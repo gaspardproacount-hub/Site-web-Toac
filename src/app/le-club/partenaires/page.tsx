@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ImagePlaceholder from "@/components/ImagePlaceholder";
+import SiteImage from "@/components/SiteImage";
+import { slugify } from "@/lib/slug";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function PartenairesPage() {
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {PARTENAIRES.map((p) => (
           <div key={p.name} className="overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm">
-            <ImagePlaceholder label={`Logo ${p.name}`} className="h-32 w-full" />
+            <SiteImage name={`partenaire-${slugify(p.name)}`} label={`Logo ${p.name}`} className="h-32 w-full" />
             <div className="p-4">
               <div className="font-display uppercase text-toac-blue-950">{p.name}</div>
               <div className="text-sm text-toac-blue-900/70">

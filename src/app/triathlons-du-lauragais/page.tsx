@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ImagePlaceholder from "@/components/ImagePlaceholder";
+import SiteImage from "@/components/SiteImage";
 
 export const metadata: Metadata = {
   title: "Triathlons du Lauragais",
@@ -13,8 +13,10 @@ export default function TriathlonsDuLauragaisPage() {
   return (
     <>
       <section className="relative flex min-h-[60vh] items-end bg-toac-blue-950 text-white">
-        <ImagePlaceholder
+        <SiteImage
+          name="hero-triathlons-lauragais"
           label="Photo — Triathlons du Lauragais, ligne d'arrivée"
+          priority
           className="absolute inset-0 h-full w-full opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-toac-blue-950 via-toac-blue-950/40 to-transparent" />

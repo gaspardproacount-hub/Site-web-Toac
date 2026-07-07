@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ImagePlaceholder from "@/components/ImagePlaceholder";
+import SiteImage from "@/components/SiteImage";
 import { PALMARES_2025 } from "@/content/bureau";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export default function LeClubPage() {
   return (
     <>
       <section className="relative flex h-[45vh] items-end bg-toac-blue-950 text-white">
-        <ImagePlaceholder label="Photo — groupe TOAC" className="absolute inset-0 h-full w-full opacity-50" />
+        <SiteImage name="hero-le-club" label="Photo — groupe TOAC" priority className="absolute inset-0 h-full w-full opacity-50" />
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-10 sm:px-6 lg:px-8">
           <h1 className="font-display text-4xl uppercase sm:text-5xl">Le Club</h1>
         </div>
