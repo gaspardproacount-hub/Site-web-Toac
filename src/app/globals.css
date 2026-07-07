@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b1f3a;
+
+  /*
+   * Palette TOAC Triathlon — bleu marine + rose/magenta, conforme au logo
+   * officiel du club (wordmark "TOAC" en bleu, "TRIATHLON" en rose).
+   * Valeurs approchées depuis une capture du site existant — à affiner
+   * avec le fichier logo officiel (voir README).
+   */
+  --toac-blue-950: #04101f;
+  --toac-blue-900: #071a33;
+  --toac-blue-800: #0b2a52;
+  --toac-blue-700: #0f3a6e;
+  --toac-blue-600: #144d8f;
+  --toac-blue-500: #1a63b3;
+  --toac-pink-600: #c60d63;
+  --toac-pink-500: #e6127a;
+  --toac-pink-400: #ee4f9b;
+  --toac-pink-300: #f7a8cb;
+  --toac-black: #0a0a0a;
+  --toac-gray-50: #f7f8fa;
+  --toac-gray-100: #eef1f5;
+  --toac-gray-200: #dfe4ea;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-display: var(--font-anton);
+  --font-sans: var(--font-inter);
+
+  --color-toac-blue-950: var(--toac-blue-950);
+  --color-toac-blue-900: var(--toac-blue-900);
+  --color-toac-blue-800: var(--toac-blue-800);
+  --color-toac-blue-700: var(--toac-blue-700);
+  --color-toac-blue-600: var(--toac-blue-600);
+  --color-toac-blue-500: var(--toac-blue-500);
+  --color-toac-pink-600: var(--toac-pink-600);
+  --color-toac-pink-500: var(--toac-pink-500);
+  --color-toac-pink-400: var(--toac-pink-400);
+  --color-toac-pink-300: var(--toac-pink-300);
+  --color-toac-black: var(--toac-black);
+  --color-toac-gray-50: var(--toac-gray-50);
+  --color-toac-gray-100: var(--toac-gray-100);
+  --color-toac-gray-200: var(--toac-gray-200);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), "Arial Black", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Section title with a pink accent block, style supertri */
+.section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 2rem;
+  background-color: var(--toac-pink-500);
+  flex-shrink: 0;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+.leaflet-container {
+  z-index: 0;
+}
+
+/* Accordéon FAQ : animation fluide de hauteur via grid-template-rows */
+.faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms ease;
+}
+
+.faq-panel[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.faq-panel > div {
+  overflow: hidden;
+}
+
+.faq-panel-inner {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.faq-panel[data-open="true"] .faq-panel-inner {
+  opacity: 1;
+  transition-delay: 60ms;
+}
