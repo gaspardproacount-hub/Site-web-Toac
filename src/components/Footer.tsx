@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { FOOTER_SITEMAP } from "@/lib/nav";
+import SiteLogo from "./SiteLogo";
 
 const PARTNERS = [
   "Foulées Toulouse",
@@ -15,14 +15,8 @@ export default function Footer() {
     <footer className="bg-toac-blue-950 text-white">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
         <div>
-          <div className="mb-3 rounded-md bg-white/95 p-2 inline-block">
-            <Image
-              src="/logo-toac.png"
-              alt="TOAC Triathlon"
-              width={692}
-              height={270}
-              className="h-10 w-auto"
-            />
+          <div className="mb-3 inline-block rounded-md bg-white/95 p-2">
+            <SiteLogo className="h-10 w-auto" />
           </div>
           <p className="text-sm text-white/70">
             Nager, rouler, courir à Toulouse depuis 1992.
