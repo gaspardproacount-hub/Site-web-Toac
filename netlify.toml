@@ -1,0 +1,12 @@
+# Configuration Netlify pour l'application Next.js du TOAC Triathlon.
+# Netlify installe automatiquement le runtime Next.js (@netlify/plugin-nextjs)
+# qui construit le site ET fait tourner la partie serveur (connexion,
+# espace adhérents, paiement Monetico). NE PAS déployer en glissant un ZIP :
+# connectez ce dépôt GitHub à Netlify (« Import an existing project »).
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import ImagePlaceholder from "@/components/ImagePlaceholder";
+import SiteImage from "@/components/SiteImage";
+import InstagramFeed from "@/components/InstagramFeed";
 import { ACTUALITES } from "@/content/actualites";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 
@@ -15,16 +16,19 @@ const CARDS = [
     title: "Entraînements",
     description: "Natation, vélo, course à pied et musculation, encadrés toute la semaine.",
     href: "/entrainements",
+    image: "carte-entrainements",
   },
   {
     title: "Triathlons du Lauragais",
     description: "15e édition les 6 et 7 juin 2026 à Nailloux — notre grand événement annuel.",
     href: "/triathlons-du-lauragais",
+    image: "carte-triathlons-lauragais",
   },
   {
     title: "Vie du club",
     description: "Stages, sorties, soirées, D3 : la convivialité au cœur du TOAC.",
     href: "/le-club/vie-du-club",
+    image: "carte-vie-du-club",
   },
 ];
 
@@ -32,8 +36,10 @@ export default function HomePage() {
   return (
     <>
       <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-toac-blue-950 text-white">
-        <ImagePlaceholder
+        <SiteImage
+          name="hero-accueil"
           label="Photo hero — triathlète TOAC en action"
+          priority
           className="absolute inset-0 h-full w-full opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-toac-blue-950 via-toac-blue-950/40 to-transparent" />
@@ -83,7 +89,7 @@ export default function HomePage() {
               href={card.href}
               className="group overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
             >
-              <ImagePlaceholder label={`Photo — ${card.title}`} className="h-48 w-full" />
+              <SiteImage name={card.image} label={`Photo — ${card.title}`} className="h-48 w-full" />
               <div className="p-5">
                 <h3 className="font-display text-lg uppercase text-toac-blue-950">{card.title}</h3>
                 <p className="mt-2 text-sm text-toac-blue-900/70">{card.description}</p>
@@ -95,6 +101,8 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <InstagramFeed />
 
       <section className="bg-toac-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

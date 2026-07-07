@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import ImagePlaceholder from "@/components/ImagePlaceholder";
+import SiteImage from "@/components/SiteImage";
+import { slugify } from "@/lib/slug";
 import { BUREAU_2026, PRESIDENT_HONNEUR, COACHS } from "@/content/bureau";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function BureauPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {BUREAU_2026.map((m, i) => (
           <div key={`${m.name}-${m.role}-${i}`} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-            <ImagePlaceholder label={m.name} className="h-14 w-14 shrink-0 rounded-full" />
+            <SiteImage name={`bureau-${slugify(m.name)}`} label={m.name} className="h-14 w-14 shrink-0 rounded-full" />
             <div>
               <div className="font-medium text-toac-blue-950">{m.name}</div>
               <div className="text-sm text-toac-blue-900/70">{m.role}</div>
@@ -36,7 +37,7 @@ export default function BureauPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {COACHS.map((c) => (
           <div key={c.name} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-            <ImagePlaceholder label={c.name} className="h-14 w-14 shrink-0 rounded-full" />
+            <SiteImage name={`coach-${slugify(c.name)}`} label={c.name} className="h-14 w-14 shrink-0 rounded-full" />
             <div>
               <div className="font-medium text-toac-blue-950">{c.name}</div>
               <div className="text-sm text-toac-blue-900/70">{c.discipline}</div>
