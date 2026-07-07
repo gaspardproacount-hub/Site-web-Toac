@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { NAV_ITEMS, type NavLink } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
+import SiteLogo from "./SiteLogo";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,14 +27,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 border-b border-toac-gray-200 bg-white/95 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8" aria-label="Navigation principale">
         <Link href="/" className="flex items-center">
-          <Image
-            src="/logo-toac.png"
-            alt="TOAC Triathlon"
-            width={692}
-            height={270}
-            priority
-            className="h-10 w-auto"
-          />
+          <SiteLogo className="h-10 w-auto" />
         </Link>
 
         <div className="hidden items-center gap-1 lg:flex">
