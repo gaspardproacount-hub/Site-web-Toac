@@ -37,7 +37,21 @@ function getPool(): Pool {
     pool = new Pool({
       connectionString,
       ssl: connectionString.includes("sslmode=") ? undefined : { rejectUnauthorized: false },
-      max: 3,
+      // Une seule connexion à la fois et des délais courts : chaque appel de
+      // fonction serverless (Vercel) est une exécution isolée et de courte
+      // durée, ce qui ne se marie pas bien avec un pool multi-connexions
+      // classique. Cela évite aussi de rester bloqué trop longtemps si la
+      // base vient de sortir de veille (Neon "scale to zero").
+      max: 1,
+      connectionTimeoutMillis: 8000,
+      idleTimeoutMillis: 10000,
+    });
+    // Une connexion qui échoue en arrière-plan (socket coupé entre deux
+    // invocations serverless) ne doit pas faire planter le process : on
+    // la journalise et on repartira sur une nouvelle connexion au prochain
+    // appel.
+    pool.on("error", (error) => {
+      console.error("Erreur de connexion PostgreSQL (pool) :", error);
     });
   }
   return pool;

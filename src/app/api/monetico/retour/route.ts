@@ -18,6 +18,9 @@ function parseMontant(montant: string | undefined): { centimes: number | null; d
  * fichier Excel envoyé par email), puis répond "version=2\ncdr=0" (accusé de
  * réception attendu par Monetico).
  */
+// Laisse le temps à une base Neon en veille de se réveiller (sinon Vercel
+// coupe la fonction après 10s par défaut sur le plan Hobby).
+export const maxDuration = 30;
 export async function POST(request: NextRequest) {
   const form = await request.formData();
   const fields: Record<string, string> = {};
