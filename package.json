@@ -11,6 +11,7 @@
     "accounts": "tsx scripts/manage-accounts.ts"
   },
   "dependencies": {
+    "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
     "leaflet": "^1.9.4",
     "next": "16.2.10",

@@ -137,6 +137,45 @@ export function buildPaymentForm(request: PaymentRequest) {
   };
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Page HTML qui se soumet automatiquement vers la page de paiement sécurisée Monetico. */
+export function buildAutoSubmitHtml(payment: ReturnType<typeof buildPaymentForm>): string {
+  const inputs = Object.entries(payment.fields)
+    .map(([key, value]) => `<input type="hidden" name="${key}" value="${escapeHtml(value)}" />`)
+    .join("\n");
+
+  return `<!doctype html>
+<html lang="fr">
+  <head><meta charset="utf-8" /><title>Redirection vers le paiement sécurisé…</title></head>
+  <body>
+    <p>Redirection vers la page de paiement sécurisée Monetico…</p>
+    <form id="monetico-form" action="${payment.actionUrl}" method="POST">
+      ${inputs}
+    </form>
+    <script>document.getElementById('monetico-form').submit();</script>
+  </body>
+</html>`;
+}
+
+/** Petite page d'erreur HTML (pour les routes qui répondent à une navigation de formulaire classique). */
+export function buildErrorHtml(message: string, backHref: string): string {
+  return `<!doctype html>
+<html lang="fr">
+  <head><meta charset="utf-8" /><title>Erreur</title></head>
+  <body>
+    <p>${escapeHtml(message)}</p>
+    <p><a href="${escapeHtml(backHref)}">← Retour</a></p>
+  </body>
+</html>`;
+}
+
 /**
  * Vérifie le sceau renvoyé par Monetico sur la notification/retour de paiement.
  *

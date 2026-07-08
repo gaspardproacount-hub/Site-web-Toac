@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
 import AdhesionForm from "@/components/AdhesionForm";
-import { TARIFS } from "@/content/tarifs";
+import { STAGE_TARIFS } from "@/content/tarifs";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -9,9 +9,7 @@ export const metadata: Metadata = {
 };
 
 const ETAPES = [
-  "Remplir le formulaire d'adhésion",
-  "Payer la cotisation en ligne (paiement sécurisé Monetico)",
-  "Remettre le chèque de caution (bénévolat Triathlons du Lauragais)",
+  "Remplir le formulaire d'adhésion et payer en ligne (cotisation + caution, paiement sécurisé Monetico)",
   "Demande de licence FFTRI",
   "Rejoindre les listes Google et la communauté WhatsApp du club",
   "Commander sa trifonction TOAC",
@@ -38,11 +36,12 @@ export default function NousRejoindrePage() {
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
         <h2 className="font-display text-xl uppercase text-toac-blue-950">
-          Formulaire d&apos;adhésion
+          Formulaire d&apos;adhésion et paiement
         </h2>
         <p className="mt-2 text-sm text-toac-blue-900/70">
-          Remplissez ce formulaire pour transmettre votre dossier au bureau. Il est enregistré directement
-          dans notre base de données (consultable dans l&apos;espace bureau), plus besoin de Google Form.
+          Un seul formulaire : vos informations, le tarif (plein ou réduit) et le paiement (cotisation +
+          caution de bénévolat, prélevés ensemble). Votre inscription est enregistrée immédiatement et
+          validée automatiquement dès que le paiement est confirmé.
         </p>
         <div className="mt-6">
           <AdhesionForm />
@@ -51,12 +50,10 @@ export default function NousRejoindrePage() {
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
         <h2 className="font-display text-xl uppercase text-toac-blue-950">
-          S'inscrire et payer en ligne
+          Payer un stage (Mer, Montagne…)
         </h2>
         <p className="mt-2 text-sm text-toac-blue-900/70">
-          Paiement sécurisé par Monetico (Crédit Mutuel / CIC). Le montant exact de votre cotisation vous
-          sera confirmé par le bureau — les montants ci-dessous sont des placeholders à ajuster dans{" "}
-          <code className="rounded bg-toac-gray-100 px-1">src/content/tarifs.ts</code>.
+          Pour un stage uniquement, sans lien avec l&apos;adhésion. Paiement sécurisé Monetico.
         </p>
 
         <form action="/api/monetico/init" method="POST" className="mt-6 space-y-4">
@@ -74,7 +71,7 @@ export default function NousRejoindrePage() {
           </div>
           <div>
             <label htmlFor="montantCentimes" className="mb-1 block text-sm font-medium text-toac-blue-900">
-              Formule
+              Stage
             </label>
             <select
               id="montantCentimes"
@@ -82,7 +79,7 @@ export default function NousRejoindrePage() {
               required
               className="w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
             >
-              {TARIFS.map((t) => (
+              {STAGE_TARIFS.map((t) => (
                 <option key={t.id} value={t.montantCentimes}>
                   {t.label}
                 </option>
@@ -93,7 +90,7 @@ export default function NousRejoindrePage() {
             type="submit"
             className="w-full rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 sm:w-auto"
           >
-            S'inscrire et payer en ligne
+            Payer le stage en ligne
           </button>
         </form>
         <p className="mt-3 text-xs text-toac-blue-900/60">

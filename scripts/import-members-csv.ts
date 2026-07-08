@@ -7,15 +7,18 @@
  * valeur que celle configurée sur Vercel) :
  *   npm run import-csv -- chemin/vers/export.csv
  *
- * Ré-exécutable sans risque : chaque ligne est identifiée par son email
- * (une ré-importation met à jour le dossier existant au lieu de le dupliquer).
+ * Ré-exécutable sans risque : chaque ligne est identifiée par le nom/prénom
+ * (une ré-importation met à jour le dossier existant au lieu de le dupliquer)
+ * — l'export du club n'a pas de colonne email.
  *
- * Colonnes attendues (l'ordre n'importe pas, les en-têtes sont
- * insensibles à la casse et aux accents) :
- *   Prénom, Nom, Email, Statut,
- *   Paiement, Formulaire d'adhésion, Chèque, Groupe Google, WhatsApp,
- *   Licence demandée, Licence payée
+ * Colonnes attendues (l'ordre n'importe pas, les en-têtes sont insensibles
+ * à la casse et aux accents) : Nom, Prénom, statut, Pay asso (paiement de
+ * la cotisation), Formulaire adhésion, justif (justificatif tarif réduit),
+ * Chèque (→ caution), GG Group, Whatsapp, Licence demandée, Licence payée.
+ * Email est optionnel (absent de l'export actuel du club).
  * Les colonnes booléennes acceptent "Oui"/"Non", "true"/"false", "1"/"0".
+ * Les lignes de total/pourcentage en haut du fichier sont ignorées
+ * automatiquement.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -92,14 +95,46 @@ const HEADER_MAP: Record<string, string> = {
   email: "email",
   statut: "status",
   paiement: "paiement",
+  payasso: "paiement",
   formulairedadhesion: "formulaireAdhesion",
   formulaireadhesion: "formulaireAdhesion",
-  cheque: "cheque",
+  justif: "justificatif",
+  cheque: "caution",
+  caution: "caution",
   groupegoogle: "groupeGoogle",
+  gggroup: "groupeGoogle",
   whatsapp: "whatsapp",
   licencedemandee: "licenceDemandee",
   licencepayee: "licencePayee",
 };
+
+const IGNORED_LAST_NAMES = new Set(["TOTAL", "OUI", "NON", "MANQUANTS"]);
+
+/** Filtre les lignes de total/pourcentage qui traînent en haut ou juste sous l'en-tête de l'export du club. */
+function isRealMemberRow(lastName: string, firstName: string): boolean {
+  if (!lastName || !firstName) return false;
+  if (IGNORED_LAST_NAMES.has(lastName.toUpperCase())) return false;
+  if (/^\d/.test(firstName)) return false;
+  return true;
+}
+
+/**
+ * L'export du club place la vraie ligne d'en-tête après un bloc de
+ * synthèse (total/pourcentage manquants) : on la retrouve en cherchant la
+ * ligne qui contient à la fois une colonne Nom et une colonne Prénom,
+ * plutôt que de supposer que c'est la première ligne du fichier.
+ */
+function findHeaderRowIndex(rows: string[][]): number {
+  const index = rows.findIndex((row) => {
+    const mapped = row.map((h) => HEADER_MAP[normalizeHeader(h)] ?? null);
+    return mapped.includes("firstName") && mapped.includes("lastName");
+  });
+  if (index === -1) {
+    console.error("Impossible de trouver la ligne d'en-tête (colonnes Nom/Prénom) dans le fichier.");
+    process.exit(1);
+  }
+  return index;
+}
 
 async function main() {
   const csvPath = process.argv[2];
@@ -116,31 +151,41 @@ async function main() {
 
   const content = fs.readFileSync(path.resolve(csvPath), "utf8");
   const rows = parseCsv(content);
-  const [headerRow, ...dataRows] = rows;
+  const headerIndex = findHeaderRowIndex(rows);
+  const headerRow = rows[headerIndex];
+  const dataRows = rows.slice(headerIndex + 1);
   const headers = headerRow.map((h) => HEADER_MAP[normalizeHeader(h)] ?? null);
 
   let imported = 0;
+  let skipped = 0;
   for (const row of dataRows) {
     const record: Record<string, string> = {};
     headers.forEach((key, i) => {
       if (key) record[key] = row[i] ?? "";
     });
-    if (!record.email) continue;
+
+    const firstName = (record.firstName ?? "").trim();
+    const lastName = (record.lastName ?? "").trim();
+    if (!isRealMemberRow(lastName, firstName)) {
+      skipped++;
+      continue;
+    }
 
     const dossier: MemberDossier = {
       paiement: toBool(record.paiement),
       formulaireAdhesion: toBool(record.formulaireAdhesion),
-      cheque: toBool(record.cheque),
+      caution: toBool(record.caution),
       groupeGoogle: toBool(record.groupeGoogle),
       whatsapp: toBool(record.whatsapp),
       licenceDemandee: toBool(record.licenceDemandee),
       licencePayee: toBool(record.licencePayee),
+      justificatif: toBool(record.justificatif),
     };
 
     await upsertMemberFromCsv({
-      firstName: record.firstName ?? "",
-      lastName: record.lastName ?? "",
-      email: record.email,
+      firstName,
+      lastName,
+      email: record.email ?? "",
       status: toStatus(record.status),
       dossier,
     });
@@ -148,7 +193,7 @@ async function main() {
   }
 
   await closeDb();
-  console.log(`✅ ${imported} adhérents importés/mis à jour dans la base de données.`);
+  console.log(`✅ ${imported} adhérents importés/mis à jour dans la base de données (${skipped} lignes ignorées).`);
 }
 
 main().catch((error) => {

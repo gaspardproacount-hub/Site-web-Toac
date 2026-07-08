@@ -85,17 +85,19 @@ réelles ne transitent jamais par le dépôt.
    ```bash
    npm run import-csv -- chemin/vers/export.csv
    ```
-   Chaque ligne est identifiée par son email : relancer la commande après une mise à jour du Sheets
-   met à jour les dossiers existants au lieu de les dupliquer.
+   Chaque ligne est identifiée par le nom + prénom (l'export du club n'a pas de colonne email) :
+   relancer la commande après une mise à jour du Sheets met à jour les dossiers existants au lieu de
+   les dupliquer. Les lignes de total/pourcentage en haut de l'export sont ignorées automatiquement.
 
-Colonnes attendues (l'ordre n'importe pas, en-têtes insensibles à la casse/accents) : `Prénom`, `Nom`,
-`Email`, `Statut`, `Paiement`, `Formulaire d'adhésion`, `Chèque`, `Groupe Google`, `WhatsApp`,
-`Licence demandée`, `Licence payée` (valeurs `Oui`/`Non`).
+Colonnes attendues (l'ordre n'importe pas, en-têtes insensibles à la casse/accents) : `Nom`, `Prénom`,
+`statut`, `Pay asso` (paiement cotisation), `Formulaire adhésion`, `justif` (justificatif tarif réduit),
+`Chèque` (→ caution), `GG Group`, `Whatsapp`, `Licence demandée`, `Licence payée` (valeurs `Oui`/`Non`).
+`Email` est optionnel.
 
 Une fois importés, les dossiers apparaissent dans **Espace Adhérents → Bureau → Dossiers adhérents**, où
-chaque case (paiement, chèque, groupe Google, WhatsApp, licence…) peut être cochée/décochée directement
-sur le site — les nouvelles demandes d'adhésion en ligne (page **Nous rejoindre**) y apparaissent aussi
-automatiquement, sans réimport.
+chaque case (paiement, caution, groupe Google, WhatsApp, licence, justificatif…) peut être cochée/décochée
+directement sur le site — les nouvelles demandes d'adhésion en ligne (page **Nous rejoindre**) y
+apparaissent aussi automatiquement, sans réimport, et sont rapprochées du bon dossier par le nom.
 
 ### Gérer les comptes de connexion
 
@@ -121,6 +123,12 @@ bcrypt est écrit dans `accounts.json`).
 Le parcours d'adhésion (page **Nous rejoindre**) construit un formulaire de paiement scellé (HMAC-SHA1) côté
 serveur (`src/lib/monetico.ts`), sans jamais exposer la clé secrète au navigateur.
 
+Le formulaire d'adhésion est **unique** : informations, choix du tarif (plein ou réduit, avec justificatif
+si besoin) et paiement (cotisation + caution de 100€ obligatoire, prélevés ensemble) en une seule étape.
+L'inscription (table `inscriptions`/`members`) est enregistrée dès l'envoi, mais le dossier n'est marqué
+**payé** (`paiement` + `caution` cochés automatiquement) qu'à réception de la confirmation Monetico — c'est
+la notification serveur-à-serveur qui valide réellement l'adhésion, pas le simple envoi du formulaire.
+
 1. Récupérez dans l'espace commerçant Monetico du club : `TPE`, code société, clé HMAC.
 2. Renseignez `MONETICO_TPE`, `MONETICO_CODE_SOCIETE`, `MONETICO_CLE_HMAC`, `MONETICO_URL_RETOUR` (URL de
    base de votre site) dans vos variables d'environnement.
@@ -129,9 +137,23 @@ serveur (`src/lib/monetico.ts`), sans jamais exposer la clé secrète au navigat
    `https://votre-domaine/api/monetico/retour`.
 5. Une fois validé en test, passez `MONETICO_TEST_MODE=false` (ou supprimez la variable) pour la production.
 
+Les montants (plein tarif, tarif réduit, caution, stages) sont dans `src/content/tarifs.ts` — à ajuster
+une fois confirmés par le bureau.
+
 ⚠️ L'ordre exact des champs du retour Monetico (fonction `verifyReturnSeal`) doit être confirmé avec la
 documentation fournie par Monetico avant la mise en production réelle (voir le commentaire dans
 `src/lib/monetico.ts`).
+
+### Justificatif tarif réduit (Vercel Blob)
+
+Le fichier uploadé (carte étudiant, attestation Pôle emploi, badge Airbus…) est stocké sur Vercel Blob et
+lié au dossier adhérent.
+
+1. Dans votre projet Vercel → onglet **Storage** → **Create Database** → **Blob** (offre gratuite).
+2. Vercel ajoute automatiquement `BLOB_READ_WRITE_TOKEN` à votre projet.
+
+Sans cette variable, le formulaire fonctionne quand même : le justificatif n'est simplement pas conservé
+(seule la case "tarif réduit demandé" est enregistrée).
 
 ## 5bis. Base de données — commandes, adhésions & dossiers
 
