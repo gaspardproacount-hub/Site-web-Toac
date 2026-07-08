@@ -63,7 +63,9 @@ ignorés par git — ils ne seront donc **pas** présents sur Vercel après un d
 | Documents PDF | `src/app/espace-adherents/documents/page.tsx` | Remplacer les `href="#"` par les vrais fichiers (à héberger dans `public/documents/` par ex.). |
 | Coordonnées des lieux | `src/content/lieux.ts` | Les latitudes/longitudes sont des approximations ; à vérifier/ajuster précisément si besoin. |
 | Variables Monetico | `.env` (Vercel ou local) | Voir § 5. |
+| `DATABASE_URL` | `.env` (Vercel ou local) | Voir § 5bis. |
 | `RESEND_API_KEY` | `.env` | Voir § 6. |
+| Champs du formulaire d'adhésion | `src/components/AdhesionForm.tsx` | Les champs proposés (état civil, contact d'urgence, certificat médical…) sont ceux d'un bulletin d'adhésion classique de club de triathlon. Le Google Form externe n'étant pas accessible publiquement pour être recopié à l'identique, ajustez les champs ici si le bureau utilise des intitulés différents. |
 
 ## 4. Importer les adhérents (CSV) et gérer les comptes
 
@@ -116,6 +118,36 @@ serveur (`src/lib/monetico.ts`), sans jamais exposer la clé secrète au navigat
 ⚠️ L'ordre exact des champs du retour Monetico (fonction `verifyReturnSeal`) doit être confirmé avec la
 documentation fournie par Monetico avant la mise en production réelle (voir le commentaire dans
 `src/lib/monetico.ts`).
+
+## 5bis. Base de données — commandes Monetico & demandes d'adhésion
+
+Le site enregistre automatiquement, dans une vraie base de données, deux choses qui demandaient
+auparavant une manipulation manuelle :
+
+- **Les commandes Monetico** : à chaque paiement, Monetico notifie le site en arrière-plan
+  (`/api/monetico/retour`) ; cette notification est désormais enregistrée dans une table `commandes`
+  au lieu de simplement être journalisée. Fini le fichier Excel à ouvrir/copier-coller depuis l'email
+  Monetico : tout est consultable dans **Espace Adhérents → Bureau → Commandes Monetico**.
+- **Les demandes d'adhésion** : la page **Nous rejoindre** propose désormais un formulaire d'adhésion
+  directement sur le site (à la place du Google Form externe). Chaque envoi est enregistré dans une
+  table `inscriptions`, consultable dans **Espace Adhérents → Bureau → Demandes d'adhésion**.
+
+### Mise en place (5 minutes, gratuit)
+
+1. Sur [vercel.com](https://vercel.com), dans votre projet → onglet **Storage** → **Create Database** →
+   choisissez un Postgres (Neon, offre gratuite). Vercel y ajoute automatiquement une variable
+   `DATABASE_URL` (ou `POSTGRES_URL`) à votre projet.
+   - Alternative sans Vercel : créez un projet gratuit sur [neon.tech](https://neon.tech) ou
+     [supabase.com](https://supabase.com) et copiez la chaîne de connexion Postgres fournie.
+2. Renseignez `DATABASE_URL` dans vos variables d'environnement (Vercel : **Settings → Environment
+   Variables** ; en local : `.env.local`).
+3. C'est tout : les tables (`commandes`, `inscriptions`) sont créées automatiquement au premier appel,
+   aucune migration à lancer à la main.
+
+Tant que `DATABASE_URL` n'est pas configurée, le site continue de fonctionner normalement (paiement,
+formulaire d'adhésion), mais les pages **Bureau → Commandes** / **Bureau → Demandes d'adhésion**
+affichent un message d'installation au lieu du tableau, et les nouvelles commandes/inscriptions ne sont
+pas conservées.
 
 ## 6. Formulaire de contact (emails)
 

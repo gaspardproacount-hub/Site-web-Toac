@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getMembers } from "@/lib/data-store";
@@ -25,6 +26,22 @@ export default async function BureauDossiersPage() {
         Tableau complet des dossiers adhérents (données factices tant que le CSV du club n&apos;a pas été
         importé — voir README).
       </p>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          href="/espace-adherents/bureau/commandes"
+          className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
+        >
+          Commandes Monetico →
+        </Link>
+        <Link
+          href="/espace-adherents/bureau/inscriptions"
+          className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
+        >
+          Demandes d&apos;adhésion →
+        </Link>
+      </div>
+
       <div className="mt-8">
         <AdminMembersTable members={members} />
       </div>
