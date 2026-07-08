@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
-import { updateMember, DatabaseNotConfiguredError, type MemberPatch } from "@/lib/db";
+import { updateMember, deleteMember, DatabaseNotConfiguredError, type MemberPatch } from "@/lib/db";
 
 const BOOLEAN_FIELDS = [
   "paiement",
@@ -54,6 +54,31 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 503 });
     }
     console.error("Échec de la mise à jour du dossier adhérent :", error);
+    return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+/** Supprime un dossier adhérent. Réservé au bureau (admin). */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+  if (!session || session.role !== "admin") {
+    return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  try {
+    await deleteMember(id);
+  } catch (error) {
+    if (error instanceof DatabaseNotConfiguredError) {
+      return NextResponse.json({ error: error.message }, { status: 503 });
+    }
+    console.error("Échec de la suppression du dossier adhérent :", error);
     return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
   }
 
