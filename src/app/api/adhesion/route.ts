@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { put, BlobError } from "@vercel/blob";
-import {
-  insertInscription,
-  upsertMemberFromInscription,
-  DatabaseNotConfiguredError,
-} from "@/lib/db";
+import { insertInscription, DatabaseNotConfiguredError } from "@/lib/db";
 import { buildPaymentForm, buildAutoSubmitHtml, buildErrorHtml } from "@/lib/monetico";
 import { ADHESION_TARIFS, CAUTION_CENTIMES } from "@/content/tarifs";
 
 /**
  * Formulaire d'adhésion en ligne, unique : inscription + paiement (cotisation
- * + caution de 100€ obligatoire) en une seule étape. L'adhésion n'est
- * considérée validée qu'une fois le paiement confirmé par Monetico (voir
- * /api/monetico/retour, qui appelle markMemberPaid).
+ * + caution de 100€ obligatoire) en une seule étape. Un simple envoi du
+ * formulaire n'enregistre qu'une demande (table `inscriptions`) — la
+ * personne n'est PAS considérée comme adhérente et n'apparaît pas dans
+ * Bureau → Dossiers adhérents tant que le paiement n'est pas confirmé par
+ * Monetico (voir /api/monetico/retour, qui appelle markInscriptionPaid et
+ * ne crée le dossier adhérent qu'à ce moment-là).
  *
  * Laisse le temps à une base Neon en veille de se réveiller (sinon Vercel
  * coupe la fonction après 10s par défaut sur le plan Hobby).
@@ -72,16 +71,9 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  let memberId: number;
+  let inscriptionId: number;
   try {
-    memberId = await upsertMemberFromInscription({
-      prenom,
-      nom,
-      email,
-      justificatif: tarifReduitDemande,
-      justificatifUrl,
-    });
-    await insertInscription({
+    inscriptionId = await insertInscription({
       prenom,
       nom,
       dateNaissance,
@@ -95,7 +87,6 @@ export async function POST(request: NextRequest) {
       certificatMedical,
       droitImage,
       message,
-      memberId,
       justificatifUrl,
     });
   } catch (error) {
@@ -111,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   const tarif = tarifReduitDemande ? ADHESION_TARIFS.reduit : ADHESION_TARIFS.plein;
   const montantCentimes = tarif.montantCentimes + CAUTION_CENTIMES;
-  const reference = `TOAC-M${memberId}-${Date.now()}`;
+  const reference = `TOAC-I${inscriptionId}-${Date.now()}`;
 
   let payment: ReturnType<typeof buildPaymentForm>;
   try {

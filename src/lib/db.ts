@@ -313,19 +313,27 @@ export interface NouvelleInscription {
   certificatMedical: string;
   droitImage: boolean;
   message: string;
-  memberId: number | null;
   justificatifUrl: string | null;
 }
 
-export async function insertInscription(inscription: NouvelleInscription): Promise<void> {
+/**
+ * Enregistre la demande d'adhésion. Ne crée volontairement PAS de dossier
+ * adhérent (table `members`) : tant que le paiement n'est pas confirmé par
+ * Monetico, la personne n'est qu'une demande en attente, pas un adhérent
+ * (voir markInscriptionPaid, appelé depuis /api/monetico/retour). Renvoie
+ * l'identifiant de l'inscription, encodé dans la référence Monetico pour
+ * pouvoir la retrouver au retour du paiement.
+ */
+export async function insertInscription(inscription: NouvelleInscription): Promise<number> {
   await ensureSchema();
-  await getPool().query(
+  const { rows } = await getPool().query<{ id: number }>(
     `
     INSERT INTO inscriptions (
       prenom, nom, date_naissance, email, telephone, adresse, formule,
       licence_existante, contact_urgence_nom, contact_urgence_telephone,
-      certificat_medical, droit_image, message, member_id, justificatif_url
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+      certificat_medical, droit_image, message, justificatif_url
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    RETURNING id
     `,
     [
       inscription.prenom,
@@ -341,10 +349,10 @@ export async function insertInscription(inscription: NouvelleInscription): Promi
       inscription.certificatMedical,
       inscription.droitImage,
       inscription.message,
-      inscription.memberId,
       inscription.justificatifUrl,
     ]
   );
+  return rows[0].id;
 }
 
 export async function getInscriptions(): Promise<InscriptionRow[]> {
@@ -353,6 +361,40 @@ export async function getInscriptions(): Promise<InscriptionRow[]> {
     "SELECT * FROM inscriptions ORDER BY recue_le DESC"
   );
   return rows;
+}
+
+export async function getInscriptionById(id: number): Promise<InscriptionRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<InscriptionRow>(
+    "SELECT * FROM inscriptions WHERE id = $1",
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Paiement Monetico confirmé pour cette demande : crée (ou retrouve, par
+ * nom) le dossier adhérent maintenant — pas avant — et le marque payé.
+ * C'est ce moment précis qui fait passer un simple candidat au statut
+ * d'adhérent.
+ */
+export async function markInscriptionPaid(inscriptionId: number): Promise<void> {
+  await ensureSchema();
+  const inscription = await getInscriptionById(inscriptionId);
+  if (!inscription) return;
+
+  const memberId = await upsertMemberFromInscription({
+    prenom: inscription.prenom,
+    nom: inscription.nom,
+    email: inscription.email,
+    justificatif: inscription.formule === "reduit",
+    justificatifUrl: inscription.justificatif_url,
+  });
+  await markMemberPaid(memberId);
+  await getPool().query(
+    "UPDATE inscriptions SET statut = 'validée', member_id = $2 WHERE id = $1",
+    [inscriptionId, memberId]
+  );
 }
 
 interface MemberRow {
@@ -481,11 +523,11 @@ export async function upsertMemberFromCsv(m: CsvMemberInput): Promise<void> {
 }
 
 /**
- * Crée (ou retrouve, par nom) le dossier adhérent correspondant à une
- * demande d'adhésion en ligne — c'est ce qui fait apparaître automatiquement
- * les nouveaux inscrits dans la vue bureau, sans ré-import CSV. Renvoie
- * l'identifiant du dossier (utilisé pour le rapprocher de la commande
- * Monetico correspondante).
+ * Crée (ou retrouve, par nom) le dossier adhérent. N'est appelée qu'une
+ * fois le paiement confirmé (voir markInscriptionPaid) : un simple envoi du
+ * formulaire d'adhésion, sans paiement, ne crée pas de dossier — la
+ * personne n'apparaît que dans Bureau → Demandes d'adhésion tant qu'elle
+ * n'a pas payé. Renvoie l'identifiant du dossier.
  */
 export async function upsertMemberFromInscription(inscription: {
   prenom: string;

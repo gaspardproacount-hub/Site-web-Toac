@@ -56,9 +56,20 @@ export default function AdminInscriptionsTable({ inscriptions }: { inscriptions:
                   Reçue le {formatDate(i.recue_le)} · {i.formule || "formule non précisée"}
                 </div>
               </div>
-              <span aria-hidden="true" className="text-toac-blue-900/50">
-                {expanded === i.id ? "▲" : "▼"}
-              </span>
+              <div className="flex items-center gap-3">
+                <span
+                  className={
+                    i.statut === "validée"
+                      ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                      : "rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800"
+                  }
+                >
+                  {i.statut === "validée" ? "Adhésion validée (payée)" : "En attente de paiement"}
+                </span>
+                <span aria-hidden="true" className="text-toac-blue-900/50">
+                  {expanded === i.id ? "▲" : "▼"}
+                </span>
+              </div>
             </button>
             {expanded === i.id && (
               <dl className="grid gap-x-6 gap-y-2 border-t border-toac-gray-100 px-4 py-4 text-sm sm:grid-cols-2">
