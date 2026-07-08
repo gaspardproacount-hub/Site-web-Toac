@@ -8,6 +8,10 @@ import { insertInscription, DatabaseNotConfiguredError } from "@/lib/db";
  * `inscriptions`, voir src/lib/db.ts), consultable dans la vue bureau
  * (Espace Adhérents → Bureau → Inscriptions).
  */
+// Laisse le temps à une base Neon en veille de se réveiller (sinon Vercel
+// coupe la fonction après 10s par défaut sur le plan Hobby).
+export const maxDuration = 30;
+
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   if (!body) {
