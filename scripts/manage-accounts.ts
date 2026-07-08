@@ -7,17 +7,19 @@
  *   npm run accounts -- add <username> <password> <"Nom Prénom"> <member|admin> [memberId]
  *   npm run accounts -- passwd <username> <nouveauMotDePasse>
  *   npm run accounts -- remove <username>
- *   npm run accounts -- bulk-from-members   (génère un compte pour chaque adhérent de members.json qui n'en a pas encore)
+ *   npm run accounts -- bulk-from-members   (génère un compte pour chaque adhérent de la base qui n'en a pas encore)
  */
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import type { Account, Member } from "../src/lib/types";
+import { loadEnvLocal } from "./load-env";
+import { getMembers, closeDb } from "../src/lib/db";
+import type { Account } from "../src/lib/types";
+
+loadEnvLocal();
 
 const ACCOUNTS_PATH = path.join(process.cwd(), "src", "data", "accounts.json");
-const MEMBERS_PATH = path.join(process.cwd(), "src", "data", "members.json");
-const MEMBERS_SAMPLE_PATH = path.join(process.cwd(), "src", "data", "members.sample.json");
 
 function loadAccounts(): Account[] {
   if (!fs.existsSync(ACCOUNTS_PATH)) return [];
@@ -26,11 +28,6 @@ function loadAccounts(): Account[] {
 
 function saveAccounts(accounts: Account[]) {
   fs.writeFileSync(ACCOUNTS_PATH, JSON.stringify(accounts, null, 2) + "\n", "utf8");
-}
-
-function loadMembers(): Member[] {
-  const target = fs.existsSync(MEMBERS_PATH) ? MEMBERS_PATH : MEMBERS_SAMPLE_PATH;
-  return JSON.parse(fs.readFileSync(target, "utf8"));
 }
 
 function generatePassword(): string {
@@ -111,7 +108,7 @@ async function cmdRemove(args: string[]) {
 }
 
 async function cmdBulkFromMembers() {
-  const members = loadMembers();
+  const members = await getMembers();
   const accounts = loadAccounts();
   const existingMemberIds = new Set(accounts.map((a) => a.memberId));
   const created: { username: string; password: string; name: string }[] = [];
@@ -163,6 +160,7 @@ async function main() {
         ].join("\n")
       );
   }
+  await closeDb();
 }
 
 main();

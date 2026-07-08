@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { insertInscription, DatabaseNotConfiguredError } from "@/lib/db";
+import { insertInscription, upsertMemberFromInscription, DatabaseNotConfiguredError } from "@/lib/db";
 
 /**
  * Formulaire d'adhésion en ligne (remplace le Google Form externe) :
  * enregistre chaque demande dans la base de données du club (table
  * `inscriptions`, voir src/lib/db.ts), consultable dans la vue bureau
- * (Espace Adhérents → Bureau → Inscriptions).
+ * (Espace Adhérents → Bureau → Inscriptions), et crée automatiquement le
+ * dossier adhérent correspondant (table `members`) pour qu'il apparaisse
+ * tout de suite dans Bureau → Dossiers adhérents.
  */
 // Laisse le temps à une base Neon en veille de se réveiller (sinon Vercel
 // coupe la fonction après 10s par défaut sur le plan Hobby).
@@ -56,6 +58,11 @@ export async function POST(request: NextRequest) {
       certificatMedical: String(certificatMedical ?? ""),
       droitImage: Boolean(droitImage),
       message: String(message ?? ""),
+    });
+    await upsertMemberFromInscription({
+      prenom: String(prenom),
+      nom: String(nom),
+      email: String(email),
     });
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) {

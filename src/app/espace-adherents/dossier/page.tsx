@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getMemberById } from "@/lib/data-store";
+import { getMemberById, DatabaseNotConfiguredError } from "@/lib/db";
 import DossierChecklist, { dossierCompletion } from "@/components/DossierChecklist";
 
 export const metadata: Metadata = {
@@ -14,7 +14,19 @@ export default async function DossierPage() {
   const session = await getSession();
   if (!session) redirect("/connexion?next=/espace-adherents/dossier");
 
-  const member = session.memberId ? getMemberById(session.memberId) : undefined;
+  let member = null;
+  let dbError = false;
+  if (session.memberId) {
+    try {
+      member = await getMemberById(session.memberId);
+    } catch (error) {
+      if (error instanceof DatabaseNotConfiguredError) {
+        dbError = true;
+      } else {
+        throw error;
+      }
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
@@ -32,7 +44,13 @@ export default async function DossierPage() {
         </div>
       )}
 
-      {!member && (
+      {dbError && (
+        <p className="mt-8 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          Le suivi des dossiers n&apos;est pas encore configuré côté serveur. Contactez le bureau.
+        </p>
+      )}
+
+      {!dbError && !member && (
         <p className="mt-8 rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4 text-sm text-toac-blue-900/70">
           Aucun dossier n&apos;est associé à ce compte pour le moment. Contactez le bureau si vous pensez
           qu&apos;il s&apos;agit d&apos;une erreur.
@@ -52,7 +70,7 @@ export default async function DossierPage() {
               <div className="font-display text-2xl text-toac-blue-950">
                 {dossierCompletion(member.dossier)}%
               </div>
-              <div className="text-xs text-toac-blue-900/60">completé</div>
+              <div className="text-xs text-toac-blue-900/60">complété</div>
             </div>
           </div>
           <DossierChecklist dossier={member.dossier} />

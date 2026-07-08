@@ -69,38 +69,52 @@ ignorés par git — ils ne seront donc **pas** présents sur Vercel après un d
 
 ## 4. Importer les adhérents (CSV) et gérer les comptes
 
-Aucune donnée personnelle réelle n'est présente dans le dépôt : `src/data/members.sample.json` et
-`src/data/accounts.sample.json` ne contiennent que des données factices, utilisées tant que
-`src/data/members.json` / `src/data/accounts.json` n'existent pas.
+Les dossiers adhérents vivent dans la base de données du site (table `members`, voir § 5bis) — jamais
+dans le dépôt git. `src/data/accounts.sample.json` ne contient que des données factices (comptes de
+démo), utilisées tant que `src/data/accounts.json` n'existe pas.
 
-### Importer le Google Sheets "Dossiers-2025-2026"
+### Importer le Google Sheets "Dossiers-2025-2026" (en local, jamais via git)
 
-1. Dans Google Sheets : `Fichier → Télécharger → Valeurs séparées par des virgules (.csv)`.
-2. Lancez :
+Cette commande écrit directement dans la base de données de production : les données personnelles
+réelles ne transitent jamais par le dépôt.
+
+1. Sur votre ordinateur, clonez le dépôt, `npm install`, puis copiez dans `.env.local` la **même**
+   valeur de `DATABASE_URL` que celle configurée sur Vercel (Settings → Environment Variables).
+2. Dans Google Sheets : `Fichier → Télécharger → Valeurs séparées par des virgules (.csv)`.
+3. Lancez :
    ```bash
    npm run import-csv -- chemin/vers/export.csv
    ```
-   Cela génère `src/data/members.json` (ignoré par git).
+   Chaque ligne est identifiée par son email : relancer la commande après une mise à jour du Sheets
+   met à jour les dossiers existants au lieu de les dupliquer.
 
 Colonnes attendues (l'ordre n'importe pas, en-têtes insensibles à la casse/accents) : `Prénom`, `Nom`,
 `Email`, `Statut`, `Paiement`, `Formulaire d'adhésion`, `Chèque`, `Groupe Google`, `WhatsApp`,
 `Licence demandée`, `Licence payée` (valeurs `Oui`/`Non`).
 
+Une fois importés, les dossiers apparaissent dans **Espace Adhérents → Bureau → Dossiers adhérents**, où
+chaque case (paiement, chèque, groupe Google, WhatsApp, licence…) peut être cochée/décochée directement
+sur le site — les nouvelles demandes d'adhésion en ligne (page **Nous rejoindre**) y apparaissent aussi
+automatiquement, sans réimport.
+
 ### Gérer les comptes de connexion
 
 ```bash
 npm run accounts -- list
-npm run accounts -- add jean.dupont motdepasse "Jean Dupont" member m-001
+npm run accounts -- add jean.dupont motdepasse "Jean Dupont" member 1
 npm run accounts -- passwd jean.dupont nouveaumotdepasse
 npm run accounts -- remove jean.dupont
 
 # Génère automatiquement un compte (identifiant + mot de passe aléatoire)
-# pour chaque adhérent de members.json qui n'en a pas encore :
+# pour chaque adhérent de la base qui n'en a pas encore :
 npm run accounts -- bulk-from-members
 ```
 
-`bulk-from-members` affiche en clair, une seule fois dans le terminal, les identifiants générés à transmettre
-aux adhérents (rien n'est jamais stocké en clair : seul le hash bcrypt est écrit dans `accounts.json`).
+Le `[memberId]` passé à `add`/généré par `bulk-from-members` est l'identifiant numérique du dossier dans
+la base (visible dans **Bureau → Dossiers adhérents**). `bulk-from-members` a aussi besoin de
+`DATABASE_URL` dans `.env.local` (voir ci-dessus). Il affiche en clair, une seule fois dans le terminal,
+les identifiants générés à transmettre aux adhérents (rien n'est jamais stocké en clair : seul le hash
+bcrypt est écrit dans `accounts.json`).
 
 ## 5. Paiement en ligne Monetico
 
@@ -119,10 +133,10 @@ serveur (`src/lib/monetico.ts`), sans jamais exposer la clé secrète au navigat
 documentation fournie par Monetico avant la mise en production réelle (voir le commentaire dans
 `src/lib/monetico.ts`).
 
-## 5bis. Base de données — commandes Monetico & demandes d'adhésion
+## 5bis. Base de données — commandes, adhésions & dossiers
 
-Le site enregistre automatiquement, dans une vraie base de données, deux choses qui demandaient
-auparavant une manipulation manuelle :
+Le site enregistre automatiquement, dans une vraie base de données, ce qui demandait auparavant une
+manipulation manuelle :
 
 - **Les commandes Monetico** : à chaque paiement, Monetico notifie le site en arrière-plan
   (`/api/monetico/retour`) ; cette notification est désormais enregistrée dans une table `commandes`
@@ -131,6 +145,9 @@ auparavant une manipulation manuelle :
 - **Les demandes d'adhésion** : la page **Nous rejoindre** propose désormais un formulaire d'adhésion
   directement sur le site (à la place du Google Form externe). Chaque envoi est enregistré dans une
   table `inscriptions`, consultable dans **Espace Adhérents → Bureau → Demandes d'adhésion**.
+- **Les dossiers adhérents** : table `members`, alimentée par l'import CSV (§ 4) et automatiquement
+  complétée par chaque nouvelle demande d'adhésion en ligne. Consultable et **modifiable** (cases à
+  cocher) dans **Espace Adhérents → Bureau → Dossiers adhérents**.
 
 ### Mise en place (5 minutes, gratuit)
 
@@ -141,13 +158,13 @@ auparavant une manipulation manuelle :
      [supabase.com](https://supabase.com) et copiez la chaîne de connexion Postgres fournie.
 2. Renseignez `DATABASE_URL` dans vos variables d'environnement (Vercel : **Settings → Environment
    Variables** ; en local : `.env.local`).
-3. C'est tout : les tables (`commandes`, `inscriptions`) sont créées automatiquement au premier appel,
-   aucune migration à lancer à la main.
+3. C'est tout : les tables (`commandes`, `inscriptions`, `members`) sont créées automatiquement au
+   premier appel, aucune migration à lancer à la main.
 
 Tant que `DATABASE_URL` n'est pas configurée, le site continue de fonctionner normalement (paiement,
-formulaire d'adhésion), mais les pages **Bureau → Commandes** / **Bureau → Demandes d'adhésion**
-affichent un message d'installation au lieu du tableau, et les nouvelles commandes/inscriptions ne sont
-pas conservées.
+formulaire d'adhésion), mais les pages **Bureau → Commandes** / **Bureau → Demandes d'adhésion** /
+**Bureau → Dossiers adhérents** affichent un message d'installation au lieu du tableau, et rien n'est
+conservé.
 
 ## 6. Formulaire de contact (emails)
 
