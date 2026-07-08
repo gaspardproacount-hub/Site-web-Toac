@@ -567,6 +567,12 @@ export async function updateMember(id: string, patch: MemberPatch): Promise<void
   );
 }
 
+/** Supprime un dossier adhérent (depuis la vue bureau). */
+export async function deleteMember(id: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("DELETE FROM members WHERE id = $1", [Number(id)]);
+}
+
 /** Ferme la connexion — à appeler en fin d'exécution des scripts CLI (import CSV…). */
 export async function closeDb(): Promise<void> {
   if (pool) await pool.end();

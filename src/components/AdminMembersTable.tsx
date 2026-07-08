@@ -23,6 +23,7 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -74,6 +75,31 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
         prev.map((m) => (m.id === member.id ? { ...m, status: previousStatus } : m))
       );
       setError(err instanceof Error ? err.message : "Échec de la mise à jour.");
+    }
+  }
+
+  async function removeMember(member: Member) {
+    const confirmed = window.confirm(
+      `Supprimer définitivement le dossier de ${member.firstName} ${member.lastName} ? Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setDeletingId(member.id);
+    const previous = data;
+    setData((prev) => prev.filter((m) => m.id !== member.id));
+
+    try {
+      const response = await fetch(`/api/admin/members/${member.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? "Échec de la suppression.");
+      }
+    } catch (err) {
+      setData(previous);
+      setError(err instanceof Error ? err.message : "Échec de la suppression.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -134,6 +160,9 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
                 </th>
               ))}
               <th className="px-3 py-2 text-center font-medium text-toac-blue-950">%</th>
+              <th className="px-3 py-2 text-center font-medium text-toac-blue-950">
+                <span className="sr-only">Supprimer</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-toac-gray-100">
@@ -176,11 +205,23 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
                   </td>
                 ))}
                 <td className="px-3 py-2 text-center font-medium">{dossierCompletion(m.dossier)}%</td>
+                <td className="px-3 py-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() => removeMember(m)}
+                    disabled={deletingId === m.id}
+                    title="Supprimer ce dossier"
+                    aria-label={`Supprimer le dossier de ${m.firstName} ${m.lastName}`}
+                    className="rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {deletingId === m.id ? "…" : "Supprimer"}
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={dossierKeys.length + 3} className="px-3 py-6 text-center text-toac-blue-900/60">
+                <td colSpan={dossierKeys.length + 4} className="px-3 py-6 text-center text-toac-blue-900/60">
                   Aucun adhérent pour le moment.
                 </td>
               </tr>
