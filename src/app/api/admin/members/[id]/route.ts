@@ -6,11 +6,12 @@ import { updateMember, DatabaseNotConfiguredError, type MemberPatch } from "@/li
 const BOOLEAN_FIELDS = [
   "paiement",
   "formulaireAdhesion",
-  "cheque",
+  "caution",
   "groupeGoogle",
   "whatsapp",
   "licenceDemandee",
   "licencePayee",
+  "justificatif",
 ] as const;
 const STATUSES = ["new", "membre", "bureau", "arbitre"] as const;
 

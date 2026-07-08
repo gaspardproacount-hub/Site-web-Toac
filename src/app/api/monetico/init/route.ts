@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { buildPaymentForm } from "@/lib/monetico";
+import { buildPaymentForm, buildAutoSubmitHtml } from "@/lib/monetico";
 
 /**
  * Reçoit le choix de formule + l'email de l'adhérent depuis le formulaire
@@ -41,34 +41,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const inputs = Object.entries(payment.fields)
-    .map(
-      ([key, value]) =>
-        `<input type="hidden" name="${key}" value="${escapeHtml(value)}" />`
-    )
-    .join("\n");
-
-  const html = `<!doctype html>
-<html lang="fr">
-  <head><meta charset="utf-8" /><title>Redirection vers le paiement sécurisé…</title></head>
-  <body>
-    <p>Redirection vers la page de paiement sécurisée Monetico…</p>
-    <form id="monetico-form" action="${payment.actionUrl}" method="POST">
-      ${inputs}
-    </form>
-    <script>document.getElementById('monetico-form').submit();</script>
-  </body>
-</html>`;
-
-  return new NextResponse(html, {
+  return new NextResponse(buildAutoSubmitHtml(payment), {
     headers: { "content-type": "text/html; charset=utf-8" },
   });
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }

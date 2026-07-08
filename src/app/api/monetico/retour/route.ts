@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyReturnSeal } from "@/lib/monetico";
-import { upsertCommande, DatabaseNotConfiguredError } from "@/lib/db";
+import { upsertCommande, markMemberPaid, DatabaseNotConfiguredError } from "@/lib/db";
 
 /** Extrait le montant en centimes depuis un champ Monetico du type "25.00EUR". */
 function parseMontant(montant: string | undefined): { centimes: number | null; devise: string | null } {
@@ -9,6 +9,12 @@ function parseMontant(montant: string | undefined): { centimes: number | null; d
   const match = /^([\d.]+)([A-Z]{3})$/.exec(montant);
   if (!match) return { centimes: null, devise: null };
   return { centimes: Math.round(Number(match[1]) * 100), devise: match[2] };
+}
+
+/** La référence des paiements d'adhésion est "TOAC-M<memberId>-<timestamp>" (voir /api/adhesion). */
+function parseMemberIdFromReference(reference: string | undefined): number | null {
+  const match = /^TOAC-M(\d+)-/.exec(reference ?? "");
+  return match ? Number(match[1]) : null;
 }
 
 /**
@@ -65,6 +71,14 @@ export async function POST(request: NextRequest) {
       texteLibre: fields["texte-libre"] ?? null,
       brut: fields,
     });
+    // Si la commande correspond à une adhésion (référence "TOAC-M<id>-…") et
+    // que le paiement est accepté, on valide automatiquement le dossier
+    // adhérent correspondant (paiement + caution réglés) — c'est ce qui
+    // remplace la validation manuelle de l'inscription par le bureau.
+    const memberId = parseMemberIdFromReference(fields.reference);
+    if (memberId && fields.cvx === "oui") {
+      await markMemberPaid(memberId);
+    }
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) {
       console.warn(

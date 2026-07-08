@@ -1,69 +1,37 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { TARIFS } from "@/content/tarifs";
+import { useState } from "react";
+import { ADHESION_TARIFS, CAUTION_CENTIMES } from "@/content/tarifs";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
 const labelClass = "mb-1 block text-sm font-medium text-toac-blue-900";
 
+function euros(centimes: number): string {
+  return `${(centimes / 100).toFixed(2).replace(".", ",")} €`;
+}
+
+/**
+ * Formulaire d'adhésion unique : informations + choix du tarif + paiement en
+ * une seule étape. La soumission est une navigation classique (pas de fetch) :
+ * /api/adhesion enregistre l'inscription puis renvoie la page qui redirige
+ * automatiquement vers le paiement sécurisé Monetico (cotisation + caution).
+ */
 export default function AdhesionForm() {
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tarifReduit, setTarifReduit] = useState<"non" | "oui">("non");
+  const [sending, setSending] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setStatus("sending");
-    setErrorMessage(null);
-
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      prenom: form.get("prenom"),
-      nom: form.get("nom"),
-      dateNaissance: form.get("dateNaissance"),
-      email: form.get("email"),
-      telephone: form.get("telephone"),
-      adresse: form.get("adresse"),
-      formule: form.get("formule"),
-      licenceExistante: form.get("licenceExistante"),
-      contactUrgenceNom: form.get("contactUrgenceNom"),
-      contactUrgenceTelephone: form.get("contactUrgenceTelephone"),
-      certificatMedical: form.get("certificatMedical"),
-      droitImage: form.get("droitImage") === "on",
-      message: form.get("message"),
-    };
-
-    try {
-      const response = await fetch("/api/adhesion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setErrorMessage(data.error ?? "Une erreur est survenue.");
-        setStatus("error");
-        return;
-      }
-      setStatus("sent");
-      event.currentTarget.reset();
-    } catch {
-      setErrorMessage("Erreur réseau. Réessayez plus tard.");
-      setStatus("error");
-    }
-  }
-
-  if (status === "sent") {
-    return (
-      <p className="rounded-md border border-green-300 bg-green-50 p-4 text-green-800">
-        Merci ! Votre demande d&apos;adhésion a bien été transmise au bureau. Vous pouvez maintenant passer à
-        l&apos;étape de paiement en ligne ci-dessous.
-      </p>
-    );
-  }
+  const tarif = tarifReduit === "oui" ? ADHESION_TARIFS.reduit : ADHESION_TARIFS.plein;
+  const total = tarif.montantCentimes + CAUTION_CENTIMES;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      action="/api/adhesion"
+      method="POST"
+      encType="multipart/form-data"
+      onSubmit={() => setSending(true)}
+      className="space-y-4"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="prenom" className={labelClass}>Prénom</label>
@@ -95,17 +63,6 @@ export default function AdhesionForm() {
           <label htmlFor="adresse" className={labelClass}>Adresse postale</label>
           <input id="adresse" name="adresse" required className={inputClass} />
         </div>
-      </div>
-
-      <div>
-        <label htmlFor="formule" className={labelClass}>Formule souhaitée</label>
-        <select id="formule" name="formule" required className={inputClass}>
-          {TARIFS.map((t) => (
-            <option key={t.id} value={t.label}>
-              {t.label}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div>
@@ -147,6 +104,54 @@ export default function AdhesionForm() {
         </select>
       </div>
 
+      <fieldset className="rounded-md border border-toac-gray-200 p-4">
+        <legend className="px-1 text-sm font-medium text-toac-blue-900">
+          Appartenez-vous à l&apos;une de ces catégories : étudiant, demandeur d&apos;emploi, salarié
+          Airbus opération ou ayant droit ?
+        </legend>
+        <div className="mt-1 flex gap-6">
+          <label className="flex items-center gap-2 text-sm text-toac-blue-900">
+            <input
+              type="radio"
+              name="tarifReduit"
+              value="non"
+              checked={tarifReduit === "non"}
+              onChange={() => setTarifReduit("non")}
+            />
+            Non — adhésion plein tarif
+          </label>
+          <label className="flex items-center gap-2 text-sm text-toac-blue-900">
+            <input
+              type="radio"
+              name="tarifReduit"
+              value="oui"
+              checked={tarifReduit === "oui"}
+              onChange={() => setTarifReduit("oui")}
+            />
+            Oui — adhésion tarif réduit
+          </label>
+        </div>
+
+        {tarifReduit === "oui" && (
+          <div className="mt-4">
+            <label htmlFor="justificatif" className={labelClass}>
+              Justificatif (carte étudiante, attestation demandeur d&apos;emploi, badge Airbus…)
+            </label>
+            <input
+              id="justificatif"
+              name="justificatif"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              required
+              className="w-full text-sm text-toac-blue-900 file:mr-3 file:rounded-md file:border-0 file:bg-toac-blue-950 file:px-4 file:py-2 file:text-sm file:text-white"
+            />
+            <p className="mt-1 text-xs text-toac-blue-900/60">
+              PDF ou image, transmis au bureau avec votre dossier.
+            </p>
+          </div>
+        )}
+      </fieldset>
+
       <label className="flex items-start gap-2 text-sm text-toac-blue-900/90">
         <input type="checkbox" name="droitImage" className="mt-1" />
         J&apos;autorise le TOAC Triathlon à utiliser mon image sur ses supports de communication
@@ -158,19 +163,32 @@ export default function AdhesionForm() {
         <textarea id="message" name="message" rows={3} className={inputClass} />
       </div>
 
-      {errorMessage && (
-        <p role="alert" className="text-sm font-medium text-red-600">
-          {errorMessage}
-        </p>
-      )}
+      <div className="rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4 text-sm">
+        <div className="flex justify-between text-toac-blue-900">
+          <span>{tarif.label}</span>
+          <span>{euros(tarif.montantCentimes)}</span>
+        </div>
+        <div className="mt-1 flex justify-between text-toac-blue-900">
+          <span>Caution bénévolat (obligatoire, restituée selon les règles du club)</span>
+          <span>{euros(CAUTION_CENTIMES)}</span>
+        </div>
+        <div className="mt-2 flex justify-between border-t border-toac-gray-200 pt-2 font-medium text-toac-blue-950">
+          <span>Total à régler</span>
+          <span>{euros(total)}</span>
+        </div>
+      </div>
 
       <button
         type="submit"
-        disabled={status === "sending"}
-        className="rounded-md bg-toac-pink-500 px-6 py-2.5 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 disabled:opacity-60"
+        disabled={sending}
+        className="w-full rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 disabled:opacity-60 sm:w-auto"
       >
-        {status === "sending" ? "Envoi…" : "Envoyer ma demande d'adhésion"}
+        {sending ? "Redirection vers le paiement…" : `Valider et payer ${euros(total)}`}
       </button>
+      <p className="text-xs text-toac-blue-900/60">
+        Paiement sécurisé Monetico (Crédit Mutuel / CIC). Votre inscription est validée automatiquement
+        dès confirmation du paiement.
+      </p>
     </form>
   );
 }

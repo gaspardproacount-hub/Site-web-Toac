@@ -3,11 +3,12 @@ import type { MemberDossier } from "@/lib/types";
 export const DOSSIER_LABELS: Record<keyof MemberDossier, string> = {
   paiement: "Paiement",
   formulaireAdhesion: "Formulaire d'adhésion",
-  cheque: "Chèque (caution)",
+  caution: "Caution (100€)",
   groupeGoogle: "Groupe Google",
   whatsapp: "WhatsApp",
   licenceDemandee: "Licence demandée",
   licencePayee: "Licence payée",
+  justificatif: "Justificatif tarif réduit",
 };
 
 export function dossierCompletion(dossier: MemberDossier): number {

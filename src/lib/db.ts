@@ -104,24 +104,98 @@ function ensureSchema(): Promise<void> {
           contact_urgence_telephone TEXT,
           certificat_medical TEXT,
           droit_image BOOLEAN NOT NULL DEFAULT false,
-          message TEXT
+          message TEXT,
+          member_id INTEGER,
+          justificatif_url TEXT
         );
 
         CREATE TABLE IF NOT EXISTS members (
           id SERIAL PRIMARY KEY,
           first_name TEXT NOT NULL,
           last_name TEXT NOT NULL,
-          email TEXT NOT NULL UNIQUE,
+          name_key TEXT,
+          email TEXT,
           status TEXT NOT NULL DEFAULT 'new',
           paiement BOOLEAN NOT NULL DEFAULT false,
           formulaire_adhesion BOOLEAN NOT NULL DEFAULT false,
-          cheque BOOLEAN NOT NULL DEFAULT false,
+          caution BOOLEAN NOT NULL DEFAULT false,
           groupe_google BOOLEAN NOT NULL DEFAULT false,
           whatsapp BOOLEAN NOT NULL DEFAULT false,
           licence_demandee BOOLEAN NOT NULL DEFAULT false,
           licence_payee BOOLEAN NOT NULL DEFAULT false,
+          justificatif BOOLEAN NOT NULL DEFAULT false,
+          justificatif_url TEXT,
           cree_le TIMESTAMPTZ NOT NULL DEFAULT now()
         );
+
+        -- Migration idempotente pour les bases créées avant l'ajout de
+        -- name_key/caution/justificatif (voir historique du dépôt) : sans
+        -- effet si la table members a déjà le schéma ci-dessus.
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'members' AND column_name = 'cheque'
+          ) THEN
+            ALTER TABLE members RENAME COLUMN cheque TO caution;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'members' AND column_name = 'justificatif'
+          ) THEN
+            ALTER TABLE members ADD COLUMN justificatif BOOLEAN NOT NULL DEFAULT false;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'members' AND column_name = 'justificatif_url'
+          ) THEN
+            ALTER TABLE members ADD COLUMN justificatif_url TEXT;
+          END IF;
+
+          IF EXISTS (
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE table_name = 'members' AND constraint_name = 'members_email_key'
+          ) THEN
+            ALTER TABLE members DROP CONSTRAINT members_email_key;
+          END IF;
+
+          ALTER TABLE members ALTER COLUMN email DROP NOT NULL;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'members' AND column_name = 'name_key'
+          ) THEN
+            ALTER TABLE members ADD COLUMN name_key TEXT;
+          END IF;
+
+          UPDATE members
+          SET name_key = lower(regexp_replace(last_name, '[^a-zA-Z0-9]', '', 'g'))
+            || '|' || lower(regexp_replace(first_name, '[^a-zA-Z0-9]', '', 'g'))
+          WHERE name_key IS NULL;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE table_name = 'members' AND constraint_name = 'members_name_key_key'
+          ) THEN
+            ALTER TABLE members ADD CONSTRAINT members_name_key_key UNIQUE (name_key);
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'inscriptions' AND column_name = 'member_id'
+          ) THEN
+            ALTER TABLE inscriptions ADD COLUMN member_id INTEGER;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'inscriptions' AND column_name = 'justificatif_url'
+          ) THEN
+            ALTER TABLE inscriptions ADD COLUMN justificatif_url TEXT;
+          END IF;
+        END $$;
         `
       )
       .then(() => undefined);
@@ -221,6 +295,8 @@ export interface InscriptionRow {
   certificat_medical: string | null;
   droit_image: boolean;
   message: string | null;
+  member_id: number | null;
+  justificatif_url: string | null;
 }
 
 export interface NouvelleInscription {
@@ -237,6 +313,8 @@ export interface NouvelleInscription {
   certificatMedical: string;
   droitImage: boolean;
   message: string;
+  memberId: number | null;
+  justificatifUrl: string | null;
 }
 
 export async function insertInscription(inscription: NouvelleInscription): Promise<void> {
@@ -246,8 +324,8 @@ export async function insertInscription(inscription: NouvelleInscription): Promi
     INSERT INTO inscriptions (
       prenom, nom, date_naissance, email, telephone, adresse, formule,
       licence_existante, contact_urgence_nom, contact_urgence_telephone,
-      certificat_medical, droit_image, message
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      certificat_medical, droit_image, message, member_id, justificatif_url
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
     `,
     [
       inscription.prenom,
@@ -263,6 +341,8 @@ export async function insertInscription(inscription: NouvelleInscription): Promi
       inscription.certificatMedical,
       inscription.droitImage,
       inscription.message,
+      inscription.memberId,
+      inscription.justificatifUrl,
     ]
   );
 }
@@ -279,15 +359,35 @@ interface MemberRow {
   id: number;
   first_name: string;
   last_name: string;
-  email: string;
+  email: string | null;
   status: string;
   paiement: boolean;
   formulaire_adhesion: boolean;
-  cheque: boolean;
+  caution: boolean;
   groupe_google: boolean;
   whatsapp: boolean;
   licence_demandee: boolean;
   licence_payee: boolean;
+  justificatif: boolean;
+  justificatif_url: string | null;
+}
+
+/**
+ * Clé de rapprochement par nom (insensible à la casse et aux accents) :
+ * l'export du club n'a pas de colonne email, et un même adhérent peut
+ * remplir le formulaire en ligne avec une adresse différente d'une année
+ * sur l'autre — le nom reste le repère stable entre l'import CSV et les
+ * inscriptions en ligne.
+ */
+function nameKey(firstName: string, lastName: string): string {
+  const normalize = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]/g, "");
+  return `${normalize(lastName)}|${normalize(firstName)}`;
 }
 
 function toMember(row: MemberRow): Member {
@@ -295,17 +395,19 @@ function toMember(row: MemberRow): Member {
     id: String(row.id),
     firstName: row.first_name,
     lastName: row.last_name,
-    email: row.email,
+    email: row.email ?? "",
     status: row.status as MemberStatus,
     dossier: {
       paiement: row.paiement,
       formulaireAdhesion: row.formulaire_adhesion,
-      cheque: row.cheque,
+      caution: row.caution,
       groupeGoogle: row.groupe_google,
       whatsapp: row.whatsapp,
       licenceDemandee: row.licence_demandee,
       licencePayee: row.licence_payee,
+      justificatif: row.justificatif,
     },
+    justificatifUrl: row.justificatif_url,
   };
 }
 
@@ -337,61 +439,91 @@ export interface CsvMemberInput {
   dossier: MemberDossier;
 }
 
-/** Insère ou met à jour (par email) un adhérent importé depuis le CSV du club. */
+/** Insère ou met à jour (par nom) un adhérent importé depuis le CSV du club. */
 export async function upsertMemberFromCsv(m: CsvMemberInput): Promise<void> {
   await ensureSchema();
   await getPool().query(
     `
     INSERT INTO members (
-      first_name, last_name, email, status, paiement, formulaire_adhesion,
-      cheque, groupe_google, whatsapp, licence_demandee, licence_payee
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-    ON CONFLICT (email) DO UPDATE SET
+      first_name, last_name, name_key, email, status, paiement, formulaire_adhesion,
+      caution, groupe_google, whatsapp, licence_demandee, licence_payee, justificatif
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+    ON CONFLICT (name_key) DO UPDATE SET
       first_name = EXCLUDED.first_name,
       last_name = EXCLUDED.last_name,
+      email = COALESCE(NULLIF(EXCLUDED.email, ''), members.email),
       status = EXCLUDED.status,
       paiement = EXCLUDED.paiement,
       formulaire_adhesion = EXCLUDED.formulaire_adhesion,
-      cheque = EXCLUDED.cheque,
+      caution = EXCLUDED.caution,
       groupe_google = EXCLUDED.groupe_google,
       whatsapp = EXCLUDED.whatsapp,
       licence_demandee = EXCLUDED.licence_demandee,
-      licence_payee = EXCLUDED.licence_payee
+      licence_payee = EXCLUDED.licence_payee,
+      justificatif = EXCLUDED.justificatif
     `,
     [
       m.firstName,
       m.lastName,
-      m.email,
+      nameKey(m.firstName, m.lastName),
+      m.email || null,
       m.status,
       m.dossier.paiement,
       m.dossier.formulaireAdhesion,
-      m.dossier.cheque,
+      m.dossier.caution,
       m.dossier.groupeGoogle,
       m.dossier.whatsapp,
       m.dossier.licenceDemandee,
       m.dossier.licencePayee,
+      m.dossier.justificatif,
     ]
   );
 }
 
 /**
- * Crée (ou retrouve, par email) le dossier adhérent correspondant à une
+ * Crée (ou retrouve, par nom) le dossier adhérent correspondant à une
  * demande d'adhésion en ligne — c'est ce qui fait apparaître automatiquement
- * les nouveaux inscrits dans la vue bureau, sans ré-import CSV.
+ * les nouveaux inscrits dans la vue bureau, sans ré-import CSV. Renvoie
+ * l'identifiant du dossier (utilisé pour le rapprocher de la commande
+ * Monetico correspondante).
  */
 export async function upsertMemberFromInscription(inscription: {
   prenom: string;
   nom: string;
   email: string;
-}): Promise<void> {
+  justificatif: boolean;
+  justificatifUrl: string | null;
+}): Promise<number> {
+  await ensureSchema();
+  const { rows } = await getPool().query<{ id: number }>(
+    `
+    INSERT INTO members (first_name, last_name, name_key, email, status, formulaire_adhesion, justificatif, justificatif_url)
+    VALUES ($1, $2, $3, $4, 'new', true, $5, $6)
+    ON CONFLICT (name_key) DO UPDATE SET
+      email = COALESCE(NULLIF(EXCLUDED.email, ''), members.email),
+      formulaire_adhesion = true,
+      justificatif = EXCLUDED.justificatif OR members.justificatif,
+      justificatif_url = COALESCE(EXCLUDED.justificatif_url, members.justificatif_url)
+    RETURNING id
+    `,
+    [
+      inscription.prenom,
+      inscription.nom,
+      nameKey(inscription.prenom, inscription.nom),
+      inscription.email || null,
+      inscription.justificatif,
+      inscription.justificatifUrl,
+    ]
+  );
+  return rows[0].id;
+}
+
+/** Marque le dossier payé + caution réglée suite à une notification Monetico acceptée. */
+export async function markMemberPaid(memberId: number): Promise<void> {
   await ensureSchema();
   await getPool().query(
-    `
-    INSERT INTO members (first_name, last_name, email, status, formulaire_adhesion)
-    VALUES ($1, $2, $3, 'new', true)
-    ON CONFLICT (email) DO UPDATE SET formulaire_adhesion = true
-    `,
-    [inscription.prenom, inscription.nom, inscription.email]
+    "UPDATE members SET paiement = true, caution = true WHERE id = $1",
+    [memberId]
   );
 }
 
@@ -399,22 +531,24 @@ export interface MemberPatch {
   status?: MemberStatus;
   paiement?: boolean;
   formulaireAdhesion?: boolean;
-  cheque?: boolean;
+  caution?: boolean;
   groupeGoogle?: boolean;
   whatsapp?: boolean;
   licenceDemandee?: boolean;
   licencePayee?: boolean;
+  justificatif?: boolean;
 }
 
 const PATCH_COLUMN: Record<keyof MemberPatch, string> = {
   status: "status",
   paiement: "paiement",
   formulaireAdhesion: "formulaire_adhesion",
-  cheque: "cheque",
+  caution: "caution",
   groupeGoogle: "groupe_google",
   whatsapp: "whatsapp",
   licenceDemandee: "licence_demandee",
   licencePayee: "licence_payee",
+  justificatif: "justificatif",
 };
 
 /** Met à jour un ou plusieurs champs du dossier (coché depuis la vue bureau). */
