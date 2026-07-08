@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import AdhesionForm from "@/components/AdhesionForm";
 import { TARIFS } from "@/content/tarifs";
 
 export const metadata: Metadata = {
@@ -34,6 +35,19 @@ export default function NousRejoindrePage() {
           </li>
         ))}
       </ol>
+
+      <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="font-display text-xl uppercase text-toac-blue-950">
+          Formulaire d&apos;adhésion
+        </h2>
+        <p className="mt-2 text-sm text-toac-blue-900/70">
+          Remplissez ce formulaire pour transmettre votre dossier au bureau. Il est enregistré directement
+          dans notre base de données (consultable dans l&apos;espace bureau), plus besoin de Google Form.
+        </p>
+        <div className="mt-6">
+          <AdhesionForm />
+        </div>
+      </section>
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
         <h2 className="font-display text-xl uppercase text-toac-blue-950">

@@ -1,29 +1,49 @@
 /**
  * Configuration du fil Instagram affiché sur la page d'accueil.
  *
- * ── Pour connecter VOTRE compte ────────────────────────────────────────
- * 1. Remplacez `handle` par le nom exact du compte du club (sans le @).
- * 2. Pour afficher de VRAIS posts en direct : collez leurs liens dans
- *    `posts` (bouton "..." → "Copier le lien" sur chaque publication).
- *    Exemple : "https://www.instagram.com/p/Cxxxxxxxxxx/"
- *    Les posts s'affichent alors directement depuis Instagram.
- * 3. Tant que `posts` est vide, le site montre 3 vignettes de secours
- *    (images public/images/insta-1, insta-2, insta-3) qui renvoient vers
- *    le compte Instagram — pratique en attendant.
+ * ┌────────────────────────────────────────────────────────────────┐
+ * │  AFFICHAGE AUTOMATIQUE DU COMPTE + DES POSTS (recommandé)             │
+ * └────────────────────────────────────────────────────────────────┘
+ * Le site se « connecte » à Instagram via un service connecteur gratuit qui
+ * se met à jour tout seul. Étapes (une seule fois, ~3 min) :
+ *
+ *   1. Allez sur un de ces services gratuits et créez un compte :
+ *        • SnapWidget  → https://snapwidget.com   (le plus simple)
+ *        • Behold      → https://behold.so
+ *        • LightWidget → https://lightwidget.com
+ *   2. Connectez le compte Instagram du club (@triathlonsdulauragais) et
+ *      choisissez un affichage en grille.
+ *   3. Le service vous donne un « code d'intégration » (embed). Deux cas :
+ *
+ *      • Si c'est une balise <iframe ...>  → copiez UNIQUEMENT l'adresse
+ *        qui suit src="..."  et collez-la dans `widgetIframeSrc` ci-dessous.
+ *        (ex. SnapWidget : "https://snapwidget.com/embed/1234567")
+ *
+ *      • Si c'est un bloc avec <script ...> → copiez TOUT le code et
+ *        collez-le (entre guillemets inversés `) dans `widgetEmbedHtml`.
+ *
+ *   4. Enregistrez, redéployez : le fil s'affiche et se met à jour seul.
+ *
+ * Tant que rien n'est configuré ci-dessous, le site affiche un bouton
+ * « Suivez-nous » + 3 vignettes de secours (voir plus bas).
  */
 export const INSTAGRAM = {
-  // Compte affiché (sans @). Le club a confirmé @triathlonsdulauragais ;
-  // remplacez-le si vous avez un compte "TOAC Tri" distinct.
+  // Compte affiché (sans @).
   handle: "triathlonsdulauragais",
 
   get profileUrl() {
     return `https://www.instagram.com/${this.handle}/`;
   },
 
-  // Liens des posts à afficher en direct (laisser vide pour les vignettes).
-  posts: [] as string[],
+  // ── Connecteur automatique (remplissez L'UN des deux) ──────────────────
+  // Adresse src="..." d'un widget iframe (SnapWidget, LightWidget…).
+  widgetIframeSrc: "",
+  // OU code d'intégration complet d'un widget à base de <script> (Behold…).
+  widgetEmbedHtml: "",
 
-  // Vignettes de secours (fichiers dans public/images/) affichées si `posts`
-  // est vide. Déposez insta-1.jpg/.png, insta-2…, insta-3… pour les remplir.
+  // ── Repli manuel (utilisé seulement si aucun connecteur ci-dessus) ─────
+  // Liens de posts précis à afficher (bouton « … » → « Copier le lien »).
+  posts: [] as string[],
+  // Vignettes de secours (fichiers public/images/insta-1, insta-2, insta-3).
   fallbackTiles: ["insta-1", "insta-2", "insta-3"],
 };

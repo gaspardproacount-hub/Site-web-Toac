@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import SiteImage from "./SiteImage";
+import RawEmbed from "./RawEmbed";
 import { INSTAGRAM } from "@/content/instagram";
 
 declare global {
@@ -19,10 +20,13 @@ function InstagramIcon({ className = "" }: { className?: string }) {
 }
 
 export default function InstagramFeed() {
+  const hasWidgetHtml = INSTAGRAM.widgetEmbedHtml.trim().length > 0;
+  const hasWidgetIframe = INSTAGRAM.widgetIframeSrc.trim().length > 0;
   const hasPosts = INSTAGRAM.posts.length > 0;
+  const usePostEmbeds = !hasWidgetHtml && !hasWidgetIframe && hasPosts;
 
   useEffect(() => {
-    if (!hasPosts) return;
+    if (!usePostEmbeds) return;
     if (!document.getElementById("instagram-embed-script")) {
       const script = document.createElement("script");
       script.id = "instagram-embed-script";
@@ -34,7 +38,7 @@ export default function InstagramFeed() {
       window.instgrm?.Embeds?.process();
     }, 500);
     return () => clearTimeout(timer);
-  }, [hasPosts]);
+  }, [usePostEmbeds]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -53,40 +57,52 @@ export default function InstagramFeed() {
         </a>
       </div>
 
-      {hasPosts ? (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {INSTAGRAM.posts.map((url) => (
-            <blockquote
-              key={url}
-              className="instagram-media"
-              data-instgrm-permalink={url}
-              data-instgrm-version="14"
-              style={{ margin: 0, width: "100%", minWidth: 0 }}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {INSTAGRAM.fallbackTiles.map((tile, i) => (
-            <a
-              key={tile}
-              href={INSTAGRAM.profileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative block aspect-square overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm"
-            >
-              <SiteImage
-                name={tile}
-                label={`Post Instagram ${i + 1}`}
-                className="h-full w-full transition group-hover:scale-105"
+      <div className="mt-8">
+        {hasWidgetHtml ? (
+          <RawEmbed html={INSTAGRAM.widgetEmbedHtml} />
+        ) : hasWidgetIframe ? (
+          <iframe
+            src={INSTAGRAM.widgetIframeSrc}
+            title="Fil Instagram du TOAC Triathlon"
+            className="h-[560px] w-full rounded-lg border border-toac-gray-200"
+            style={{ border: "none", overflow: "hidden" }}
+            scrolling="no"
+          />
+        ) : usePostEmbeds ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {INSTAGRAM.posts.map((url) => (
+              <blockquote
+                key={url}
+                className="instagram-media"
+                data-instgrm-permalink={url}
+                data-instgrm-version="14"
+                style={{ margin: 0, width: "100%", minWidth: 0 }}
               />
-              <span className="absolute inset-0 flex items-center justify-center bg-toac-blue-950/0 transition group-hover:bg-toac-blue-950/30">
-                <InstagramIcon className="h-8 w-8 text-white opacity-0 transition group-hover:opacity-100" />
-              </span>
-            </a>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {INSTAGRAM.fallbackTiles.map((tile, i) => (
+              <a
+                key={tile}
+                href={INSTAGRAM.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative block aspect-square overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm"
+              >
+                <SiteImage
+                  name={tile}
+                  label={`Post Instagram ${i + 1}`}
+                  className="h-full w-full transition group-hover:scale-105"
+                />
+                <span className="absolute inset-0 flex items-center justify-center bg-toac-blue-950/0 transition group-hover:bg-toac-blue-950/30">
+                  <InstagramIcon className="h-8 w-8 text-white opacity-0 transition group-hover:opacity-100" />
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
 
       <p className="mt-6 text-center text-sm text-toac-blue-900/60">
         Retrouvez toute l&apos;actualité du club en images sur notre compte Instagram.
