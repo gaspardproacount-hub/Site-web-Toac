@@ -1,9 +1,14 @@
 /**
  * Importe le CSV exporté depuis le Google Sheets "Dossiers-2025-2026" du
- * club et génère src/data/members.json (ignoré par git — jamais committé).
+ * club directement dans la base de données du site (table `members`) —
+ * les vraies données personnelles ne transitent donc jamais par git.
  *
- * Usage :
+ * Usage (en local, avec DATABASE_URL renseignée dans .env.local — la même
+ * valeur que celle configurée sur Vercel) :
  *   npm run import-csv -- chemin/vers/export.csv
+ *
+ * Ré-exécutable sans risque : chaque ligne est identifiée par son email
+ * (une ré-importation met à jour le dossier existant au lieu de le dupliquer).
  *
  * Colonnes attendues (l'ordre n'importe pas, les en-têtes sont
  * insensibles à la casse et aux accents) :
@@ -14,7 +19,11 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { Member, MemberDossier, MemberStatus } from "../src/lib/types";
+import { loadEnvLocal } from "./load-env";
+import { upsertMemberFromCsv, closeDb } from "../src/lib/db";
+import type { MemberDossier, MemberStatus } from "../src/lib/types";
+
+loadEnvLocal();
 
 function parseCsv(content: string): string[][] {
   const rows: string[][] = [];
@@ -92,10 +101,16 @@ const HEADER_MAP: Record<string, string> = {
   licencepayee: "licencePayee",
 };
 
-function main() {
+async function main() {
   const csvPath = process.argv[2];
   if (!csvPath) {
     console.error("Usage : npm run import-csv -- chemin/vers/export.csv");
+    process.exit(1);
+  }
+  if (!process.env.DATABASE_URL) {
+    console.error(
+      "DATABASE_URL n'est pas définie. Ajoutez-la dans .env.local (même valeur que sur Vercel) avant d'importer."
+    );
     process.exit(1);
   }
 
@@ -104,11 +119,13 @@ function main() {
   const [headerRow, ...dataRows] = rows;
   const headers = headerRow.map((h) => HEADER_MAP[normalizeHeader(h)] ?? null);
 
-  const members: Member[] = dataRows.map((row, index) => {
+  let imported = 0;
+  for (const row of dataRows) {
     const record: Record<string, string> = {};
     headers.forEach((key, i) => {
       if (key) record[key] = row[i] ?? "";
     });
+    if (!record.email) continue;
 
     const dossier: MemberDossier = {
       paiement: toBool(record.paiement),
@@ -120,22 +137,21 @@ function main() {
       licencePayee: toBool(record.licencePayee),
     };
 
-    return {
-      id: `m-${String(index + 1).padStart(3, "0")}`,
+    await upsertMemberFromCsv({
       firstName: record.firstName ?? "",
       lastName: record.lastName ?? "",
-      email: record.email ?? "",
+      email: record.email,
       status: toStatus(record.status),
       dossier,
-    };
-  });
+    });
+    imported++;
+  }
 
-  const outputPath = path.join(process.cwd(), "src", "data", "members.json");
-  fs.writeFileSync(outputPath, JSON.stringify(members, null, 2) + "\n", "utf8");
-  console.log(`✅ ${members.length} adhérents importés vers ${outputPath}`);
-  console.log(
-    "⚠️  Ce fichier contient des données personnelles : il est ignoré par git (.gitignore) — ne le committez jamais dans un dépôt public."
-  );
+  await closeDb();
+  console.log(`✅ ${imported} adhérents importés/mis à jour dans la base de données.`);
 }
 
-main();
+main().catch((error) => {
+  console.error("Échec de l'import :", error);
+  process.exit(1);
+});

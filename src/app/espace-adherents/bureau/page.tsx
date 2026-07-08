@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getMembers } from "@/lib/data-store";
+import { getMembers, DatabaseNotConfiguredError } from "@/lib/db";
 import AdminMembersTable from "@/components/AdminMembersTable";
+import DbSetupNotice from "@/components/DbSetupNotice";
+import type { Member } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Vue bureau — Dossiers adhérents",
@@ -15,7 +17,18 @@ export default async function BureauDossiersPage() {
   if (!session) redirect("/connexion?next=/espace-adherents/bureau");
   if (session.role !== "admin") redirect("/espace-adherents/dossier");
 
-  const members = getMembers();
+  let members: Member[];
+  let dbError = false;
+  try {
+    members = await getMembers();
+  } catch (error) {
+    if (error instanceof DatabaseNotConfiguredError) {
+      dbError = true;
+      members = [];
+    } else {
+      throw error;
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -23,8 +36,8 @@ export default async function BureauDossiersPage() {
         Vue bureau — Dossiers adhérents
       </h1>
       <p className="mt-4 text-toac-blue-900/80">
-        Tableau complet des dossiers adhérents (données factices tant que le CSV du club n&apos;a pas été
-        importé — voir README).
+        Dossiers importés du club (CSV) et nouvelles demandes d&apos;adhésion, dans la même liste. Cochez
+        les étapes au fur et à mesure — les changements sont enregistrés immédiatement.
       </p>
 
       <div className="mt-6 flex flex-wrap gap-3">
@@ -43,7 +56,7 @@ export default async function BureauDossiersPage() {
       </div>
 
       <div className="mt-8">
-        <AdminMembersTable members={members} />
+        {dbError ? <DbSetupNotice /> : <AdminMembersTable members={members} />}
       </div>
     </div>
   );

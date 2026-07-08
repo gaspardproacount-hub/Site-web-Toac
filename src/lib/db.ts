@@ -1,5 +1,5 @@
-import "server-only";
 import { Pool } from "pg";
+import type { Member, MemberDossier, MemberStatus } from "./types";
 
 /**
  * Base de données Postgres (Neon, Vercel Postgres, Supabase… n'importe quel
@@ -15,6 +15,13 @@ import { Pool } from "pg";
  * Tant que DATABASE_URL n'est pas définie, les fonctions ci-dessous lèvent
  * une erreur explicite, interceptée par les pages/API qui les appellent
  * pour afficher un message d'installation plutôt que de planter le site.
+ *
+ * Pas de garde `import "server-only"` ici (contrairement aux autres modules
+ * de src/lib) : ce module est aussi importé directement par les scripts CLI
+ * (scripts/import-members-csv.ts, scripts/manage-accounts.ts) exécutés avec
+ * `tsx`, hors du bundler Next — `server-only` y lève toujours une erreur. La
+ * dépendance `pg` (Node uniquement) empêche de toute façon tout bundling
+ * accidentel côté client.
  */
 
 let pool: Pool | null = null;
@@ -98,6 +105,22 @@ function ensureSchema(): Promise<void> {
           certificat_medical TEXT,
           droit_image BOOLEAN NOT NULL DEFAULT false,
           message TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS members (
+          id SERIAL PRIMARY KEY,
+          first_name TEXT NOT NULL,
+          last_name TEXT NOT NULL,
+          email TEXT NOT NULL UNIQUE,
+          status TEXT NOT NULL DEFAULT 'new',
+          paiement BOOLEAN NOT NULL DEFAULT false,
+          formulaire_adhesion BOOLEAN NOT NULL DEFAULT false,
+          cheque BOOLEAN NOT NULL DEFAULT false,
+          groupe_google BOOLEAN NOT NULL DEFAULT false,
+          whatsapp BOOLEAN NOT NULL DEFAULT false,
+          licence_demandee BOOLEAN NOT NULL DEFAULT false,
+          licence_payee BOOLEAN NOT NULL DEFAULT false,
+          cree_le TIMESTAMPTZ NOT NULL DEFAULT now()
         );
         `
       )
@@ -250,4 +273,167 @@ export async function getInscriptions(): Promise<InscriptionRow[]> {
     "SELECT * FROM inscriptions ORDER BY recue_le DESC"
   );
   return rows;
+}
+
+interface MemberRow {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  status: string;
+  paiement: boolean;
+  formulaire_adhesion: boolean;
+  cheque: boolean;
+  groupe_google: boolean;
+  whatsapp: boolean;
+  licence_demandee: boolean;
+  licence_payee: boolean;
+}
+
+function toMember(row: MemberRow): Member {
+  return {
+    id: String(row.id),
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+    status: row.status as MemberStatus,
+    dossier: {
+      paiement: row.paiement,
+      formulaireAdhesion: row.formulaire_adhesion,
+      cheque: row.cheque,
+      groupeGoogle: row.groupe_google,
+      whatsapp: row.whatsapp,
+      licenceDemandee: row.licence_demandee,
+      licencePayee: row.licence_payee,
+    },
+  };
+}
+
+/** Tous les dossiers adhérents (import CSV + inscriptions en ligne), pour la vue bureau. */
+export async function getMembers(): Promise<Member[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MemberRow>(
+    "SELECT * FROM members ORDER BY last_name, first_name"
+  );
+  return rows.map(toMember);
+}
+
+export async function getMemberById(id: string): Promise<Member | null> {
+  await ensureSchema();
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId)) return null;
+  const { rows } = await getPool().query<MemberRow>(
+    "SELECT * FROM members WHERE id = $1",
+    [numericId]
+  );
+  return rows[0] ? toMember(rows[0]) : null;
+}
+
+export interface CsvMemberInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: MemberStatus;
+  dossier: MemberDossier;
+}
+
+/** Insère ou met à jour (par email) un adhérent importé depuis le CSV du club. */
+export async function upsertMemberFromCsv(m: CsvMemberInput): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    INSERT INTO members (
+      first_name, last_name, email, status, paiement, formulaire_adhesion,
+      cheque, groupe_google, whatsapp, licence_demandee, licence_payee
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    ON CONFLICT (email) DO UPDATE SET
+      first_name = EXCLUDED.first_name,
+      last_name = EXCLUDED.last_name,
+      status = EXCLUDED.status,
+      paiement = EXCLUDED.paiement,
+      formulaire_adhesion = EXCLUDED.formulaire_adhesion,
+      cheque = EXCLUDED.cheque,
+      groupe_google = EXCLUDED.groupe_google,
+      whatsapp = EXCLUDED.whatsapp,
+      licence_demandee = EXCLUDED.licence_demandee,
+      licence_payee = EXCLUDED.licence_payee
+    `,
+    [
+      m.firstName,
+      m.lastName,
+      m.email,
+      m.status,
+      m.dossier.paiement,
+      m.dossier.formulaireAdhesion,
+      m.dossier.cheque,
+      m.dossier.groupeGoogle,
+      m.dossier.whatsapp,
+      m.dossier.licenceDemandee,
+      m.dossier.licencePayee,
+    ]
+  );
+}
+
+/**
+ * Crée (ou retrouve, par email) le dossier adhérent correspondant à une
+ * demande d'adhésion en ligne — c'est ce qui fait apparaître automatiquement
+ * les nouveaux inscrits dans la vue bureau, sans ré-import CSV.
+ */
+export async function upsertMemberFromInscription(inscription: {
+  prenom: string;
+  nom: string;
+  email: string;
+}): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    INSERT INTO members (first_name, last_name, email, status, formulaire_adhesion)
+    VALUES ($1, $2, $3, 'new', true)
+    ON CONFLICT (email) DO UPDATE SET formulaire_adhesion = true
+    `,
+    [inscription.prenom, inscription.nom, inscription.email]
+  );
+}
+
+export interface MemberPatch {
+  status?: MemberStatus;
+  paiement?: boolean;
+  formulaireAdhesion?: boolean;
+  cheque?: boolean;
+  groupeGoogle?: boolean;
+  whatsapp?: boolean;
+  licenceDemandee?: boolean;
+  licencePayee?: boolean;
+}
+
+const PATCH_COLUMN: Record<keyof MemberPatch, string> = {
+  status: "status",
+  paiement: "paiement",
+  formulaireAdhesion: "formulaire_adhesion",
+  cheque: "cheque",
+  groupeGoogle: "groupe_google",
+  whatsapp: "whatsapp",
+  licenceDemandee: "licence_demandee",
+  licencePayee: "licence_payee",
+};
+
+/** Met à jour un ou plusieurs champs du dossier (coché depuis la vue bureau). */
+export async function updateMember(id: string, patch: MemberPatch): Promise<void> {
+  await ensureSchema();
+  const entries = (Object.entries(patch) as [keyof MemberPatch, MemberPatch[keyof MemberPatch]][]).filter(
+    ([, value]) => value !== undefined
+  );
+  if (entries.length === 0) return;
+
+  const setClauses = entries.map(([key], i) => `${PATCH_COLUMN[key]} = $${i + 2}`);
+  const values = entries.map(([, value]) => value);
+  await getPool().query(
+    `UPDATE members SET ${setClauses.join(", ")} WHERE id = $1`,
+    [Number(id), ...values]
+  );
+}
+
+/** Ferme la connexion — à appeler en fin d'exécution des scripts CLI (import CSV…). */
+export async function closeDb(): Promise<void> {
+  if (pool) await pool.end();
 }
