@@ -1,9 +1,12 @@
 /**
- * Tarifs d'adhésion 2025-2026, d'après la grille du club (Part club + Part
- * FFTri, licence compétition ou loisir). Le total (club + FFTri) est
- * prélevé en une fois par le site via Monetico. La part FFTri est
- * susceptible de varier de ±5% (grille FFTri définitive non communiquée à
- * ce jour) : ajustez les montants ci-dessous si besoin.
+ * Tarifs 2025-2026 — repris exactement du catalogue produits configuré dans
+ * l'espace Monetico Online Asso du club (monetico-online-asso.com), pour
+ * que le total calculé sur le site corresponde toujours à la somme des
+ * "produits" réels côté Monetico. Le total (adhésion + licence + assurance
+ * + caution) est prélevé en une fois via le formulaire d'adhésion.
+ *
+ * Si vous modifiez un prix côté Monetico Online Asso (menu Gestion de la
+ * page de commande), reportez le même montant ici.
  */
 export interface Tarif {
   id: string;
@@ -11,62 +14,42 @@ export interface Tarif {
   montantCentimes: number;
 }
 
-/** Caution obligatoire, prélevée automatiquement avec la cotisation (remplace l'ancien chèque de caution). Restituée en fin de saison sous réserve d'implication dans l'organisation des Triathlons du Lauragais (6-7 juin 2026). */
+/** Produit Monetico "Caution bénévolat (Toac)" — restituée en fin de saison sous réserve d'implication dans l'organisation des Triathlons du Lauragais (6-7 juin 2026). */
 export const CAUTION_CENTIMES = 10000;
 
 export type ProfilAdherent = "plein" | "reduit";
 export type LicenceType = "competition" | "loisir";
 
 /**
+ * Produits "Adhésion club (…)" — Part club uniquement (sans la licence
+ * FFTri, facturée séparément ci-dessous).
  * plein  = Extérieurs (dont Airbus Central)
  * reduit = Airbus Opérations & ayant droit Airbus Opérations / Chômeurs & Étudiants
  */
-export const ADHESION_TARIFS: Record<ProfilAdherent, Record<LicenceType, Tarif>> = {
-  plein: {
-    competition: {
-      id: "adhesion-plein-competition",
-      label: "Adhésion plein tarif — licence compétition (250 €)",
-      montantCentimes: 25000,
-    },
-    loisir: {
-      id: "adhesion-plein-loisir",
-      label: "Adhésion plein tarif — licence loisir (185 €)",
-      montantCentimes: 18500,
-    },
-  },
-  reduit: {
-    competition: {
-      id: "adhesion-reduit-competition",
-      label: "Adhésion tarif réduit — licence compétition (200 €)",
-      montantCentimes: 20000,
-    },
-    loisir: {
-      id: "adhesion-reduit-loisir",
-      label: "Adhésion tarif réduit — licence loisir (135 €)",
-      montantCentimes: 13500,
-    },
-  },
+export const ADHESION_CLUB_TARIFS: Record<ProfilAdherent, Tarif> = {
+  plein: { id: "adhesion-club-plein", label: "Adhésion club (plein tarif)", montantCentimes: 14500 },
+  reduit: { id: "adhesion-club-reduit", label: "Adhésion club (tarif réduit)", montantCentimes: 9500 },
 };
 
 /**
- * Assurance FFTRI 2026 (obligatoire, formule au choix de l'adhérent) —
- * voir https://www.fftri.com/pratiquer/se-licencier/assurance/assurance-2026/
- * Ajustez les montants si le barème FFTRI change.
+ * Produits "Licence FFTri (…)". Le tarif compétition (1 €) est un
+ * placeholder côté Monetico en attendant la grille FFTRI définitive —
+ * mettez à jour dès qu'elle est communiquée.
  */
+export const LICENCE_FFTRI_TARIFS: Record<LicenceType, Tarif> = {
+  loisir: { id: "licence-fftri-loisir", label: "Licence FFTri (loisir)", montantCentimes: 4000 },
+  competition: {
+    id: "licence-fftri-competition",
+    label: "Licence FFTri (compétition)",
+    montantCentimes: 100,
+  },
+};
+
+/** Produits "Assurance FFTri (Formule …)". */
 export const ASSURANCE_TARIFS: Tarif[] = [
-  { id: "assurance-formule-1", label: "Formule 1 — Responsabilité civile (4,80 €)", montantCentimes: 480 },
-  {
-    id: "assurance-formule-2",
-    label: "Formule 2 — RC + individuelle accident (5,45 €)",
-    montantCentimes: 545,
-  },
-  {
-    id: "assurance-formule-3",
-    label: "Formule 3 — RC + individuelle accident + assistance + vélo (190,00 €)",
-    montantCentimes: 19000,
-  },
-  { id: "assurance-licence-action", label: "Licence Action (5,00 €)", montantCentimes: 500 },
-  { id: "assurance-licence-4-6-ans", label: "Licence 4-6 ans (0,95 €)", montantCentimes: 95 },
+  { id: "assurance-formule-1", label: "Assurance FFTri (Formule 1)", montantCentimes: 480 },
+  { id: "assurance-formule-2", label: "Assurance FFTri (Formule 2)", montantCentimes: 545 },
+  { id: "assurance-formule-3", label: "Assurance FFTri (Formule 3)", montantCentimes: 19000 },
 ];
 
 /** Stages, payables indépendamment de l'adhésion. */

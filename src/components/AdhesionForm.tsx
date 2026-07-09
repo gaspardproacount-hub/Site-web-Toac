@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ADHESION_TARIFS, ASSURANCE_TARIFS, CAUTION_CENTIMES, type LicenceType } from "@/content/tarifs";
+import {
+  ADHESION_CLUB_TARIFS,
+  LICENCE_FFTRI_TARIFS,
+  ASSURANCE_TARIFS,
+  CAUTION_CENTIMES,
+  type LicenceType,
+} from "@/content/tarifs";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
@@ -23,9 +29,11 @@ export default function AdhesionForm() {
   const [assuranceId, setAssuranceId] = useState(ASSURANCE_TARIFS[1].id);
   const [sending, setSending] = useState(false);
 
-  const tarif = ADHESION_TARIFS[tarifReduit === "oui" ? "reduit" : "plein"][licenceType];
+  const adhesionClub = ADHESION_CLUB_TARIFS[tarifReduit === "oui" ? "reduit" : "plein"];
+  const licenceFFTri = LICENCE_FFTRI_TARIFS[licenceType];
   const assurance = ASSURANCE_TARIFS.find((a) => a.id === assuranceId) ?? ASSURANCE_TARIFS[1];
-  const total = tarif.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
+  const total =
+    adhesionClub.montantCentimes + licenceFFTri.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
 
   return (
     <form
@@ -223,8 +231,12 @@ export default function AdhesionForm() {
 
       <div className="rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4 text-sm">
         <div className="flex justify-between text-toac-blue-900">
-          <span>{tarif.label}</span>
-          <span>{euros(tarif.montantCentimes)}</span>
+          <span>{adhesionClub.label}</span>
+          <span>{euros(adhesionClub.montantCentimes)}</span>
+        </div>
+        <div className="mt-1 flex justify-between text-toac-blue-900">
+          <span>{licenceFFTri.label}</span>
+          <span>{euros(licenceFFTri.montantCentimes)}</span>
         </div>
         <div className="mt-1 flex justify-between text-toac-blue-900">
           <span>{assurance.label}</span>
@@ -232,8 +244,8 @@ export default function AdhesionForm() {
         </div>
         <div className="mt-1 flex justify-between text-toac-blue-900">
           <span>
-            Caution Triathlons du Lauragais (obligatoire, restituée en fin de saison sous réserve
-            d&apos;implication dans l&apos;organisation des Triathlons du Lauragais, 6-7 juin 2026)
+            Caution bénévolat (Toac) — restituée en fin de saison sous réserve d&apos;implication dans
+            l&apos;organisation des Triathlons du Lauragais (6-7 juin 2026)
           </span>
           <span>{euros(CAUTION_CENTIMES)}</span>
         </div>
