@@ -26,12 +26,12 @@ function euros(centimes: number): string {
 export default function AdhesionForm() {
   const [tarifReduit, setTarifReduit] = useState<"non" | "oui">("non");
   const [licenceType, setLicenceType] = useState<LicenceType>("loisir");
-  const [assuranceId, setAssuranceId] = useState(ASSURANCE_TARIFS[1].id);
+  const [assuranceId, setAssuranceId] = useState("assurance-formule-2");
   const [sending, setSending] = useState(false);
 
   const adhesionClub = ADHESION_CLUB_TARIFS[tarifReduit === "oui" ? "reduit" : "plein"];
   const licenceFFTri = LICENCE_FFTRI_TARIFS[licenceType];
-  const assurance = ASSURANCE_TARIFS.find((a) => a.id === assuranceId) ?? ASSURANCE_TARIFS[1];
+  const assurance = ASSURANCE_TARIFS.find((a) => a.id === assuranceId) ?? ASSURANCE_TARIFS[0];
   const total =
     adhesionClub.montantCentimes + licenceFFTri.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
 

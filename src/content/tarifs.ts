@@ -45,8 +45,9 @@ export const LICENCE_FFTRI_TARIFS: Record<LicenceType, Tarif> = {
   },
 };
 
-/** Produits "Assurance FFTri (Formule …)". */
+/** Produits "Assurance FFTri (Formule …)", + option "aucune" pour ceux qui ont déjà une assurance équivalente par ailleurs. */
 export const ASSURANCE_TARIFS: Tarif[] = [
+  { id: "assurance-aucune", label: "Aucune assurance FFTri", montantCentimes: 0 },
   { id: "assurance-formule-1", label: "Assurance FFTri (Formule 1)", montantCentimes: 480 },
   { id: "assurance-formule-2", label: "Assurance FFTri (Formule 2)", montantCentimes: 545 },
   { id: "assurance-formule-3", label: "Assurance FFTri (Formule 3)", montantCentimes: 19000 },
