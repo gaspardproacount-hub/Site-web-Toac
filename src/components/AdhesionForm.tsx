@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ADHESION_TARIFS, CAUTION_CENTIMES } from "@/content/tarifs";
+import { ADHESION_TARIFS, ASSURANCE_TARIFS, CAUTION_CENTIMES, type LicenceType } from "@/content/tarifs";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
@@ -19,10 +19,13 @@ function euros(centimes: number): string {
  */
 export default function AdhesionForm() {
   const [tarifReduit, setTarifReduit] = useState<"non" | "oui">("non");
+  const [licenceType, setLicenceType] = useState<LicenceType>("loisir");
+  const [assuranceId, setAssuranceId] = useState(ASSURANCE_TARIFS[1].id);
   const [sending, setSending] = useState(false);
 
-  const tarif = tarifReduit === "oui" ? ADHESION_TARIFS.reduit : ADHESION_TARIFS.plein;
-  const total = tarif.montantCentimes + CAUTION_CENTIMES;
+  const tarif = ADHESION_TARIFS[tarifReduit === "oui" ? "reduit" : "plein"][licenceType];
+  const assurance = ASSURANCE_TARIFS.find((a) => a.id === assuranceId) ?? ASSURANCE_TARIFS[1];
+  const total = tarif.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
 
   return (
     <form
@@ -105,9 +108,35 @@ export default function AdhesionForm() {
       </div>
 
       <fieldset className="rounded-md border border-toac-gray-200 p-4">
+        <legend className="px-1 text-sm font-medium text-toac-blue-900">Licence FFTRI souhaitée</legend>
+        <div className="mt-1 flex gap-6">
+          <label className="flex items-center gap-2 text-sm text-toac-blue-900">
+            <input
+              type="radio"
+              name="licenceType"
+              value="loisir"
+              checked={licenceType === "loisir"}
+              onChange={() => setLicenceType("loisir")}
+            />
+            Loisir
+          </label>
+          <label className="flex items-center gap-2 text-sm text-toac-blue-900">
+            <input
+              type="radio"
+              name="licenceType"
+              value="competition"
+              checked={licenceType === "competition"}
+              onChange={() => setLicenceType("competition")}
+            />
+            Compétition
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="rounded-md border border-toac-gray-200 p-4">
         <legend className="px-1 text-sm font-medium text-toac-blue-900">
-          Appartenez-vous à l&apos;une de ces catégories : étudiant, demandeur d&apos;emploi, salarié
-          Airbus opération ou ayant droit ?
+          Appartenez-vous à l&apos;une de ces catégories : Airbus Opérations, ayant droit Airbus
+          Opérations, chômeur ou étudiant ?
         </legend>
         <div className="mt-1 flex gap-6">
           <label className="flex items-center gap-2 text-sm text-toac-blue-900">
@@ -152,6 +181,35 @@ export default function AdhesionForm() {
         )}
       </fieldset>
 
+      <div>
+        <label htmlFor="assurance" className={labelClass}>
+          Assurance FFTRI 2026 (obligatoire — voir le détail des garanties sur{" "}
+          <a
+            href="https://www.fftri.com/pratiquer/se-licencier/assurance/assurance-2026/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            fftri.com
+          </a>
+          )
+        </label>
+        <select
+          id="assurance"
+          name="assurance"
+          required
+          value={assuranceId}
+          onChange={(e) => setAssuranceId(e.target.value)}
+          className={inputClass}
+        >
+          {ASSURANCE_TARIFS.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <label className="flex items-start gap-2 text-sm text-toac-blue-900/90">
         <input type="checkbox" name="droitImage" className="mt-1" />
         J&apos;autorise le TOAC Triathlon à utiliser mon image sur ses supports de communication
@@ -169,7 +227,14 @@ export default function AdhesionForm() {
           <span>{euros(tarif.montantCentimes)}</span>
         </div>
         <div className="mt-1 flex justify-between text-toac-blue-900">
-          <span>Caution bénévolat (obligatoire, restituée selon les règles du club)</span>
+          <span>{assurance.label}</span>
+          <span>{euros(assurance.montantCentimes)}</span>
+        </div>
+        <div className="mt-1 flex justify-between text-toac-blue-900">
+          <span>
+            Caution Triathlons du Lauragais (obligatoire, restituée en fin de saison sous réserve
+            d&apos;implication dans l&apos;organisation des Triathlons du Lauragais, 6-7 juin 2026)
+          </span>
           <span>{euros(CAUTION_CENTIMES)}</span>
         </div>
         <div className="mt-2 flex justify-between border-t border-toac-gray-200 pt-2 font-medium text-toac-blue-950">

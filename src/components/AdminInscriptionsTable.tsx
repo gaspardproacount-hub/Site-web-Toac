@@ -77,9 +77,20 @@ export default function AdminInscriptionsTable({ inscriptions }: { inscriptions:
                 <div><dt className="text-toac-blue-900/60">Téléphone</dt><dd>{i.telephone || "—"}</dd></div>
                 <div className="sm:col-span-2"><dt className="text-toac-blue-900/60">Adresse</dt><dd>{i.adresse || "—"}</dd></div>
                 <div><dt className="text-toac-blue-900/60">Licence FFTRI existante</dt><dd>{i.licence_existante || "—"}</dd></div>
+                <div><dt className="text-toac-blue-900/60">Assurance FFTRI</dt><dd>{i.assurance || "—"}</dd></div>
                 <div><dt className="text-toac-blue-900/60">Certificat médical / PPS</dt><dd>{i.certificat_medical || "—"}</dd></div>
                 <div><dt className="text-toac-blue-900/60">Contact d&apos;urgence</dt><dd>{i.contact_urgence_nom || "—"} {i.contact_urgence_telephone ? `(${i.contact_urgence_telephone})` : ""}</dd></div>
                 <div><dt className="text-toac-blue-900/60">Droit à l&apos;image</dt><dd>{i.droit_image ? "Oui" : "Non"}</dd></div>
+                {i.justificatif_url && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-toac-blue-900/60">Justificatif tarif réduit</dt>
+                    <dd>
+                      <a href={i.justificatif_url} target="_blank" rel="noopener noreferrer" className="text-toac-blue-700 underline">
+                        Voir le fichier
+                      </a>
+                    </dd>
+                  </div>
+                )}
                 {i.message && (
                   <div className="sm:col-span-2"><dt className="text-toac-blue-900/60">Message</dt><dd>{i.message}</dd></div>
                 )}
