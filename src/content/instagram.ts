@@ -29,7 +29,7 @@
  */
 export const INSTAGRAM = {
   // Compte affiché (sans @).
-  handle: "triathlonsdulauragais",
+  handle: "toactriathlon",
 
   get profileUrl() {
     return `https://www.instagram.com/${this.handle}/`;
@@ -38,8 +38,10 @@ export const INSTAGRAM = {
   // ── Connecteur automatique (remplissez L'UN des deux) ──────────────────
   // Adresse src="..." d'un widget iframe (SnapWidget, LightWidget…).
   widgetIframeSrc: "",
-  // OU code d'intégration complet d'un widget à base de <script> (Behold…).
-  widgetEmbedHtml: "",
+  // OU code d'intégration complet d'un widget à base de <script> (Behold, Elfsight…).
+  widgetEmbedHtml: `<!-- Elfsight Instagram Feed | Untitled Instagram Feed -->
+<script src="https://elfsightcdn.com/platform.js" async></script>
+<div class="elfsight-app-3165caf2-9928-43b0-a36a-a55a94d71964" data-elfsight-app-lazy></div>`,
 
   // ── Repli manuel (utilisé seulement si aucun connecteur ci-dessus) ─────
   // Liens de posts précis à afficher (bouton « … » → « Copier le lien »).
