@@ -207,6 +207,14 @@ démo, visible dans les logs Vercel). Pour un envoi réel par email :
   client : elles sont lues côté serveur (Server Components / Route Handlers) et seul le rendu HTML final
   (ou les champs strictement nécessaires) atteint le navigateur.
 
+### Rendre tout le site privé (avant mise en ligne publique)
+
+Sans passer par un plan payant Vercel : renseignez `SITE_PASSWORD` dans les variables d'environnement.
+Une fois définie, le navigateur demande un identifiant (n'importe lequel) et ce mot de passe avant
+d'afficher quoi que ce soit sur le site. Laissez la variable vide (ou supprimez-la) pour repasser le site
+en public. La notification de paiement Monetico (`/api/monetico/retour`) reste volontairement accessible
+sans mot de passe, sinon les paiements en cours échoueraient.
+
 ## 8. Placeholders restants — récapitulatif
 
 - Toutes les photos (`ImagePlaceholder`)
