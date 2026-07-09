@@ -106,7 +106,8 @@ function ensureSchema(): Promise<void> {
           droit_image BOOLEAN NOT NULL DEFAULT false,
           message TEXT,
           member_id INTEGER,
-          justificatif_url TEXT
+          justificatif_url TEXT,
+          assurance TEXT
         );
 
         CREATE TABLE IF NOT EXISTS members (
@@ -194,6 +195,13 @@ function ensureSchema(): Promise<void> {
             WHERE table_name = 'inscriptions' AND column_name = 'justificatif_url'
           ) THEN
             ALTER TABLE inscriptions ADD COLUMN justificatif_url TEXT;
+          END IF;
+
+          IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'inscriptions' AND column_name = 'assurance'
+          ) THEN
+            ALTER TABLE inscriptions ADD COLUMN assurance TEXT;
           END IF;
         END $$;
         `
@@ -297,6 +305,7 @@ export interface InscriptionRow {
   message: string | null;
   member_id: number | null;
   justificatif_url: string | null;
+  assurance: string | null;
 }
 
 export interface NouvelleInscription {
@@ -314,6 +323,7 @@ export interface NouvelleInscription {
   droitImage: boolean;
   message: string;
   justificatifUrl: string | null;
+  assurance: string;
 }
 
 /**
@@ -331,8 +341,8 @@ export async function insertInscription(inscription: NouvelleInscription): Promi
     INSERT INTO inscriptions (
       prenom, nom, date_naissance, email, telephone, adresse, formule,
       licence_existante, contact_urgence_nom, contact_urgence_telephone,
-      certificat_medical, droit_image, message, justificatif_url
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      certificat_medical, droit_image, message, justificatif_url, assurance
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
     RETURNING id
     `,
     [
@@ -350,6 +360,7 @@ export async function insertInscription(inscription: NouvelleInscription): Promi
       inscription.droitImage,
       inscription.message,
       inscription.justificatifUrl,
+      inscription.assurance,
     ]
   );
   return rows[0].id;
@@ -387,7 +398,7 @@ export async function markInscriptionPaid(inscriptionId: number): Promise<void> 
     prenom: inscription.prenom,
     nom: inscription.nom,
     email: inscription.email,
-    justificatif: inscription.formule === "reduit",
+    justificatif: inscription.formule?.startsWith("reduit") ?? false,
     justificatifUrl: inscription.justificatif_url,
   });
   await markMemberPaid(memberId);

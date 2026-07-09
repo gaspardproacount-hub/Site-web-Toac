@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Member, MemberDossier, MemberStatus } from "@/lib/types";
-import { DOSSIER_LABELS, dossierCompletion } from "./DossierChecklist";
+import type { Member, MemberStatus } from "@/lib/types";
+import { DOSSIER_COLUMNS, isColumnChecked, dossierCompletion, type DossierColumn } from "./DossierChecklist";
 
 const STATUSES: MemberStatus[] = ["new", "membre", "bureau", "arbitre"];
 
@@ -42,24 +42,30 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
     return Math.round(total / data.length);
   }, [data]);
 
-  const dossierKeys = Object.keys(DOSSIER_LABELS) as Array<keyof MemberDossier>;
-
-  async function toggleDossierField(member: Member, key: keyof MemberDossier) {
-    const nextValue = !member.dossier[key];
+  async function toggleColumn(member: Member, column: DossierColumn) {
+    const nextValue = !isColumnChecked(member.dossier, column);
+    const previousDossier = member.dossier;
     setError(null);
     setData((prev) =>
       prev.map((m) =>
-        m.id === member.id ? { ...m, dossier: { ...m.dossier, [key]: nextValue } } : m
+        m.id === member.id
+          ? {
+              ...m,
+              dossier: column.fields.reduce(
+                (d, field) => ({ ...d, [field]: nextValue }),
+                m.dossier
+              ),
+            }
+          : m
       )
     );
     try {
-      await patchMember(member.id, { [key]: nextValue });
-    } catch (err) {
-      setData((prev) =>
-        prev.map((m) =>
-          m.id === member.id ? { ...m, dossier: { ...m.dossier, [key]: !nextValue } } : m
-        )
+      await patchMember(
+        member.id,
+        Object.fromEntries(column.fields.map((field) => [field, nextValue]))
       );
+    } catch (err) {
+      setData((prev) => prev.map((m) => (m.id === member.id ? { ...m, dossier: previousDossier } : m)));
       setError(err instanceof Error ? err.message : "Échec de la mise à jour.");
     }
   }
@@ -154,9 +160,9 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
             <tr>
               <th className="px-3 py-2 text-left font-medium text-toac-blue-950">Adhérent</th>
               <th className="px-3 py-2 text-left font-medium text-toac-blue-950">Statut</th>
-              {dossierKeys.map((key) => (
-                <th key={key} className="px-3 py-2 text-center font-medium text-toac-blue-950">
-                  {DOSSIER_LABELS[key]}
+              {DOSSIER_COLUMNS.map((column) => (
+                <th key={column.key} className="px-3 py-2 text-center font-medium text-toac-blue-950">
+                  {column.label}
                 </th>
               ))}
               <th className="px-3 py-2 text-center font-medium text-toac-blue-950">%</th>
@@ -187,23 +193,26 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
                     ))}
                   </select>
                 </td>
-                {dossierKeys.map((key) => (
-                  <td key={key} className="px-3 py-2 text-center">
-                    <button
-                      type="button"
-                      onClick={() => toggleDossierField(m, key)}
-                      aria-pressed={m.dossier[key]}
-                      title="Cliquez pour cocher/décocher"
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                        m.dossier[key]
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-toac-gray-100 text-toac-blue-900/50 hover:bg-toac-gray-200"
-                      }`}
-                    >
-                      {m.dossier[key] ? "✅" : "—"}
-                    </button>
-                  </td>
-                ))}
+                {DOSSIER_COLUMNS.map((column) => {
+                  const checked = isColumnChecked(m.dossier, column);
+                  return (
+                    <td key={column.key} className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => toggleColumn(m, column)}
+                        aria-pressed={checked}
+                        title="Cliquez pour cocher/décocher"
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                          checked
+                            ? "bg-green-100 text-green-800 hover:bg-green-200"
+                            : "bg-toac-gray-100 text-toac-blue-900/50 hover:bg-toac-gray-200"
+                        }`}
+                      >
+                        {checked ? "✅" : "—"}
+                      </button>
+                    </td>
+                  );
+                })}
                 <td className="px-3 py-2 text-center font-medium">{dossierCompletion(m.dossier)}%</td>
                 <td className="px-3 py-2 text-center">
                   <button
@@ -221,7 +230,7 @@ export default function AdminMembersTable({ members }: { members: Member[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={dossierKeys.length + 4} className="px-3 py-6 text-center text-toac-blue-900/60">
+                <td colSpan={DOSSIER_COLUMNS.length + 4} className="px-3 py-6 text-center text-toac-blue-900/60">
                   Aucun adhérent pour le moment.
                 </td>
               </tr>

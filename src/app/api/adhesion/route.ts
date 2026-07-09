@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { put, BlobError } from "@vercel/blob";
 import { insertInscription, DatabaseNotConfiguredError } from "@/lib/db";
 import { buildPaymentForm, buildAutoSubmitHtml, buildErrorHtml } from "@/lib/monetico";
-import { ADHESION_TARIFS, CAUTION_CENTIMES } from "@/content/tarifs";
+import { ADHESION_TARIFS, ASSURANCE_TARIFS, CAUTION_CENTIMES, type LicenceType } from "@/content/tarifs";
 
 /**
  * Formulaire d'adhésion en ligne, unique : inscription + paiement (cotisation
@@ -42,14 +42,19 @@ export async function POST(request: NextRequest) {
   const droitImage = form.get("droitImage") === "on";
   const message = String(form.get("message") ?? "");
   const tarifReduitDemande = form.get("tarifReduit") === "oui";
+  const licenceType: LicenceType = form.get("licenceType") === "competition" ? "competition" : "loisir";
   const justificatifFile = form.get("justificatif");
+  const assurance = ASSURANCE_TARIFS.find((a) => a.id === form.get("assurance"));
 
   if (!prenom || !nom || !email) {
     return htmlError("Prénom, nom et email sont requis.");
   }
+  if (!assurance) {
+    return htmlError("Merci de choisir une formule d'assurance FFTRI.");
+  }
   if (tarifReduitDemande && !(justificatifFile instanceof File && justificatifFile.size > 0)) {
     return htmlError(
-      "Merci de joindre un justificatif (étudiant, demandeur d'emploi, salarié Airbus opération ou ayant droit) pour bénéficier du tarif réduit."
+      "Merci de joindre un justificatif (Airbus Opérations, ayant droit Airbus Opérations, chômeur ou étudiant) pour bénéficier du tarif réduit."
     );
   }
 
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
       email,
       telephone,
       adresse,
-      formule: tarifReduitDemande ? "reduit" : "plein",
+      formule: `${tarifReduitDemande ? "reduit" : "plein"}-${licenceType}`,
       licenceExistante,
       contactUrgenceNom,
       contactUrgenceTelephone,
@@ -88,6 +93,7 @@ export async function POST(request: NextRequest) {
       droitImage,
       message,
       justificatifUrl,
+      assurance: assurance.label,
     });
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) {
@@ -100,8 +106,8 @@ export async function POST(request: NextRequest) {
     return htmlError("Une erreur est survenue. Réessayez plus tard.");
   }
 
-  const tarif = tarifReduitDemande ? ADHESION_TARIFS.reduit : ADHESION_TARIFS.plein;
-  const montantCentimes = tarif.montantCentimes + CAUTION_CENTIMES;
+  const tarif = ADHESION_TARIFS[tarifReduitDemande ? "reduit" : "plein"][licenceType];
+  const montantCentimes = tarif.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
   const reference = `TOAC-I${inscriptionId}-${Date.now()}`;
 
   let payment: ReturnType<typeof buildPaymentForm>;
@@ -110,7 +116,7 @@ export async function POST(request: NextRequest) {
       montantCentimes,
       reference,
       email,
-      texteLibre: `Adhésion ${tarifReduitDemande ? "tarif réduit" : "plein tarif"} + caution`,
+      texteLibre: `Adhésion ${tarifReduitDemande ? "tarif réduit" : "plein tarif"} (${licenceType}) + ${assurance.label} + caution`,
     });
   } catch (error) {
     console.error("Configuration Monetico manquante :", error);
