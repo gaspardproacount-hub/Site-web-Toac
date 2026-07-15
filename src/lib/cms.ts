@@ -5,9 +5,10 @@
 // renvoient null et les pages gardent leur contenu actuel (src/content/*).
 
 const CMS_CONFIG = {
-  supabaseUrl: "VOTRE_SUPABASE_URL",
-  supabaseAnonKey: "VOTRE_SUPABASE_ANON_KEY",
-  siteId: "VOTRE_SITE_ID",
+  supabaseUrl: "https://kekjsyqakhpuzxxeralm.supabase.co",
+  supabaseAnonKey:
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtla2pzeXFha2hwdXp4eGVyYWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNDgwNDAsImV4cCI6MjA5OTYyNDA0MH0.vZdboaaVCYThBNH4zXGrb8gEYXwzmk5uHCoPiLFXhUI",
+  siteId: "f75cad77-b956-4822-83ff-bee764af2b4d",
 };
 
 const isConfigured =
