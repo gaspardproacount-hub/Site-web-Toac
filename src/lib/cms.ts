@@ -24,6 +24,23 @@ export type CmsPageBlock = {
   position: number;
 };
 
+export type CmsProduct = {
+  id: string;
+  section_id: string | null;
+  name: string;
+  description: string;
+  price: number | null;
+  image_url: string | null;
+  position: number;
+};
+
+export type CmsCatalogSection = {
+  id: string;
+  name: string;
+  position: number;
+  products: CmsProduct[];
+};
+
 async function fetchFromCms<T>(table: string, query: string): Promise<T[] | null> {
   if (!isConfigured) return null;
 
@@ -43,6 +60,32 @@ async function fetchFromCms<T>(table: string, query: string): Promise<T[] | null
   } catch {
     return null;
   }
+}
+
+export async function getCmsCatalog(): Promise<CmsCatalogSection[] | null> {
+  const [sections, products] = await Promise.all([
+    fetchFromCms<{ id: string; name: string; position: number }>(
+      "catalog_sections",
+      "&select=*&order=position.asc"
+    ),
+    fetchFromCms<CmsProduct>("products", "&select=*&order=position.asc"),
+  ]);
+
+  const hasSections = Boolean(sections && sections.length);
+  const hasProducts = Boolean(products && products.length);
+  if (!hasSections && !hasProducts) return null;
+
+  const result: CmsCatalogSection[] = (sections ?? []).map((section) => ({
+    ...section,
+    products: (products ?? []).filter((p) => p.section_id === section.id),
+  }));
+
+  const unassigned = (products ?? []).filter((p) => !p.section_id);
+  if (unassigned.length) {
+    result.push({ id: "unassigned", name: "Autres", position: result.length, products: unassigned });
+  }
+
+  return result;
 }
 
 export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | null> {
