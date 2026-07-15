@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import ContactForm from "@/components/ContactForm";
 import AdhesionForm from "@/components/AdhesionForm";
 import { STAGE_TARIFS } from "@/content/tarifs";
+import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -17,11 +19,19 @@ const ETAPES = [
 
 export default function NousRejoindrePage() {
   return (
+    <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Nous rejoindre</h1>
-      <p className="mt-4 text-toac-blue-900/80">
-        Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription.
-      </p>
+      <CmsPageBlocks
+        slug="nous-rejoindre"
+        fallback={
+          <>
+            <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Nous rejoindre</h1>
+            <p className="mt-4 text-toac-blue-900/80">
+              Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription.
+            </p>
+          </>
+        }
+      />
 
       <ol className="mt-10 space-y-4">
         {ETAPES.map((etape, i) => (
@@ -111,5 +121,6 @@ export default function NousRejoindrePage() {
         </div>
       </section>
     </div>
+    </Suspense>
   );
 }

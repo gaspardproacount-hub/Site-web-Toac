@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
 export const metadata: Metadata = {
   title: "La vie du club",
@@ -33,9 +35,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function VieDuClubPage() {
   return (
+    <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="font-display text-3xl uppercase text-toac-blue-950 sm:text-4xl">La vie du club</h1>
 
+      <CmsPageBlocks slug="vie-du-club" fallback={<>
       <Section title="Soirées">
         <p>
           Rentrée (barbecue auberge espagnole), Noël, Assemblée Générale, et des apéros conviviaux après
@@ -117,6 +121,8 @@ export default function VieDuClubPage() {
           Lien de commande des tenues (LIEN_COMMANDE_TENUES — à compléter)
         </a>
       </Section>
+      </>} />
     </div>
+    </Suspense>
   );
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
+import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
 export const metadata: Metadata = {
   title: "Triathlons du Lauragais",
@@ -11,6 +13,7 @@ const FORMATS = ["XS", "S", "M", "L", "Swimrun (SR)", "Jeunes 6-9 ans", "Jeunes 
 
 export default function TriathlonsDuLauragaisPage() {
   return (
+    <Suspense fallback={null}>
     <>
       <section className="relative flex min-h-[60vh] items-end bg-toac-blue-950 text-white">
         <SiteImage
@@ -67,18 +70,26 @@ export default function TriathlonsDuLauragaisPage() {
         </p>
       </section>
 
-      <section className="bg-toac-gray-50 py-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
-            180 bénévoles nécessaires
-          </h2>
-          <p className="mt-4 text-toac-blue-900/90">
-            L'organisation mobilise 180 bénévoles sur 4 jours : installation le vendredi, course le week-end,
-            derniers retours le lundi. Cet événement finance la vie du club (sortie club, cadeaux adhérents,
-            D3, investissements).
-          </p>
-        </div>
-      </section>
+      <div className="bg-toac-gray-50">
+        <CmsPageBlocks
+          slug="triathlons-du-lauragais"
+          fallback={
+            <section className="py-16">
+              <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
+                  180 bénévoles nécessaires
+                </h2>
+                <p className="mt-4 text-toac-blue-900/90">
+                  L'organisation mobilise 180 bénévoles sur 4 jours : installation le vendredi, course le week-end,
+                  derniers retours le lundi. Cet événement finance la vie du club (sortie club, cadeaux adhérents,
+                  D3, investissements).
+                </p>
+              </div>
+            </section>
+          }
+        />
+      </div>
     </>
+    </Suspense>
   );
 }

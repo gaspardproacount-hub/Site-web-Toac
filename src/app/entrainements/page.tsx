@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   PLANNING,
   CRENEAUX_LIBRES,
@@ -6,6 +7,7 @@ import {
   DISCIPLINE_COLORS,
   JOURS_ORDER,
 } from "@/content/planning";
+import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
 export const metadata: Metadata = {
   title: "Planning des entraînements",
@@ -20,14 +22,22 @@ export default function EntrainementsPage() {
   })).filter((g) => g.creneaux.length > 0);
 
   return (
+    <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-        Planning de la semaine
-      </h1>
-      <p className="mt-4 max-w-3xl text-toac-blue-900/80">
-        Retrouvez toutes les séances encadrées du club sur l'application <strong>IDO</strong>, qui regroupe
-        horaires, lieux et contenus. Le planning ci-dessous est celui de la saison en cours.
-      </p>
+      <CmsPageBlocks
+        slug="entrainements"
+        fallback={
+          <>
+            <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
+              Planning de la semaine
+            </h1>
+            <p className="mt-4 max-w-3xl text-toac-blue-900/80">
+              Retrouvez toutes les séances encadrées du club sur l'application <strong>IDO</strong>, qui regroupe
+              horaires, lieux et contenus. Le planning ci-dessous est celui de la saison en cours.
+            </p>
+          </>
+        }
+      />
 
       <div className="mt-8 flex flex-wrap gap-3 text-xs">
         {(Object.keys(DISCIPLINE_LABELS) as Array<keyof typeof DISCIPLINE_LABELS>).map((d) => (
@@ -77,5 +87,6 @@ export default function EntrainementsPage() {
         ))}
       </ul>
     </div>
+    </Suspense>
   );
 }
