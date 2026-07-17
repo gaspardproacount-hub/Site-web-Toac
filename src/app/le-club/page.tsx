@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
+import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { getCmsCatalog } from "@/lib/cms";
 import { PALMARES_2025 } from "@/content/bureau";
 
 export const metadata: Metadata = {
@@ -10,7 +12,10 @@ export const metadata: Metadata = {
     "Le TOAC Triathlon, né en 1992, est aujourd'hui un club indépendant de ~180 licenciés à Toulouse, tous niveaux, affilié FFTRI.",
 };
 
-export default function LeClubPage() {
+export default async function LeClubPage() {
+  const cmsCatalog = await getCmsCatalog();
+  const palmaresSection = cmsCatalog?.find((s) => s.name === "Palmarès 2025");
+
   return (
     <Suspense fallback={null}>
     <>
@@ -56,12 +61,30 @@ export default function LeClubPage() {
             Ils portent nos couleurs — Palmarès 2025
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {PALMARES_2025.map((p) => (
-              <div key={p.name} className="rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <div className="font-display text-base uppercase text-toac-blue-950">{p.name}</div>
-                <div className="mt-1 text-sm text-toac-blue-900/70">{p.exploit}</div>
-              </div>
-            ))}
+            {palmaresSection
+              ? palmaresSection.products.map((p) => (
+                  <div
+                    key={p.id}
+                    className="relative rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <CmsEditPencil
+                      payload={{ type: "edit-product", productId: p.id }}
+                      className="absolute right-2 top-2"
+                    />
+                    <div className="font-display text-base uppercase text-toac-blue-950">{p.name}</div>
+                    <div className="mt-1 text-sm text-toac-blue-900/70">{p.description}</div>
+                  </div>
+                ))
+              : PALMARES_2025.map((p) => (
+                  <div key={p.name} className="rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
+                    <div className="font-display text-base uppercase text-toac-blue-950">{p.name}</div>
+                    <div className="mt-1 text-sm text-toac-blue-900/70">{p.exploit}</div>
+                  </div>
+                ))}
+            <CmsAddTile
+              payload={{ type: "add-product", sectionId: palmaresSection?.id }}
+              label="+ Ajouter un palmarès"
+            />
           </div>
         </div>
       </section>

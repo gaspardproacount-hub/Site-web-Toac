@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FAQ_CATEGORIES, FAQ_ITEMS, type FaqItem } from "@/content/faq";
+import { FAQ_CATEGORIES, FAQ_ITEMS } from "@/content/faq";
+import { CmsEditPencil } from "@/components/cms-edit";
+
+type FaqItem = { id: string; categorie: string; question: string; reponse: string };
 
 const DIACRITICS_REGEX = new RegExp("[\\u0300-\\u036f]", "g");
 
@@ -18,17 +21,19 @@ function AccordionItem({
   item,
   isOpen,
   onToggle,
+  editable,
 }: {
   item: FaqItem;
   isOpen: boolean;
   onToggle: () => void;
+  editable: boolean;
 }) {
   const panelId = `faq-panel-${item.id}`;
   const buttonId = `faq-button-${item.id}`;
 
   return (
     <div className="border-b border-toac-gray-200 last:border-0">
-      <h3>
+      <h3 className="flex items-center gap-2">
         <button
           id={buttonId}
           type="button"
@@ -47,6 +52,7 @@ function AccordionItem({
             <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
           </svg>
         </button>
+        {editable && <CmsEditPencil payload={{ type: "edit-product", productId: item.id }} />}
       </h3>
       <div id={panelId} role="region" aria-labelledby={buttonId} className="faq-panel" data-open={isOpen}>
         <div>
@@ -57,24 +63,34 @@ function AccordionItem({
   );
 }
 
-export default function FaqAccordion() {
+export default function FaqAccordion({
+  categories = FAQ_CATEGORIES,
+  items = FAQ_ITEMS,
+  editable = false,
+}: {
+  categories?: string[];
+  items?: FaqItem[];
+  editable?: boolean;
+}) {
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return FAQ_ITEMS;
-    return FAQ_ITEMS.filter(
+    if (!query) return items;
+    return items.filter(
       (item) =>
         item.question.toLowerCase().includes(query) ||
         item.reponse.toLowerCase().includes(query)
     );
-  }, [search]);
+  }, [search, items]);
 
-  const grouped = FAQ_CATEGORIES.map((categorie) => ({
-    categorie,
-    items: filtered.filter((item) => item.categorie === categorie),
-  })).filter((group) => group.items.length > 0);
+  const grouped = categories
+    .map((categorie) => ({
+      categorie,
+      items: filtered.filter((item) => item.categorie === categorie),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <div>
@@ -93,7 +109,7 @@ export default function FaqAccordion() {
       </div>
 
       <div className="mb-8 flex flex-wrap gap-3 text-sm">
-        {FAQ_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <a
             key={cat}
             href={`#${slugify(cat)}`}
@@ -121,6 +137,7 @@ export default function FaqAccordion() {
                   item={item}
                   isOpen={openId === item.id}
                   onToggle={() => setOpenId(openId === item.id ? null : item.id)}
+                  editable={editable}
                 />
               ))}
             </div>

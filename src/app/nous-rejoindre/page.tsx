@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import ContactForm from "@/components/ContactForm";
 import AdhesionForm from "@/components/AdhesionForm";
 import { STAGE_TARIFS } from "@/content/tarifs";
-import { CmsPageBlocks } from "@/components/CmsPageBlocks";
+import { getCmsPageBlocks } from "@/lib/cms";
+import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -17,31 +18,48 @@ const ETAPES = [
   "Commander sa trifonction TOAC",
 ];
 
-export default function NousRejoindrePage() {
+export default async function NousRejoindrePage() {
+  const cmsBlocks = await getCmsPageBlocks("nous-rejoindre");
+  // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
+  const introBlock = cmsBlocks?.[0];
+  const etapeBlocks = cmsBlocks?.slice(1) ?? [];
+
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <CmsPageBlocks
-        slug="nous-rejoindre"
-        fallback={
-          <>
-            <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Nous rejoindre</h1>
-            <p className="mt-4 text-toac-blue-900/80">
-              Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription.
-            </p>
-          </>
-        }
-      />
+      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
+        {introBlock?.heading || "Nous rejoindre"}
+      </h1>
+      <p className="mt-4 text-toac-blue-900/80">
+        {introBlock?.body ||
+          "Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription."}
+        {introBlock && <CmsEditPencil payload={{ type: "edit-block", blockId: introBlock.id }} className="ml-2" />}
+      </p>
 
       <ol className="mt-10 space-y-4">
-        {ETAPES.map((etape, i) => (
-          <li key={etape} className="flex items-start gap-4">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-toac-blue-950 font-display text-sm text-toac-pink-400">
-              {i + 1}
-            </span>
-            <span className="pt-1 text-toac-blue-900/90">{etape}</span>
-          </li>
-        ))}
+        {etapeBlocks.length
+          ? etapeBlocks.map((block, i) => (
+              <li key={block.id} className="flex items-start gap-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-toac-blue-950 font-display text-sm text-toac-pink-400">
+                  {i + 1}
+                </span>
+                <span className="flex flex-1 items-start justify-between gap-2 pt-1 text-toac-blue-900/90">
+                  {block.heading}
+                  <CmsEditPencil payload={{ type: "edit-block", blockId: block.id }} />
+                </span>
+              </li>
+            ))
+          : ETAPES.map((etape, i) => (
+              <li key={etape} className="flex items-start gap-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-toac-blue-950 font-display text-sm text-toac-pink-400">
+                  {i + 1}
+                </span>
+                <span className="pt-1 text-toac-blue-900/90">{etape}</span>
+              </li>
+            ))}
+        <li>
+          <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter une étape" />
+        </li>
       </ol>
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
