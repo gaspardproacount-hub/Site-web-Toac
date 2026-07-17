@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import InstagramFeed from "@/components/InstagramFeed";
 import { ACTUALITES } from "@/content/actualites";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
+import { getCmsPageBlocks } from "@/lib/cms";
+import { CmsEditPencil } from "@/components/cms-edit";
 
 const STATS = [
   { value: "1992", label: "Année de fondation" },
@@ -32,8 +35,14 @@ const CARDS = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const cmsBlocks = await getCmsPageBlocks("accueil");
+  const heroBlock = cmsBlocks?.[0];
+  const heroTitle = heroBlock?.heading || "TOAC Triathlon";
+  const heroSubtitle = heroBlock?.body || "Nager, rouler, courir à Toulouse depuis 1992";
+
   return (
+    <Suspense fallback={null}>
     <>
       <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-toac-blue-950 text-white">
         <SiteImage
@@ -45,10 +54,11 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-toac-blue-950 via-toac-blue-950/40 to-transparent" />
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
           <h1 className="animate-fade-in-up font-display text-4xl uppercase leading-tight sm:text-5xl lg:text-6xl">
-            TOAC Triathlon
-            <span className="block text-toac-pink-500">
-              Nager, rouler, courir à Toulouse depuis 1992
-            </span>
+            {heroTitle}
+            <span className="block text-toac-pink-500">{heroSubtitle}</span>
+            {heroBlock && (
+              <CmsEditPencil payload={{ type: "edit-block", blockId: heroBlock.id }} className="mt-3" />
+            )}
           </h1>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
@@ -143,5 +153,6 @@ export default function HomePage() {
         </div>
       </section>
     </>
+    </Suspense>
   );
 }
