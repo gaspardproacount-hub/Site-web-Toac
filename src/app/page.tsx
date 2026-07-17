@@ -4,8 +4,8 @@ import SiteImage from "@/components/SiteImage";
 import InstagramFeed from "@/components/InstagramFeed";
 import { ACTUALITES } from "@/content/actualites";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
-import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditableText } from "@/components/cms-edit";
+import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 const STATS = [
   { value: "1992", label: "Année de fondation" },
@@ -36,10 +36,17 @@ const CARDS = [
 ];
 
 export default async function HomePage() {
-  const cmsBlocks = await getCmsPageBlocks("accueil");
+  const [cmsBlocks, cmsCatalog] = await Promise.all([getCmsPageBlocks("accueil"), getCmsCatalog()]);
   const heroBlock = cmsBlocks?.[0];
   const heroTitle = heroBlock?.heading || "TOAC Triathlon";
   const heroSubtitle = heroBlock?.body || "Nager, rouler, courir à Toulouse depuis 1992";
+  // bloc[1..3] = les 3 cartes "Le club en 3 temps" (le lien et la photo restent gérés dans le code).
+  const cardBlocks = cmsBlocks?.slice(1, 1 + CARDS.length) ?? [];
+
+  const statsSection = cmsCatalog?.find((s) => s.name === "Statistiques accueil");
+  const actualitesSection = cmsCatalog?.find((s) => s.name === "Actualités");
+  const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
+  const institutionnelsSection = cmsCatalog?.find((s) => s.name === "Partenaires institutionnels");
 
   return (
     <Suspense fallback={null}>
@@ -94,12 +101,29 @@ export default async function HomePage() {
 
       <section className="border-b border-toac-gray-200 bg-toac-gray-50">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 sm:px-6 md:grid-cols-4 lg:px-8">
-          {STATS.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="font-display text-3xl text-toac-blue-950 sm:text-4xl">{stat.value}</div>
-              <div className="mt-1 text-sm text-toac-blue-900/70">{stat.label}</div>
-            </div>
-          ))}
+          {statsSection
+            ? statsSection.products.map((stat) => (
+                <div key={stat.id} className="text-center">
+                  <CmsEditableText
+                    as="div"
+                    value={stat.name}
+                    target={{ kind: "product", id: stat.id, field: "name" }}
+                    className="font-display text-3xl text-toac-blue-950 sm:text-4xl"
+                  />
+                  <CmsEditableText
+                    as="div"
+                    value={stat.description}
+                    target={{ kind: "product", id: stat.id, field: "description" }}
+                    className="mt-1 text-sm text-toac-blue-900/70"
+                  />
+                </div>
+              ))
+            : STATS.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="font-display text-3xl text-toac-blue-950 sm:text-4xl">{stat.value}</div>
+                  <div className="mt-1 text-sm text-toac-blue-900/70">{stat.label}</div>
+                </div>
+              ))}
         </div>
       </section>
 
@@ -108,22 +132,45 @@ export default async function HomePage() {
           Le club en 3 temps
         </h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {CARDS.map((card) => (
-            <Link
-              key={card.title}
-              href={card.href}
-              className="group overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-            >
-              <SiteImage name={card.image} label={`Photo — ${card.title}`} className="h-48 w-full" />
-              <div className="p-5">
-                <h3 className="font-display text-lg uppercase text-toac-blue-950">{card.title}</h3>
-                <p className="mt-2 text-sm text-toac-blue-900/70">{card.description}</p>
-                <span className="mt-3 inline-block text-sm font-medium text-toac-blue-600 group-hover:underline">
-                  En savoir plus →
-                </span>
-              </div>
-            </Link>
-          ))}
+          {CARDS.map((card, i) => {
+            const block = cardBlocks[i];
+            return (
+              <Link
+                key={card.title}
+                href={card.href}
+                className="group overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              >
+                <SiteImage name={card.image} label={`Photo — ${card.title}`} className="h-48 w-full" />
+                <div className="p-5">
+                  {block ? (
+                    <>
+                      <CmsEditableText
+                        as="h3"
+                        value={block.heading || card.title}
+                        target={{ kind: "block", id: block.id, field: "heading" }}
+                        className="font-display text-lg uppercase text-toac-blue-950"
+                      />
+                      <CmsEditableText
+                        as="p"
+                        value={block.body || card.description}
+                        target={{ kind: "block", id: block.id, field: "body" }}
+                        multiline
+                        className="mt-2 block text-sm text-toac-blue-900/70"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-display text-lg uppercase text-toac-blue-950">{card.title}</h3>
+                      <p className="mt-2 text-sm text-toac-blue-900/70">{card.description}</p>
+                    </>
+                  )}
+                  <span className="mt-3 inline-block text-sm font-medium text-toac-blue-600 group-hover:underline">
+                    En savoir plus →
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -135,22 +182,49 @@ export default async function HomePage() {
             Actualités
           </h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-3">
-            {ACTUALITES.map((news) => (
-              <article
-                key={news.slug}
-                className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-              >
-                <time className="text-xs uppercase tracking-wide text-toac-blue-600" dateTime={news.date}>
-                  {new Date(news.date).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </time>
-                <h3 className="mt-2 font-display text-base uppercase text-toac-blue-950">{news.title}</h3>
-                <p className="mt-2 text-sm text-toac-blue-900/70">{news.excerpt}</p>
-              </article>
-            ))}
+            {actualitesSection
+              ? actualitesSection.products.map((news) => (
+                  <article
+                    key={news.id}
+                    className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                  >
+                    <CmsEditableText
+                      as="h3"
+                      value={news.name}
+                      target={{ kind: "product", id: news.id, field: "name" }}
+                      className="font-display text-base uppercase text-toac-blue-950"
+                    />
+                    <CmsEditableText
+                      as="p"
+                      value={news.description}
+                      target={{ kind: "product", id: news.id, field: "description" }}
+                      multiline
+                      className="mt-2 block text-sm text-toac-blue-900/70"
+                    />
+                  </article>
+                ))
+              : ACTUALITES.map((news) => (
+                  <article
+                    key={news.slug}
+                    className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                  >
+                    <time className="text-xs uppercase tracking-wide text-toac-blue-600" dateTime={news.date}>
+                      {new Date(news.date).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </time>
+                    <h3 className="mt-2 font-display text-base uppercase text-toac-blue-950">{news.title}</h3>
+                    <p className="mt-2 text-sm text-toac-blue-900/70">{news.excerpt}</p>
+                  </article>
+                ))}
+            {actualitesSection && (
+              <CmsAddTile
+                payload={{ type: "add-product", sectionId: actualitesSection.id }}
+                label="+ Ajouter une actualité"
+              />
+            )}
           </div>
         </div>
       </section>
@@ -160,11 +234,24 @@ export default async function HomePage() {
           Ils nous soutiennent
         </h2>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-          {[...PARTENAIRES.map((p) => p.name), ...PARTENAIRES_INSTITUTIONNELS].map((name) => (
-            <span key={name} className="font-display text-sm uppercase text-toac-blue-900/50">
-              {name}
-            </span>
-          ))}
+          {partenairesSection || institutionnelsSection
+            ? [
+                ...(partenairesSection?.products.map((p) => ({ id: p.id, name: p.name })) ?? []),
+                ...(institutionnelsSection?.products.map((p) => ({ id: p.id, name: p.name })) ?? []),
+              ].map((p) => (
+                <CmsEditableText
+                  key={p.id}
+                  as="span"
+                  value={p.name}
+                  target={{ kind: "product", id: p.id, field: "name" }}
+                  className="font-display text-sm uppercase text-toac-blue-900/50"
+                />
+              ))
+            : [...PARTENAIRES.map((p) => p.name), ...PARTENAIRES_INSTITUTIONNELS].map((name) => (
+                <span key={name} className="font-display text-sm uppercase text-toac-blue-900/50">
+                  {name}
+                </span>
+              ))}
         </div>
       </section>
     </>
