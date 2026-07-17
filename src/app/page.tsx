@@ -5,7 +5,7 @@ import InstagramFeed from "@/components/InstagramFeed";
 import { ACTUALITES } from "@/content/actualites";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditPencil } from "@/components/cms-edit";
+import { CmsEditableText } from "@/components/cms-edit";
 
 const STATS = [
   { value: "1992", label: "Année de fondation" },
@@ -54,10 +54,25 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-toac-blue-950 via-toac-blue-950/40 to-transparent" />
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6 lg:px-8">
           <h1 className="animate-fade-in-up font-display text-4xl uppercase leading-tight sm:text-5xl lg:text-6xl">
-            {heroTitle}
-            <span className="block text-toac-pink-500">{heroSubtitle}</span>
-            {heroBlock && (
-              <CmsEditPencil payload={{ type: "edit-block", blockId: heroBlock.id }} className="mt-3" />
+            {heroBlock ? (
+              <>
+                <CmsEditableText
+                  as="span"
+                  value={heroTitle}
+                  target={{ kind: "block", id: heroBlock.id, field: "heading" }}
+                />
+                <CmsEditableText
+                  as="span"
+                  value={heroSubtitle}
+                  target={{ kind: "block", id: heroBlock.id, field: "body" }}
+                  className="block text-toac-pink-500"
+                />
+              </>
+            ) : (
+              <>
+                {heroTitle}
+                <span className="block text-toac-pink-500">{heroSubtitle}</span>
+              </>
             )}
           </h1>
           <div className="mt-8 flex flex-wrap gap-4">

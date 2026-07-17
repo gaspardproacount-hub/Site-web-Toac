@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FAQ_CATEGORIES, FAQ_ITEMS } from "@/content/faq";
-import { CmsEditPencil } from "@/components/cms-edit";
+import { CmsEditableText } from "@/components/cms-edit";
 
 type FaqItem = { id: string; categorie: string; question: string; reponse: string };
 
@@ -34,29 +34,66 @@ function AccordionItem({
   return (
     <div className="border-b border-toac-gray-200 last:border-0">
       <h3 className="flex items-center gap-2">
-        <button
-          id={buttonId}
-          type="button"
-          aria-expanded={isOpen}
-          aria-controls={panelId}
-          onClick={onToggle}
-          className="flex w-full items-center justify-between gap-4 py-4 text-left transition hover:bg-toac-pink-300/10"
-        >
-          <span className="font-medium text-toac-blue-950">{item.question}</span>
-          <svg
-            aria-hidden="true"
-            className={`h-4 w-4 shrink-0 text-toac-blue-700 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-            viewBox="0 0 20 20"
-            fill="currentColor"
+        {editable ? (
+          <span className="flex w-full items-center justify-between gap-4 py-4 text-left">
+            <CmsEditableText
+              as="span"
+              value={item.question}
+              target={{ kind: "product", id: item.id, field: "name" }}
+              className="font-medium text-toac-blue-950"
+            />
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              onClick={onToggle}
+              aria-label="Ouvrir / fermer"
+              className="shrink-0 rounded p-1 hover:bg-toac-pink-300/10"
+            >
+              <svg
+                aria-hidden="true"
+                className={`h-4 w-4 shrink-0 text-toac-blue-700 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+              </svg>
+            </button>
+          </span>
+        ) : (
+          <button
+            id={buttonId}
+            type="button"
+            aria-expanded={isOpen}
+            aria-controls={panelId}
+            onClick={onToggle}
+            className="flex w-full items-center justify-between gap-4 py-4 text-left transition hover:bg-toac-pink-300/10"
           >
-            <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-          </svg>
-        </button>
-        {editable && <CmsEditPencil payload={{ type: "edit-product", productId: item.id }} />}
+            <span className="font-medium text-toac-blue-950">{item.question}</span>
+            <svg
+              aria-hidden="true"
+              className={`h-4 w-4 shrink-0 text-toac-blue-700 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+            </svg>
+          </button>
+        )}
       </h3>
       <div id={panelId} role="region" aria-labelledby={buttonId} className="faq-panel" data-open={isOpen}>
         <div>
-          <p className="faq-panel-inner pb-4 text-sm text-toac-blue-900/80">{item.reponse}</p>
+          {editable ? (
+            <CmsEditableText
+              as="p"
+              value={item.reponse}
+              target={{ kind: "product", id: item.id, field: "description" }}
+              multiline
+              className="faq-panel-inner block pb-4 text-sm text-toac-blue-900/80"
+            />
+          ) : (
+            <p className="faq-panel-inner pb-4 text-sm text-toac-blue-900/80">{item.reponse}</p>
+          )}
         </div>
       </div>
     </div>

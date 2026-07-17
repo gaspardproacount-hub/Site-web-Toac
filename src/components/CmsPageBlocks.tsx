@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 // Rend le contenu géré par le dashboard client pour une page donnée (identifiée
 // par son "slug", ex: "le-club"). Si aucun bloc n'a été créé pour cette page
@@ -25,10 +25,6 @@ export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback
       {blocks.map((block) => (
         <section key={block.id} className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="relative rounded-lg">
-            <CmsEditPencil
-              payload={{ type: "edit-block", blockId: block.id }}
-              className="absolute -right-2 -top-2"
-            />
             {block.image_url && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -38,12 +34,21 @@ export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback
               />
             )}
             {block.heading && (
-              <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
-                {block.heading}
-              </h2>
+              <CmsEditableText
+                as="h2"
+                value={block.heading}
+                target={{ kind: "block", id: block.id, field: "heading" }}
+                className="section-title font-display text-2xl uppercase text-toac-blue-950"
+              />
             )}
             {block.body && (
-              <div className="mt-6 space-y-4 whitespace-pre-line text-toac-blue-900/90">{block.body}</div>
+              <CmsEditableText
+                as="div"
+                value={block.body}
+                target={{ kind: "block", id: block.id, field: "body" }}
+                multiline
+                className="mt-6 block space-y-4 whitespace-pre-line text-toac-blue-900/90"
+              />
             )}
           </div>
         </section>

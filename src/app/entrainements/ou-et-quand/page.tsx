@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import LieuxMap from "@/components/LieuxMap";
 import { LIEUX } from "@/content/lieux";
 import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Où & Quand",
@@ -30,12 +30,19 @@ export default async function OuEtQuandPage() {
         {cmsBlocks
           ? cmsBlocks.map((block) => (
               <div key={block.id} className="relative rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
-                <CmsEditPencil
-                  payload={{ type: "edit-block", blockId: block.id }}
-                  className="absolute right-2 top-2"
+                <CmsEditableText
+                  as="h2"
+                  value={block.heading}
+                  target={{ kind: "block", id: block.id, field: "heading" }}
+                  className="font-display text-base uppercase text-toac-blue-950"
                 />
-                <h2 className="font-display text-base uppercase text-toac-blue-950">{block.heading}</h2>
-                <p className="mt-2 whitespace-pre-line text-sm text-toac-blue-900/80">{block.body}</p>
+                <CmsEditableText
+                  as="p"
+                  value={block.body}
+                  target={{ kind: "block", id: block.id, field: "body" }}
+                  multiline
+                  className="mt-2 block whitespace-pre-line text-sm text-toac-blue-900/80"
+                />
               </div>
             ))
           : LIEUX.map((lieu) => (

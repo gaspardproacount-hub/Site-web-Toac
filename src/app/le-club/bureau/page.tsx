@@ -4,7 +4,7 @@ import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { BUREAU_2026, PRESIDENT_HONNEUR, COACHS } from "@/content/bureau";
 import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Le bureau & les coachs",
@@ -32,10 +32,6 @@ export default async function BureauPage() {
                 key={m.id}
                 className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
               >
-                <CmsEditPencil
-                  payload={{ type: "edit-product", productId: m.id }}
-                  className="absolute -right-2 -top-2"
-                />
                 {m.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.image_url} alt={m.name} className="h-14 w-14 shrink-0 rounded-full object-cover" />
@@ -43,8 +39,18 @@ export default async function BureauPage() {
                   <div className="h-14 w-14 shrink-0 rounded-full bg-toac-gray-200" />
                 )}
                 <div>
-                  <div className="font-medium text-toac-blue-950">{m.name}</div>
-                  <div className="text-sm text-toac-blue-900/70">{m.description}</div>
+                  <CmsEditableText
+                    as="div"
+                    value={m.name}
+                    target={{ kind: "product", id: m.id, field: "name" }}
+                    className="font-medium text-toac-blue-950"
+                  />
+                  <CmsEditableText
+                    as="div"
+                    value={m.description}
+                    target={{ kind: "product", id: m.id, field: "description" }}
+                    className="text-sm text-toac-blue-900/70"
+                  />
                 </div>
               </div>
             ))
@@ -76,10 +82,6 @@ export default async function BureauPage() {
                 key={c.id}
                 className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
               >
-                <CmsEditPencil
-                  payload={{ type: "edit-product", productId: c.id }}
-                  className="absolute -right-2 -top-2"
-                />
                 {c.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={c.image_url} alt={c.name} className="h-14 w-14 shrink-0 rounded-full object-cover" />
@@ -87,8 +89,18 @@ export default async function BureauPage() {
                   <div className="h-14 w-14 shrink-0 rounded-full bg-toac-gray-200" />
                 )}
                 <div>
-                  <div className="font-medium text-toac-blue-950">{c.name}</div>
-                  <div className="text-sm text-toac-blue-900/70">{c.description}</div>
+                  <CmsEditableText
+                    as="div"
+                    value={c.name}
+                    target={{ kind: "product", id: c.id, field: "name" }}
+                    className="font-medium text-toac-blue-950"
+                  />
+                  <CmsEditableText
+                    as="div"
+                    value={c.description}
+                    target={{ kind: "product", id: c.id, field: "description" }}
+                    className="text-sm text-toac-blue-900/70"
+                  />
                 </div>
               </div>
             ))

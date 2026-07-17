@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
-import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 import { getCmsCatalog } from "@/lib/cms";
 import { PALMARES_2025 } from "@/content/bureau";
 
@@ -67,12 +67,19 @@ export default async function LeClubPage() {
                     key={p.id}
                     className="relative rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
                   >
-                    <CmsEditPencil
-                      payload={{ type: "edit-product", productId: p.id }}
-                      className="absolute right-2 top-2"
+                    <CmsEditableText
+                      as="div"
+                      value={p.name}
+                      target={{ kind: "product", id: p.id, field: "name" }}
+                      className="font-display text-base uppercase text-toac-blue-950"
                     />
-                    <div className="font-display text-base uppercase text-toac-blue-950">{p.name}</div>
-                    <div className="mt-1 text-sm text-toac-blue-900/70">{p.description}</div>
+                    <CmsEditableText
+                      as="div"
+                      value={p.description}
+                      target={{ kind: "product", id: p.id, field: "description" }}
+                      multiline
+                      className="mt-1 block text-sm text-toac-blue-900/70"
+                    />
                   </div>
                 ))
               : PALMARES_2025.map((p) => (

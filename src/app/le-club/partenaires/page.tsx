@@ -5,7 +5,7 @@ import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Nos partenaires",
@@ -30,10 +30,6 @@ export default async function PartenairesPage() {
                 key={p.id}
                 className="relative overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm"
               >
-                <CmsEditPencil
-                  payload={{ type: "edit-product", productId: p.id }}
-                  className="absolute right-2 top-2"
-                />
                 {p.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={p.image_url} alt={`Logo ${p.name}`} className="h-32 w-full object-cover" />
@@ -41,8 +37,18 @@ export default async function PartenairesPage() {
                   <div className="h-32 w-full bg-toac-gray-100" />
                 )}
                 <div className="p-4">
-                  <div className="font-display uppercase text-toac-blue-950">{p.name}</div>
-                  <div className="text-sm text-toac-blue-900/70">{p.description}</div>
+                  <CmsEditableText
+                    as="div"
+                    value={p.name}
+                    target={{ kind: "product", id: p.id, field: "name" }}
+                    className="font-display uppercase text-toac-blue-950"
+                  />
+                  <CmsEditableText
+                    as="div"
+                    value={p.description}
+                    target={{ kind: "product", id: p.id, field: "description" }}
+                    className="text-sm text-toac-blue-900/70"
+                  />
                 </div>
               </div>
             ))

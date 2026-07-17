@@ -4,7 +4,7 @@ import ContactForm from "@/components/ContactForm";
 import AdhesionForm from "@/components/AdhesionForm";
 import { STAGE_TARIFS } from "@/content/tarifs";
 import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -27,14 +27,35 @@ export default async function NousRejoindrePage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-        {introBlock?.heading || "Nous rejoindre"}
-      </h1>
-      <p className="mt-4 text-toac-blue-900/80">
-        {introBlock?.body ||
-          "Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription."}
-        {introBlock && <CmsEditPencil payload={{ type: "edit-block", blockId: introBlock.id }} className="ml-2" />}
-      </p>
+      {introBlock ? (
+        <>
+          <CmsEditableText
+            as="h1"
+            value={introBlock.heading || "Nous rejoindre"}
+            target={{ kind: "block", id: introBlock.id, field: "heading" }}
+            className="section-title font-display text-3xl uppercase text-toac-blue-950"
+          />
+          <CmsEditableText
+            as="p"
+            value={
+              introBlock.body ||
+              "Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription."
+            }
+            target={{ kind: "block", id: introBlock.id, field: "body" }}
+            multiline
+            className="mt-4 block text-toac-blue-900/80"
+          />
+        </>
+      ) : (
+        <>
+          <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
+            Nous rejoindre
+          </h1>
+          <p className="mt-4 text-toac-blue-900/80">
+            Nouvelles adhésions : merci de prendre contact avec le bureau avant de finaliser votre inscription.
+          </p>
+        </>
+      )}
 
       <ol className="mt-10 space-y-4">
         {etapeBlocks.length
@@ -43,10 +64,12 @@ export default async function NousRejoindrePage() {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-toac-blue-950 font-display text-sm text-toac-pink-400">
                   {i + 1}
                 </span>
-                <span className="flex flex-1 items-start justify-between gap-2 pt-1 text-toac-blue-900/90">
-                  {block.heading}
-                  <CmsEditPencil payload={{ type: "edit-block", blockId: block.id }} />
-                </span>
+                <CmsEditableText
+                  as="span"
+                  value={block.heading}
+                  target={{ kind: "block", id: block.id, field: "heading" }}
+                  className="flex-1 pt-1 text-toac-blue-900/90"
+                />
               </li>
             ))
           : ETAPES.map((etape, i) => (
