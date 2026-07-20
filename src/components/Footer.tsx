@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { FOOTER_SITEMAP } from "@/lib/nav";
 import SiteLogo from "./SiteLogo";
+import { CmsEditableText } from "./cms-edit";
+import type { CmsPageBlock, CmsCatalogSection } from "@/lib/cms";
 
 const PARTNERS = [
   "Foulées Toulouse",
@@ -10,7 +12,21 @@ const PARTNERS = [
   "Trek",
 ];
 
-export default function Footer() {
+const TAGLINE = "Nager, rouler, courir à Toulouse depuis 1992.";
+const ADDRESS = "20 chemin de Garric\n31200 Toulouse";
+
+export default function Footer({
+  footerBlocks,
+  partenairesSection,
+}: {
+  footerBlocks?: CmsPageBlock[] | null;
+  partenairesSection?: CmsCatalogSection;
+}) {
+  const infoBlock = footerBlocks?.[0];
+  const partnerNames = partenairesSection?.products.length
+    ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name }))
+    : null;
+
   return (
     <footer className="bg-toac-blue-950 text-white">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
@@ -18,14 +34,28 @@ export default function Footer() {
           <div className="mb-3 inline-block rounded-md bg-white/95 p-2">
             <SiteLogo className="h-10 w-auto" />
           </div>
-          <p className="text-sm text-white/70">
-            Nager, rouler, courir à Toulouse depuis 1992.
-          </p>
-          <p className="mt-4 text-sm text-white/70">
-            20 chemin de Garric
-            <br />
-            31200 Toulouse
-          </p>
+          {infoBlock ? (
+            <>
+              <CmsEditableText
+                as="p"
+                value={infoBlock.heading || TAGLINE}
+                target={{ kind: "block", id: infoBlock.id, field: "heading" }}
+                className="block text-sm text-white/70"
+              />
+              <CmsEditableText
+                as="p"
+                value={infoBlock.body || ADDRESS}
+                target={{ kind: "block", id: infoBlock.id, field: "body" }}
+                multiline
+                className="mt-4 block whitespace-pre-line text-sm text-white/70"
+              />
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-white/70">{TAGLINE}</p>
+              <p className="mt-4 whitespace-pre-line text-sm text-white/70">{ADDRESS}</p>
+            </>
+          )}
         </div>
 
         <div>
@@ -81,9 +111,9 @@ export default function Footer() {
             Partenaires
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
-            {PARTNERS.map((partner) => (
-              <li key={partner}>{partner}</li>
-            ))}
+            {partnerNames
+              ? partnerNames.map((p) => <li key={p.id}>{p.name}</li>)
+              : PARTNERS.map((partner) => <li key={partner}>{partner}</li>)}
           </ul>
           <Link
             href="/le-club/partenaires"

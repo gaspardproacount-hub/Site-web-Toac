@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
+import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 
 const anton = Anton({
   variable: "--font-anton",
@@ -36,18 +37,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [navBlocks, footerBlocks, cmsCatalog] = await Promise.all([
+    getCmsPageBlocks("navigation"),
+    getCmsPageBlocks("footer"),
+    getCmsCatalog(),
+  ]);
+  const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
+
   return (
     <html lang="fr" className={`${anton.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white text-toac-blue-950">
         <AuthProvider>
-          <Navbar />
+          <Navbar navBlocks={navBlocks} />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <Footer footerBlocks={footerBlocks} partenairesSection={partenairesSection} />
         </AuthProvider>
       </body>
     </html>

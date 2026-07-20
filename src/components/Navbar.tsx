@@ -1,15 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NAV_ITEMS, type NavLink } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
 import SiteLogo from "./SiteLogo";
+import { CmsEditableText } from "./cms-edit";
+import type { CmsPageBlock } from "@/lib/cms";
 
-export default function Navbar() {
+// Aplatit NAV_ITEMS (parents puis enfants, dans l'ordre d'affichage) pour faire
+// correspondre chaque libellé au bloc CMS de même position — seul le texte du
+// libellé est modifiable, le lien (href) reste toujours géré dans le code.
+function flattenLabelKeys(): string[] {
+  const keys: string[] = [];
+  for (const item of NAV_ITEMS) {
+    keys.push(item.label);
+    for (const child of item.children ?? []) {
+      keys.push(`${item.label}>${child.label}`);
+    }
+  }
+  return keys;
+}
+
+export default function Navbar({ navBlocks }: { navBlocks?: CmsPageBlock[] | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const { auth, requireAuth, logout } = useAuth();
+
+  const overrides = useMemo(() => {
+    const keys = flattenLabelKeys();
+    const map = new Map<string, CmsPageBlock>();
+    keys.forEach((key, i) => {
+      const block = navBlocks?.[i];
+      if (block) map.set(key, block);
+    });
+    return map;
+  }, [navBlocks]);
+
+  function NavLabel({ text, mapKey }: { text: string; mapKey: string }) {
+    const block = overrides.get(mapKey);
+    if (!block) return <>{text}</>;
+    return (
+      <CmsEditableText
+        as="span"
+        value={block.heading || text}
+        target={{ kind: "block", id: block.id, field: "heading" }}
+      />
+    );
+  }
 
   function handleLinkClick(
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -48,7 +86,7 @@ export default function Navbar() {
                   }
                   className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
                 >
-                  {item.label}
+                  <NavLabel text={item.label} mapKey={item.label} />
                   <svg
                     aria-hidden="true"
                     className={`h-3 w-3 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
@@ -63,7 +101,7 @@ export default function Navbar() {
                   href={item.href!}
                   className="px-3 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
                 >
-                  {item.label}
+                  <NavLabel text={item.label} mapKey={item.label} />
                 </Link>
               )}
 
@@ -77,7 +115,7 @@ export default function Navbar() {
                       className="flex items-center gap-2 px-4 py-2 text-sm text-toac-blue-950 hover:bg-toac-pink-300/30"
                     >
                       {link.protected && <span aria-hidden="true">🔒</span>}
-                      {link.label}
+                      <NavLabel text={link.label} mapKey={`${item.label}>${link.label}`} />
                     </Link>
                   ))}
                 </div>
@@ -134,7 +172,7 @@ export default function Navbar() {
                   }}
                   className="block py-2 font-medium text-toac-blue-950"
                 >
-                  {item.label}
+                  <NavLabel text={item.label} mapKey={item.label} />
                 </Link>
                 {item.children && (
                   <div className="ml-4 space-y-1 border-l border-toac-gray-200 pl-4">
@@ -146,7 +184,7 @@ export default function Navbar() {
                         className="flex items-center gap-2 py-1.5 text-sm text-toac-blue-900"
                       >
                         {link.protected && <span aria-hidden="true">🔒</span>}
-                        {link.label}
+                        <NavLabel text={link.label} mapKey={`${item.label}>${link.label}`} />
                       </Link>
                     ))}
                   </div>
