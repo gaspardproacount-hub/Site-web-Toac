@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { FOOTER_SITEMAP } from "@/lib/nav";
 import SiteLogo from "./SiteLogo";
-import { CmsEditableText } from "./cms-edit";
-import type { CmsPageBlock, CmsCatalogSection } from "@/lib/cms";
+import { CmsEditableText, CmsEditPencil } from "./cms-edit";
+import type { CmsPageBlock, CmsCatalogSection, CmsSiteSettings } from "@/lib/cms";
 
 const PARTNERS = [
   "Foulées Toulouse",
@@ -18,9 +18,11 @@ const ADDRESS = "20 chemin de Garric\n31200 Toulouse";
 export default function Footer({
   footerBlocks,
   partenairesSection,
+  socialLinks,
 }: {
   footerBlocks?: CmsPageBlock[] | null;
   partenairesSection?: CmsCatalogSection;
+  socialLinks?: CmsSiteSettings["social_links"];
 }) {
   const infoBlock = footerBlocks?.[0];
   const partnerNames = partenairesSection?.products.length
@@ -83,25 +85,27 @@ export default function Footer({
                 toac-triathlon-bureau@googlegroups.com
               </a>
             </li>
-            <li>
+            <li className="flex items-center gap-2">
               <a
-                href="https://www.instagram.com/triathlonsdulauragais"
+                href={socialLinks?.instagram || "https://www.instagram.com/triathlonsdulauragais"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white"
               >
                 Instagram @triathlonsdulauragais
               </a>
+              <CmsEditPencil payload={{ type: "edit-info-field", field: "instagram" }} />
             </li>
-            <li>
+            <li className="flex items-center gap-2">
               <a
-                href="https://www.facebook.com/"
+                href={socialLinks?.facebook || "https://www.facebook.com/"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white"
               >
                 Facebook Triathlons du Lauragais
               </a>
+              <CmsEditPencil payload={{ type: "edit-info-field", field: "facebook" }} />
             </li>
           </ul>
         </div>

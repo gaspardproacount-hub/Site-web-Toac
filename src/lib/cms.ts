@@ -24,6 +24,16 @@ export type CmsPageBlock = {
   position: number;
 };
 
+export type CmsSiteSettings = {
+  business_name: string;
+  description: string;
+  address: string;
+  phone: string;
+  email: string;
+  opening_hours: { jour: string; horaires: string }[];
+  social_links: { facebook?: string; instagram?: string; site_web?: string; reservation_url?: string };
+};
+
 export type CmsProduct = {
   id: string;
   section_id: string | null;
@@ -60,6 +70,11 @@ async function fetchFromCms<T>(table: string, query: string): Promise<T[] | null
   } catch {
     return null;
   }
+}
+
+export async function getCmsSiteSettings(): Promise<CmsSiteSettings | null> {
+  const rows = await fetchFromCms<CmsSiteSettings>("site_settings", "&select=*");
+  return rows && rows[0] ? rows[0] : null;
 }
 
 export async function getCmsCatalog(): Promise<CmsCatalogSection[] | null> {

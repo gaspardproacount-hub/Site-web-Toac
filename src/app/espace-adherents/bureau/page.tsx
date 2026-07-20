@@ -6,6 +6,8 @@ import { getMembers, DatabaseNotConfiguredError } from "@/lib/db";
 import AdminMembersTable from "@/components/AdminMembersTable";
 import DbSetupNotice from "@/components/DbSetupNotice";
 import type { Member } from "@/lib/types";
+import { getCmsPageBlocks } from "@/lib/cms";
+import { CmsEditableText } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Vue bureau — Dossiers adhérents",
@@ -30,15 +32,41 @@ export default async function BureauDossiersPage() {
     }
   }
 
+  const introBlocks = await getCmsPageBlocks("espace-bureau");
+  const introBlock = introBlocks?.[0];
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-        Vue bureau — Dossiers adhérents
-      </h1>
-      <p className="mt-4 text-toac-blue-900/80">
-        Dossiers importés du club (CSV) et nouvelles demandes d&apos;adhésion, dans la même liste. Cochez
-        les étapes au fur et à mesure — les changements sont enregistrés immédiatement.
-      </p>
+      {introBlock ? (
+        <>
+          <CmsEditableText
+            as="h1"
+            value={introBlock.heading || "Vue bureau — Dossiers adhérents"}
+            target={{ kind: "block", id: introBlock.id, field: "heading" }}
+            className="section-title block font-display text-3xl uppercase text-toac-blue-950"
+          />
+          <CmsEditableText
+            as="p"
+            value={
+              introBlock.body ||
+              "Dossiers importés du club (CSV) et nouvelles demandes d'adhésion, dans la même liste. Cochez les étapes au fur et à mesure — les changements sont enregistrés immédiatement."
+            }
+            target={{ kind: "block", id: introBlock.id, field: "body" }}
+            multiline
+            className="mt-4 block text-toac-blue-900/80"
+          />
+        </>
+      ) : (
+        <>
+          <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
+            Vue bureau — Dossiers adhérents
+          </h1>
+          <p className="mt-4 text-toac-blue-900/80">
+            Dossiers importés du club (CSV) et nouvelles demandes d&apos;adhésion, dans la même liste. Cochez
+            les étapes au fur et à mesure — les changements sont enregistrés immédiatement.
+          </p>
+        </>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link

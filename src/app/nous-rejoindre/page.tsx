@@ -19,10 +19,17 @@ const ETAPES = [
 ];
 
 export default async function NousRejoindrePage() {
-  const cmsBlocks = await getCmsPageBlocks("nous-rejoindre");
+  const [cmsBlocks, sectionBlocks] = await Promise.all([
+    getCmsPageBlocks("nous-rejoindre"),
+    getCmsPageBlocks("nous-rejoindre-sections"),
+  ]);
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
   const introBlock = cmsBlocks?.[0];
   const etapeBlocks = cmsBlocks?.slice(1) ?? [];
+  // bloc[0]=adhésion/paiement, bloc[1]=stage, bloc[2]=contact/préinscription.
+  const adhesionSectionBlock = sectionBlocks?.[0];
+  const stageSectionBlock = sectionBlocks?.[1];
+  const contactSectionBlock = sectionBlocks?.[2];
 
   return (
     <Suspense fallback={null}>
@@ -86,26 +93,72 @@ export default async function NousRejoindrePage() {
       </ol>
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="font-display text-xl uppercase text-toac-blue-950">
-          Formulaire d&apos;adhésion et paiement
-        </h2>
-        <p className="mt-2 text-sm text-toac-blue-900/70">
-          Un seul formulaire : vos informations, le tarif (plein ou réduit) et le paiement (cotisation +
-          caution de bénévolat, prélevés ensemble). Votre inscription est enregistrée immédiatement et
-          validée automatiquement dès que le paiement est confirmé.
-        </p>
+        {adhesionSectionBlock ? (
+          <>
+            <CmsEditableText
+              as="h2"
+              value={adhesionSectionBlock.heading || "Formulaire d'adhésion et paiement"}
+              target={{ kind: "block", id: adhesionSectionBlock.id, field: "heading" }}
+              className="font-display text-xl uppercase text-toac-blue-950"
+            />
+            <CmsEditableText
+              as="p"
+              value={
+                adhesionSectionBlock.body ||
+                "Un seul formulaire : vos informations, le tarif (plein ou réduit) et le paiement (cotisation + caution de bénévolat, prélevés ensemble). Votre inscription est enregistrée immédiatement et validée automatiquement dès que le paiement est confirmé."
+              }
+              target={{ kind: "block", id: adhesionSectionBlock.id, field: "body" }}
+              multiline
+              className="mt-2 block text-sm text-toac-blue-900/70"
+            />
+          </>
+        ) : (
+          <>
+            <h2 className="font-display text-xl uppercase text-toac-blue-950">
+              Formulaire d&apos;adhésion et paiement
+            </h2>
+            <p className="mt-2 text-sm text-toac-blue-900/70">
+              Un seul formulaire : vos informations, le tarif (plein ou réduit) et le paiement (cotisation +
+              caution de bénévolat, prélevés ensemble). Votre inscription est enregistrée immédiatement et
+              validée automatiquement dès que le paiement est confirmé.
+            </p>
+          </>
+        )}
         <div className="mt-6">
           <AdhesionForm />
         </div>
       </section>
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="font-display text-xl uppercase text-toac-blue-950">
-          Payer un stage (Mer, Montagne…)
-        </h2>
-        <p className="mt-2 text-sm text-toac-blue-900/70">
-          Pour un stage uniquement, sans lien avec l&apos;adhésion. Paiement sécurisé Monetico.
-        </p>
+        {stageSectionBlock ? (
+          <>
+            <CmsEditableText
+              as="h2"
+              value={stageSectionBlock.heading || "Payer un stage (Mer, Montagne…)"}
+              target={{ kind: "block", id: stageSectionBlock.id, field: "heading" }}
+              className="font-display text-xl uppercase text-toac-blue-950"
+            />
+            <CmsEditableText
+              as="p"
+              value={
+                stageSectionBlock.body ||
+                "Pour un stage uniquement, sans lien avec l'adhésion. Paiement sécurisé Monetico."
+              }
+              target={{ kind: "block", id: stageSectionBlock.id, field: "body" }}
+              multiline
+              className="mt-2 block text-sm text-toac-blue-900/70"
+            />
+          </>
+        ) : (
+          <>
+            <h2 className="font-display text-xl uppercase text-toac-blue-950">
+              Payer un stage (Mer, Montagne…)
+            </h2>
+            <p className="mt-2 text-sm text-toac-blue-900/70">
+              Pour un stage uniquement, sans lien avec l&apos;adhésion. Paiement sécurisé Monetico.
+            </p>
+          </>
+        )}
 
         <form action="/api/monetico/init" method="POST" className="mt-6 space-y-4">
           <div>
@@ -151,12 +204,32 @@ export default async function NousRejoindrePage() {
       </section>
 
       <section className="mt-14">
-        <h2 className="font-display text-xl uppercase text-toac-blue-950">
-          Contacter le bureau / préinscription
-        </h2>
-        <p className="mt-2 text-sm text-toac-blue-900/70">
-          Un formulaire simple pour prendre contact avant votre adhésion.
-        </p>
+        {contactSectionBlock ? (
+          <>
+            <CmsEditableText
+              as="h2"
+              value={contactSectionBlock.heading || "Contacter le bureau / préinscription"}
+              target={{ kind: "block", id: contactSectionBlock.id, field: "heading" }}
+              className="font-display text-xl uppercase text-toac-blue-950"
+            />
+            <CmsEditableText
+              as="p"
+              value={contactSectionBlock.body || "Un formulaire simple pour prendre contact avant votre adhésion."}
+              target={{ kind: "block", id: contactSectionBlock.id, field: "body" }}
+              multiline
+              className="mt-2 block text-sm text-toac-blue-900/70"
+            />
+          </>
+        ) : (
+          <>
+            <h2 className="font-display text-xl uppercase text-toac-blue-950">
+              Contacter le bureau / préinscription
+            </h2>
+            <p className="mt-2 text-sm text-toac-blue-900/70">
+              Un formulaire simple pour prendre contact avant votre adhésion.
+            </p>
+          </>
+        )}
         <div className="mt-6">
           <ContactForm />
         </div>

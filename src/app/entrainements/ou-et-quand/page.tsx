@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import LieuxMap from "@/components/LieuxMap";
 import { LIEUX } from "@/content/lieux";
-import { getCmsPageBlocks } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
@@ -10,20 +10,36 @@ export const metadata: Metadata = {
   description: "Carte et fiches détaillées des lieux d'entraînement du TOAC Triathlon.",
 };
 
+function parseLatLng(text: string): { lat: number; lng: number } | null {
+  const parts = text.split(",").map((p) => Number(p.trim()));
+  if (parts.length !== 2 || !parts.every((n) => Number.isFinite(n))) return null;
+  return { lat: parts[0], lng: parts[1] };
+}
+
 export default async function OuEtQuandPage() {
-  const cmsBlocks = await getCmsPageBlocks("ou-et-quand");
+  const [cmsBlocks, cmsCatalog] = await Promise.all([
+    getCmsPageBlocks("ou-et-quand"),
+    getCmsCatalog(),
+  ]);
+  const gpsSection = cmsCatalog?.find((s) => s.name === "Coordonnées GPS");
+
+  const lieuxForMap = LIEUX.map((lieu) => {
+    const override = gpsSection?.products.find((p) => p.name === lieu.nom);
+    const coords = override ? parseLatLng(override.description) : null;
+    return coords ? { ...lieu, lat: coords.lat, lng: coords.lng } : lieu;
+  });
 
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Où & Quand</h1>
       <p className="mt-2 text-sm text-toac-blue-900/60">
-        La carte reste gérée directement dans le site (coordonnées GPS) — le texte de chaque fiche ci-dessous
-        est modifiable depuis le dashboard.
+        Coordonnées GPS et texte de chaque fiche modifiables depuis le dashboard (rubrique « Coordonnées GPS »
+        du catalogue pour la position des marqueurs).
       </p>
 
       <div className="mt-8">
-        <LieuxMap lieux={LIEUX} />
+        <LieuxMap lieux={lieuxForMap} />
       </div>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">

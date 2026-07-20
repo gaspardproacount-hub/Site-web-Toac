@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Anton, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
-import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog, getCmsSiteSettings } from "@/lib/cms";
 
 const anton = Anton({
   variable: "--font-anton",
@@ -42,10 +43,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [navBlocks, footerBlocks, cmsCatalog] = await Promise.all([
+  const [navBlocks, footerBlocks, cmsCatalog, cmsSettings] = await Promise.all([
     getCmsPageBlocks("navigation"),
     getCmsPageBlocks("footer"),
     getCmsCatalog(),
+    getCmsSiteSettings(),
   ]);
   const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
 
@@ -53,9 +55,17 @@ export default async function RootLayout({
     <html lang="fr" className={`${anton.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white text-toac-blue-950">
         <AuthProvider>
-          <Navbar navBlocks={navBlocks} />
+          <Suspense fallback={null}>
+            <Navbar navBlocks={navBlocks} />
+          </Suspense>
           <main className="flex-1">{children}</main>
-          <Footer footerBlocks={footerBlocks} partenairesSection={partenairesSection} />
+          <Suspense fallback={null}>
+            <Footer
+              footerBlocks={footerBlocks}
+              partenairesSection={partenairesSection}
+              socialLinks={cmsSettings?.social_links}
+            />
+          </Suspense>
         </AuthProvider>
       </body>
     </html>

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { getMemberById, DatabaseNotConfiguredError } from "@/lib/db";
 import DossierChecklist, { dossierCompletion } from "@/components/DossierChecklist";
+import { getCmsPageBlocks } from "@/lib/cms";
+import { CmsEditableText } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Suivi de mon dossier",
@@ -28,11 +30,23 @@ export default async function DossierPage() {
     }
   }
 
+  const introBlocks = await getCmsPageBlocks("espace-dossier");
+  const introBlock = introBlocks?.[0];
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-        Suivi de mon dossier
-      </h1>
+      {introBlock ? (
+        <CmsEditableText
+          as="h1"
+          value={introBlock.heading || "Suivi de mon dossier"}
+          target={{ kind: "block", id: introBlock.id, field: "heading" }}
+          className="section-title block font-display text-3xl uppercase text-toac-blue-950"
+        />
+      ) : (
+        <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
+          Suivi de mon dossier
+        </h1>
+      )}
       <p className="mt-4 text-toac-blue-900/80">Bonjour {session.name}.</p>
 
       {session.role === "admin" && (
