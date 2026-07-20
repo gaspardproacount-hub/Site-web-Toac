@@ -5,7 +5,7 @@ import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Nos partenaires",
@@ -30,12 +30,13 @@ export default async function PartenairesPage() {
                 key={p.id}
                 className="relative overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm"
               >
-                {p.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image_url} alt={`Logo ${p.name}`} className="h-32 w-full object-cover" />
-                ) : (
-                  <div className="h-32 w-full bg-toac-gray-100" />
-                )}
+                <CmsEditableImage
+                  src={p.image_url}
+                  alt={`Logo ${p.name}`}
+                  target={{ kind: "product", id: p.id }}
+                  className="h-32 w-full bg-toac-gray-100"
+                  imgClassName="h-32 w-full object-cover"
+                />
                 <div className="p-4">
                   <CmsEditableText
                     as="div"

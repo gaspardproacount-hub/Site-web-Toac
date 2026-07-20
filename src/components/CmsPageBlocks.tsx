@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
 
 // Rend le contenu géré par le dashboard client pour une page donnée (identifiée
 // par son "slug", ex: "le-club"). Si aucun bloc n'a été créé pour cette page
@@ -26,11 +26,12 @@ export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback
         <section key={block.id} className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="relative rounded-lg">
             {block.image_url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <CmsEditableImage
                 src={block.image_url}
                 alt={block.heading}
-                className="mb-6 aspect-video w-full rounded-lg object-cover"
+                target={{ kind: "block", id: block.id }}
+                className="mb-6 aspect-video w-full overflow-hidden rounded-lg"
+                imgClassName="aspect-video w-full rounded-lg object-cover"
               />
             )}
             {block.heading && (

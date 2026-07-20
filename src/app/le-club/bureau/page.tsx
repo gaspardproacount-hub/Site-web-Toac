@@ -4,7 +4,7 @@ import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { BUREAU_2026, PRESIDENT_HONNEUR, COACHS } from "@/content/bureau";
 import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Le bureau & les coachs",
@@ -32,12 +32,13 @@ export default async function BureauPage() {
                 key={m.id}
                 className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
               >
-                {m.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.image_url} alt={m.name} className="h-14 w-14 shrink-0 rounded-full object-cover" />
-                ) : (
-                  <div className="h-14 w-14 shrink-0 rounded-full bg-toac-gray-200" />
-                )}
+                <CmsEditableImage
+                  src={m.image_url}
+                  alt={m.name}
+                  target={{ kind: "product", id: m.id }}
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
+                  imgClassName="h-14 w-14 rounded-full object-cover"
+                />
                 <div>
                   <CmsEditableText
                     as="div"
@@ -82,12 +83,13 @@ export default async function BureauPage() {
                 key={c.id}
                 className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
               >
-                {c.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.image_url} alt={c.name} className="h-14 w-14 shrink-0 rounded-full object-cover" />
-                ) : (
-                  <div className="h-14 w-14 shrink-0 rounded-full bg-toac-gray-200" />
-                )}
+                <CmsEditableImage
+                  src={c.image_url}
+                  alt={c.name}
+                  target={{ kind: "product", id: c.id }}
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
+                  imgClassName="h-14 w-14 rounded-full object-cover"
+                />
                 <div>
                   <CmsEditableText
                     as="div"

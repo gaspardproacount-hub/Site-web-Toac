@@ -6,7 +6,7 @@
 // fenêtre parente (le dashboard) qui l'enregistre en base, sans quitter l'aperçu.
 
 import { useSearchParams } from "next/navigation";
-import { createElement, type FocusEvent, type KeyboardEvent } from "react";
+import { createElement, useRef, useState, type ChangeEvent, type FocusEvent, type KeyboardEvent } from "react";
 
 export function useCmsEditMode(): boolean {
   const searchParams = useSearchParams();
@@ -75,6 +75,78 @@ export function CmsEditableText({
       className: `cms-editable ${className}`,
     },
     value
+  );
+}
+
+export type ImageTarget = { kind: "product" | "block"; id: string };
+
+/**
+ * Image modifiable directement dans l'aperçu : au clic, ouvre le sélecteur de
+ * fichiers, envoie l'image (en base64) au dashboard qui la redimensionne, la
+ * stocke et met à jour le produit/bloc concerné. Hors mode édition, rend une
+ * simple balise <img> (ou rien si aucune image).
+ */
+export function CmsEditableImage({
+  src,
+  alt,
+  target,
+  className = "",
+  imgClassName = "",
+}: {
+  src: string | null;
+  alt: string;
+  target: ImageTarget;
+  className?: string;
+  imgClassName?: string;
+}) {
+  const editMode = useCmsEditMode();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(src);
+  const [uploading, setUploading] = useState(false);
+
+  if (!editMode) {
+    return (
+      <div className={className}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {src && <img src={src} alt={alt} className={imgClassName} />}
+      </div>
+    );
+  }
+
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      setPreview(dataUrl);
+      postToDashboard({ type: "inline-image-update", target, dataUrl });
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      {preview ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={preview} alt={alt} className={imgClassName} />
+      ) : (
+        <div className={`flex items-center justify-center bg-toac-gray-100 text-xs text-toac-blue-900/50 ${imgClassName}`}>
+          Aucune image
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        aria-label="Changer l'image"
+        className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/0 text-xs font-medium text-transparent transition hover:bg-black/40 hover:text-white"
+      >
+        {uploading ? "Envoi…" : "✎ Changer l'image"}
+      </button>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+    </div>
   );
 }
 
