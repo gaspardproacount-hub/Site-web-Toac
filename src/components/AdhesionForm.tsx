@@ -6,8 +6,11 @@ import {
   LICENCE_FFTRI_TARIFS,
   ASSURANCE_TARIFS,
   CAUTION_CENTIMES,
+  type Tarif,
+  type ProfilAdherent,
   type LicenceType,
 } from "@/content/tarifs";
+import { CmsEditableText, CmsEditPencil } from "@/components/cms-edit";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
@@ -17,23 +20,51 @@ function euros(centimes: number): string {
   return `${(centimes / 100).toFixed(2).replace(".", ",")} €`;
 }
 
+const DEFAULT_CAUTION: Tarif = {
+  id: "caution-benevolat",
+  label: "Caution bénévolat (Toac) — restituée en fin de saison sous réserve d'implication dans l'organisation des Triathlons du Lauragais (6-7 juin 2026)",
+  montantCentimes: CAUTION_CENTIMES,
+};
+
 /**
  * Formulaire d'adhésion unique : informations + choix du tarif + paiement en
  * une seule étape. La soumission est une navigation classique (pas de fetch) :
  * /api/adhesion enregistre l'inscription puis renvoie la page qui redirige
  * automatiquement vers le paiement sécurisé Monetico (cotisation + caution).
+ *
+ * Les libellés des tarifs sont modifiables en ligne (texte) ; le prix se
+ * modifie via le crayon, qui ouvre le champ prix validé du dashboard —
+ * jamais en texte libre, pour éviter qu'une faute de frappe fausse le
+ * montant réellement facturé.
  */
-export default function AdhesionForm() {
+export default function AdhesionForm({
+  adhesionClubTarifs = ADHESION_CLUB_TARIFS,
+  adhesionClubIsCms = false,
+  licenceTarifs = LICENCE_FFTRI_TARIFS,
+  licenceIsCms = false,
+  assuranceTarifs = ASSURANCE_TARIFS,
+  assuranceIsCms = false,
+  caution = DEFAULT_CAUTION,
+  cautionIsCms = false,
+}: {
+  adhesionClubTarifs?: Record<ProfilAdherent, Tarif>;
+  adhesionClubIsCms?: boolean;
+  licenceTarifs?: Record<LicenceType, Tarif>;
+  licenceIsCms?: boolean;
+  assuranceTarifs?: Tarif[];
+  assuranceIsCms?: boolean;
+  caution?: Tarif;
+  cautionIsCms?: boolean;
+}) {
   const [tarifReduit, setTarifReduit] = useState<"non" | "oui">("non");
   const [licenceType, setLicenceType] = useState<LicenceType>("loisir");
-  const [assuranceId, setAssuranceId] = useState("assurance-formule-2");
+  const [assuranceId, setAssuranceId] = useState(assuranceTarifs[2]?.id ?? assuranceTarifs[0].id);
   const [sending, setSending] = useState(false);
 
-  const adhesionClub = ADHESION_CLUB_TARIFS[tarifReduit === "oui" ? "reduit" : "plein"];
-  const licenceFFTri = LICENCE_FFTRI_TARIFS[licenceType];
-  const assurance = ASSURANCE_TARIFS.find((a) => a.id === assuranceId) ?? ASSURANCE_TARIFS[0];
-  const total =
-    adhesionClub.montantCentimes + licenceFFTri.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
+  const adhesionClub = adhesionClubTarifs[tarifReduit === "oui" ? "reduit" : "plein"];
+  const licenceFFTri = licenceTarifs[licenceType];
+  const assurance = assuranceTarifs.find((a) => a.id === assuranceId) ?? assuranceTarifs[0];
+  const total = adhesionClub.montantCentimes + licenceFFTri.montantCentimes + assurance.montantCentimes + caution.montantCentimes;
 
   return (
     <form
@@ -210,12 +241,17 @@ export default function AdhesionForm() {
           onChange={(e) => setAssuranceId(e.target.value)}
           className={inputClass}
         >
-          {ASSURANCE_TARIFS.map((a) => (
+          {assuranceTarifs.map((a) => (
             <option key={a.id} value={a.id}>
-              {a.label}
+              {a.label} ({euros(a.montantCentimes)})
             </option>
           ))}
         </select>
+        {assuranceIsCms && (
+          <p className="mt-1 text-xs text-toac-blue-900/50">
+            Formules modifiables (nom, prix) depuis le dashboard → Catalogue → rubrique « Assurance FFTri ».
+          </p>
+        )}
       </div>
 
       <label className="flex items-start gap-2 text-sm text-toac-blue-900/90">
@@ -230,24 +266,74 @@ export default function AdhesionForm() {
       </div>
 
       <div className="rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4 text-sm">
-        <div className="flex justify-between text-toac-blue-900">
-          <span>{adhesionClub.label}</span>
-          <span>{euros(adhesionClub.montantCentimes)}</span>
-        </div>
-        <div className="mt-1 flex justify-between text-toac-blue-900">
-          <span>{licenceFFTri.label}</span>
-          <span>{euros(licenceFFTri.montantCentimes)}</span>
-        </div>
-        <div className="mt-1 flex justify-between text-toac-blue-900">
-          <span>{assurance.label}</span>
-          <span>{euros(assurance.montantCentimes)}</span>
-        </div>
-        <div className="mt-1 flex justify-between text-toac-blue-900">
-          <span>
-            Caution bénévolat (Toac) — restituée en fin de saison sous réserve d&apos;implication dans
-            l&apos;organisation des Triathlons du Lauragais (6-7 juin 2026)
+        <div className="flex justify-between gap-3 text-toac-blue-900">
+          {adhesionClubIsCms ? (
+            <CmsEditableText
+              as="span"
+              value={adhesionClub.label}
+              target={{ kind: "product", id: adhesionClub.id, field: "name" }}
+            />
+          ) : (
+            <span>{adhesionClub.label}</span>
+          )}
+          <span className="flex shrink-0 items-center gap-1">
+            {euros(adhesionClub.montantCentimes)}
+            {adhesionClubIsCms && (
+              <CmsEditPencil payload={{ type: "edit-product", productId: adhesionClub.id }} />
+            )}
           </span>
-          <span>{euros(CAUTION_CENTIMES)}</span>
+        </div>
+        <div className="mt-1 flex justify-between gap-3 text-toac-blue-900">
+          {licenceIsCms ? (
+            <CmsEditableText
+              as="span"
+              value={licenceFFTri.label}
+              target={{ kind: "product", id: licenceFFTri.id, field: "name" }}
+            />
+          ) : (
+            <span>{licenceFFTri.label}</span>
+          )}
+          <span className="flex shrink-0 items-center gap-1">
+            {euros(licenceFFTri.montantCentimes)}
+            {licenceIsCms && (
+              <CmsEditPencil payload={{ type: "edit-product", productId: licenceFFTri.id }} />
+            )}
+          </span>
+        </div>
+        <div className="mt-1 flex justify-between gap-3 text-toac-blue-900">
+          {assuranceIsCms ? (
+            <CmsEditableText
+              as="span"
+              value={assurance.label}
+              target={{ kind: "product", id: assurance.id, field: "name" }}
+            />
+          ) : (
+            <span>{assurance.label}</span>
+          )}
+          <span className="flex shrink-0 items-center gap-1">
+            {euros(assurance.montantCentimes)}
+            {assuranceIsCms && (
+              <CmsEditPencil payload={{ type: "edit-product", productId: assurance.id }} />
+            )}
+          </span>
+        </div>
+        <div className="mt-1 flex justify-between gap-3 text-toac-blue-900">
+          {cautionIsCms ? (
+            <CmsEditableText
+              as="span"
+              value={caution.label}
+              target={{ kind: "product", id: caution.id, field: "name" }}
+              multiline
+            />
+          ) : (
+            <span>{caution.label}</span>
+          )}
+          <span className="flex shrink-0 items-center gap-1">
+            {euros(caution.montantCentimes)}
+            {cautionIsCms && (
+              <CmsEditPencil payload={{ type: "edit-product", productId: caution.id }} />
+            )}
+          </span>
         </div>
         <div className="mt-2 flex justify-between border-t border-toac-gray-200 pt-2 font-medium text-toac-blue-950">
           <span>Total à régler</span>

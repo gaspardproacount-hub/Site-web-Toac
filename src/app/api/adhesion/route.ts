@@ -3,13 +3,8 @@ import type { NextRequest } from "next/server";
 import { put, BlobError } from "@vercel/blob";
 import { insertInscription, DatabaseNotConfiguredError } from "@/lib/db";
 import { buildPaymentForm, buildAutoSubmitHtml, buildErrorHtml } from "@/lib/monetico";
-import {
-  ADHESION_CLUB_TARIFS,
-  LICENCE_FFTRI_TARIFS,
-  ASSURANCE_TARIFS,
-  CAUTION_CENTIMES,
-  type LicenceType,
-} from "@/content/tarifs";
+import { resolveTarifs } from "@/lib/tarifs-cms";
+import type { LicenceType } from "@/content/tarifs";
 
 /**
  * Formulaire d'adhésion en ligne, unique : inscription + paiement (cotisation
@@ -50,7 +45,13 @@ export async function POST(request: NextRequest) {
   const tarifReduitDemande = form.get("tarifReduit") === "oui";
   const licenceType: LicenceType = form.get("licenceType") === "competition" ? "competition" : "loisir";
   const justificatifFile = form.get("justificatif");
-  const assurance = ASSURANCE_TARIFS.find((a) => a.id === form.get("assurance"));
+
+  // Le montant est TOUJOURS recalculé ici à partir des tarifs actuels
+  // (CMS si configurés, sinon statiques) — jamais depuis une valeur envoyée
+  // par le client, pour que le prix facturé soit fiable même si les tarifs
+  // ont changé entre l'affichage de la page et la soumission du formulaire.
+  const tarifs = await resolveTarifs();
+  const assurance = tarifs.assurance.find((a) => a.id === form.get("assurance"));
 
   if (!prenom || !nom || !email) {
     return htmlError("Prénom, nom et email sont requis.");
@@ -112,10 +113,10 @@ export async function POST(request: NextRequest) {
     return htmlError("Une erreur est survenue. Réessayez plus tard.");
   }
 
-  const adhesionClub = ADHESION_CLUB_TARIFS[tarifReduitDemande ? "reduit" : "plein"];
-  const licenceFFTri = LICENCE_FFTRI_TARIFS[licenceType];
+  const adhesionClub = tarifs.adhesionClub[tarifReduitDemande ? "reduit" : "plein"];
+  const licenceFFTri = tarifs.licenceFFTri[licenceType];
   const montantCentimes =
-    adhesionClub.montantCentimes + licenceFFTri.montantCentimes + assurance.montantCentimes + CAUTION_CENTIMES;
+    adhesionClub.montantCentimes + licenceFFTri.montantCentimes + assurance.montantCentimes + tarifs.caution.montantCentimes;
   const reference = `TOAC-I${inscriptionId}-${Date.now()}`;
 
   let payment: ReturnType<typeof buildPaymentForm>;
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       montantCentimes,
       reference,
       email,
-      texteLibre: `${adhesionClub.label} + ${licenceFFTri.label} + ${assurance.label} + Caution bénévolat (Toac)`,
+      texteLibre: `${adhesionClub.label} + ${licenceFFTri.label} + ${assurance.label} + ${tarifs.caution.label}`,
     });
   } catch (error) {
     console.error("Configuration Monetico manquante :", error);

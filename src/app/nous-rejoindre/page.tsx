@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import ContactForm from "@/components/ContactForm";
 import AdhesionForm from "@/components/AdhesionForm";
-import { STAGE_TARIFS } from "@/content/tarifs";
-import { getCmsPageBlocks } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
+import { resolveTarifsFromCatalog } from "@/lib/tarifs-cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
@@ -19,9 +19,10 @@ const ETAPES = [
 ];
 
 export default async function NousRejoindrePage() {
-  const [cmsBlocks, sectionBlocks] = await Promise.all([
+  const [cmsBlocks, sectionBlocks, cmsCatalog] = await Promise.all([
     getCmsPageBlocks("nous-rejoindre"),
     getCmsPageBlocks("nous-rejoindre-sections"),
+    getCmsCatalog(),
   ]);
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
   const introBlock = cmsBlocks?.[0];
@@ -30,6 +31,9 @@ export default async function NousRejoindrePage() {
   const adhesionSectionBlock = sectionBlocks?.[0];
   const stageSectionBlock = sectionBlocks?.[1];
   const contactSectionBlock = sectionBlocks?.[2];
+
+  const tarifs = resolveTarifsFromCatalog(cmsCatalog);
+  const stagesSection = cmsCatalog?.find((s) => s.name === "Stages");
 
   return (
     <Suspense fallback={null}>
@@ -125,7 +129,16 @@ export default async function NousRejoindrePage() {
           </>
         )}
         <div className="mt-6">
-          <AdhesionForm />
+          <AdhesionForm
+            adhesionClubTarifs={tarifs.adhesionClub}
+            adhesionClubIsCms={tarifs.adhesionClubIsCms}
+            licenceTarifs={tarifs.licenceFFTri}
+            licenceIsCms={tarifs.licenceFFTriIsCms}
+            assuranceTarifs={tarifs.assurance}
+            assuranceIsCms={tarifs.assuranceIsCms}
+            caution={tarifs.caution}
+            cautionIsCms={tarifs.cautionIsCms}
+          />
         </div>
       </section>
 
@@ -183,12 +196,22 @@ export default async function NousRejoindrePage() {
               required
               className="w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
             >
-              {STAGE_TARIFS.map((t) => (
+              {tarifs.stages.map((t) => (
                 <option key={t.id} value={t.montantCentimes}>
-                  {t.label}
+                  {t.label} ({(t.montantCentimes / 100).toFixed(2).replace(".", ",")} €)
                 </option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-toac-blue-900/50">
+              Nom et prix modifiables, et de nouveaux stages ajoutables à tout moment, depuis le dashboard →
+              Catalogue → rubrique « Stages ».
+            </p>
+            <div className="mt-2">
+              <CmsAddTile
+                payload={{ type: "add-product", sectionId: stagesSection?.id }}
+                label="+ Ajouter un stage"
+              />
+            </div>
           </div>
           <button
             type="submit"
