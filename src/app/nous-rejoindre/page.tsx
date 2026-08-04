@@ -5,6 +5,7 @@ import AdhesionForm from "@/components/AdhesionForm";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 import { resolveTarifsFromCatalog } from "@/lib/tarifs-cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import EtapeAccordionItem from "@/components/EtapeAccordionItem";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -71,17 +72,7 @@ export default async function NousRejoindrePage() {
       <ol className="mt-10 space-y-4">
         {etapeBlocks.length
           ? etapeBlocks.map((block, i) => (
-              <li key={block.id} className="flex items-start gap-4">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-toac-blue-950 font-display text-sm text-toac-pink-400">
-                  {i + 1}
-                </span>
-                <CmsEditableText
-                  as="span"
-                  value={block.heading}
-                  target={{ kind: "block", id: block.id, field: "heading" }}
-                  className="flex-1 pt-1 text-toac-blue-900/90"
-                />
-              </li>
+              <EtapeAccordionItem key={block.id} index={i} block={block} />
             ))
           : ETAPES.map((etape, i) => (
               <li key={etape} className="flex items-start gap-4">
