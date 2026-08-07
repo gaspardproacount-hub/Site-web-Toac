@@ -130,14 +130,48 @@ export default async function NousRejoindrePage() {
           Une fois votre pré-inscription validée par le club, la suite se passe en 5 étapes :
         </p>
         <ol className="mt-4 list-decimal space-y-2 pl-5">
-          <li>Vous payez votre part club (lien de paiement transmis par le bureau).</li>
+          <li>
+            Vous payez votre part club via le{" "}
+            <a
+              href="https://www.payasso.fr/toac-triathlon/inscription-2025-2026"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-toac-blue-700 underline"
+            >
+              lien de paiement PayAsso
+            </a>{" "}
+            (si c&apos;est déjà fait, ne tenez pas compte de cette étape).
+          </li>
           <li>
             Vous transmettez votre chèque de caution à Nicolas Verdeyme (par courrier/boîte aux lettres ou en
-            main propre à un membre du bureau).
+            main propre à un membre du bureau) : 72, chemin de Tournefeuille, 31300 Toulouse.
           </li>
-          <li>Vous demandez votre licence 25/26 sur le site FFTRI (lien transmis par email par le club).</li>
+          <li>
+            Vous demandez votre licence 25/26 sur le site FFTRI via{" "}
+            <a
+              href="https://espacetri.fftri.com/users/license/account-registration"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-toac-blue-700 underline"
+            >
+              ce lien
+            </a>{" "}
+            (nous vous enverrons un email dès que cette action sera possible — ajoutez votre photo dans votre
+            espace FFTRI et sélectionnez le paiement par CB).
+          </li>
           <li>Le TOAC Triathlon valide votre demande.</li>
-          <li>Vous payez votre part fédération sur le site FFTRI.</li>
+          <li>
+            Vous payez votre part fédération sur le site FFTRI via{" "}
+            <a
+              href="https://espacetri.fftri.com/users/license/account-registration"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-toac-blue-700 underline"
+            >
+              ce lien
+            </a>
+            .
+          </li>
         </ol>
       </section>
 
