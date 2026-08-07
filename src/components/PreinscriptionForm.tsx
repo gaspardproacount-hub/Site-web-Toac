@@ -132,6 +132,16 @@ export default function PreinscriptionForm() {
         <legend className={legendClass}>
           J&apos;ai pris connaissance du règlement intérieur et je l&apos;accepte
         </legend>
+        <p className="mb-2 text-xs">
+          <a
+            href="https://drive.google.com/file/d/16DrDVEWcMUqFdzFhO0hIYJy4gp9Hc1h2/view?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-toac-blue-700 underline"
+          >
+            Règlement 2025-2026
+          </a>
+        </p>
         <label className={radioRowClass}>
           <input type="checkbox" name="reglementAccepte" required className="mt-1" />
           J&apos;accepte le règlement intérieur du club
