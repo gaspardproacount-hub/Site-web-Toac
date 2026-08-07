@@ -6,11 +6,56 @@
 // fenêtre parente (le dashboard) qui l'enregistre en base, sans quitter l'aperçu.
 
 import { useSearchParams } from "next/navigation";
-import { createElement, useRef, useState, type ChangeEvent, type FocusEvent, type KeyboardEvent } from "react";
+import {
+  createElement,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 
 export function useCmsEditMode(): boolean {
   const searchParams = useSearchParams();
   return searchParams.get("cms_edit") === "1";
+}
+
+// Permet d'insérer des liens cliquables dans un texte CMS avec la syntaxe
+// Markdown [texte du lien](/nous-rejoindre) — sans avoir besoin d'un éditeur
+// riche. Un lien commençant par http(s) s'ouvre dans un nouvel onglet.
+const LINK_PATTERN = /\[([^\]]+)\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g;
+
+export function linkifyText(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  LINK_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = LINK_PATTERN.exec(text))) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const [, label, href] = match;
+    const external = href.startsWith("http");
+    parts.push(
+      createElement(
+        "a",
+        {
+          key: `link-${key++}`,
+          href,
+          className: "underline decoration-1 underline-offset-2 hover:text-toac-pink-500",
+          ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
+        },
+        label
+      )
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
 }
 
 export function postToDashboard(payload: Record<string, unknown>) {
@@ -39,7 +84,7 @@ export function CmsEditableText({
   const editMode = useCmsEditMode();
 
   if (!editMode) {
-    return createElement(as, { className }, value);
+    return createElement(as, { className }, multiline ? linkifyText(value) : value);
   }
 
   function handleBlur(e: FocusEvent<HTMLElement>) {

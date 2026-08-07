@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FAQ_CATEGORIES, FAQ_ITEMS } from "@/content/faq";
-import { CmsEditableText } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile, linkifyText } from "@/components/cms-edit";
 
 type FaqItem = { id: string; categorie: string; question: string; reponse: string };
 
@@ -92,7 +92,7 @@ function AccordionItem({
               className="faq-panel-inner block pb-4 text-sm text-toac-blue-900/80"
             />
           ) : (
-            <p className="faq-panel-inner pb-4 text-sm text-toac-blue-900/80">{item.reponse}</p>
+            <p className="faq-panel-inner pb-4 text-sm text-toac-blue-900/80">{linkifyText(item.reponse)}</p>
           )}
         </div>
       </div>
@@ -104,10 +104,12 @@ export default function FaqAccordion({
   categories = FAQ_CATEGORIES,
   items = FAQ_ITEMS,
   editable = false,
+  categorySectionIds,
 }: {
   categories?: string[];
   items?: FaqItem[];
   editable?: boolean;
+  categorySectionIds?: Record<string, string>;
 }) {
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -178,6 +180,14 @@ export default function FaqAccordion({
                 />
               ))}
             </div>
+            {editable && (
+              <div className="mt-3">
+                <CmsAddTile
+                  payload={{ type: "add-product", sectionId: categorySectionIds?.[group.categorie] }}
+                  label="+ Ajouter une question dans cette catégorie"
+                />
+              </div>
+            )}
           </section>
         ))}
       </div>
