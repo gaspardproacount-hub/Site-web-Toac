@@ -105,6 +105,15 @@ export default function PreinscriptionForm() {
         <p className="mb-2 text-xs text-toac-blue-900/60">
           Logistique : vendredi 5 juin 2026 · Épreuves courtes distances : samedi 6 juin 2026 · Épreuves
           longues distances : dimanche 7 juin 2026 · Logistique : lundi 8 juin 2026
+          <br />
+          <a
+            href="https://drive.google.com/file/d/1xBHY7xm8kkfHkMQonYpL7XUcJkpvc3wZ/view?usp=drive_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-toac-blue-700 underline"
+          >
+            + d&apos;infos
+          </a>
         </p>
         <div className="space-y-2">
           <label className={radioRowClass}>
