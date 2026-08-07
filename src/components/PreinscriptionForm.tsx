@@ -217,6 +217,26 @@ export default function PreinscriptionForm() {
 
       <fieldset className={fieldsetClass}>
         <legend className={legendClass}>Stage Argelès : 03/04/26 - 07/04/26</legend>
+        <p className="mb-2 text-xs text-toac-blue-900/60">
+          <a
+            href="https://www.campingledauphin.com/evenements/club-de-triathlon/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-toac-blue-700 underline"
+          >
+            + d&apos;infos via ce lien
+          </a>
+          <br />
+          Infos complémentaires P15 dans la{" "}
+          <a
+            href="https://drive.google.com/drive/u/0/folders/18xwJoGyyVTNsBDfNF025PJbJ2TfSuwpq"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-toac-blue-700 underline"
+          >
+            présentation de la réunion de rentrée
+          </a>
+        </p>
         <div className="space-y-2">
           {STAGE_OPTIONS.map((o) => (
             <label key={o.value} className={radioRowClass}>
