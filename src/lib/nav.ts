@@ -33,15 +33,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Triathlons du Lauragais", href: "/triathlons-du-lauragais" },
   { label: "FAQ", href: "/faq" },
   { label: "Nous rejoindre", href: "/nous-rejoindre" },
-  {
-    label: "Espace Adhérents",
-    href: "/espace-adherents/dossier",
-    children: [
-      { label: "Suivi de mon dossier", href: "/espace-adherents/dossier", protected: true },
-      { label: "Documents & infos internes", href: "/espace-adherents/documents", protected: true },
-      { label: "Avantages partenaires", href: "/espace-adherents/avantages", protected: true },
-    ],
-  },
   { label: "Contact", href: "/contact" },
 ];
 

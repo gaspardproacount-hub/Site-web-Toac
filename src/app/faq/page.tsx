@@ -26,6 +26,9 @@ export default async function FaqPage() {
         }))
       )
     : undefined;
+  const categorySectionIds = faqSections.length
+    ? Object.fromEntries(faqSections.map((s) => [s.name.slice(FAQ_PREFIX.length), s.id]))
+    : undefined;
 
   return (
     <Suspense fallback={null}>
@@ -45,7 +48,12 @@ export default async function FaqPage() {
         }
       />
       <div className="mt-8">
-        <FaqAccordion categories={categories} items={items} editable={faqSections.length > 0} />
+        <FaqAccordion
+          categories={categories}
+          items={items}
+          editable={faqSections.length > 0}
+          categorySectionIds={categorySectionIds}
+        />
       </div>
     </div>
     </Suspense>

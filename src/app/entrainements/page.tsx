@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import {
   PLANNING,
-  CRENEAUX_LIBRES,
   DISCIPLINE_LABELS,
   DISCIPLINE_COLORS,
   JOURS_ORDER,
@@ -33,7 +32,6 @@ export default async function EntrainementsPage() {
   const cmsCatalog = await getCmsCatalog();
   const planningSections = cmsCatalog?.filter((s) => s.name.startsWith(PLANNING_PREFIX)) ?? [];
   const cmsJours = planningSections.filter((s) => s.name.slice(PLANNING_PREFIX.length) !== "Libre");
-  const cmsLibre = planningSections.find((s) => s.name.slice(PLANNING_PREFIX.length) === "Libre");
 
   const parJour = JOURS_ORDER.map((jour) => ({
     jour,
@@ -128,39 +126,6 @@ export default async function EntrainementsPage() {
         la sécurité du groupe est en jeu. La musculation nécessite une décharge signée, téléchargeable dans
         l'espace adhérents.
       </div>
-
-      <h2 className="mt-14 font-display text-xl uppercase text-toac-blue-950">
-        Entraînement libre (non encadré)
-      </h2>
-      <ul className="mt-4 space-y-3">
-        {cmsLibre
-          ? cmsLibre.products.map((c) => (
-              <li key={c.id} className="rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <CmsEditableText
-                  as="div"
-                  value={c.name}
-                  target={{ kind: "product", id: c.id, field: "name" }}
-                  className="font-medium text-toac-blue-950"
-                />
-                <CmsEditableText
-                  as="div"
-                  value={c.description}
-                  target={{ kind: "product", id: c.id, field: "description" }}
-                  multiline
-                  className="mt-1 block text-sm text-toac-blue-900/70"
-                />
-              </li>
-            ))
-          : CRENEAUX_LIBRES.map((c, i) => (
-              <li key={i} className="rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <div className="font-medium text-toac-blue-950">{c.lieu}</div>
-                <div className="text-sm text-toac-blue-900/70">{c.detail}</div>
-              </li>
-            ))}
-        <li>
-          <CmsAddTile payload={{ type: "add-product", sectionId: cmsLibre?.id }} label="+ Ajouter un créneau libre" />
-        </li>
-      </ul>
     </div>
     </Suspense>
   );

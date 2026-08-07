@@ -13,8 +13,8 @@ const TOAC_LIEU = {
   id: "toac-siege",
   nom: "TOAC Triathlon",
   adresse: "20 chemin de Garric, 31200 Toulouse",
-  lat: 43.5804,
-  lng: 1.4372,
+  lat: 43.621621,
+  lng: 1.409115,
   disciplines: [],
   creneaux: "",
 };

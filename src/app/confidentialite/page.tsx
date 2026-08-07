@@ -27,15 +27,6 @@ export default function ConfidentialitePage() {
               </p>
             </section>
             <section>
-              <h2 className="font-display text-base uppercase text-toac-blue-950">Espace adhérents</h2>
-              <p className="mt-2">
-                L'espace adhérents est protégé par une authentification côté serveur (identifiant et mot de passe
-                transmis par le bureau). Les données personnelles des adhérents ne sont jamais exposées dans le
-                code du site accessible publiquement : elles sont stockées côté serveur et servies uniquement après
-                vérification de la session.
-              </p>
-            </section>
-            <section>
               <h2 className="font-display text-base uppercase text-toac-blue-950">Partage avec les partenaires</h2>
               <p className="mt-2">
                 Certains avantages partenaires (ex. Alltricks) nécessitent la transmission de votre email au

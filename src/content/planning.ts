@@ -1,4 +1,4 @@
-export type Discipline = "natation" | "velo" | "course" | "muscu" | "libre";
+export type Discipline = "natation" | "velo" | "course" | "muscu";
 
 export interface Creneau {
   jour: string;
@@ -13,7 +13,6 @@ export const DISCIPLINE_LABELS: Record<Discipline, string> = {
   velo: "Vélo",
   course: "Course à pied",
   muscu: "Musculation",
-  libre: "Libre (non encadré)",
 };
 
 export const DISCIPLINE_COLORS: Record<Discipline, string> = {
@@ -21,7 +20,6 @@ export const DISCIPLINE_COLORS: Record<Discipline, string> = {
   velo: "bg-orange-100 text-orange-800 border-orange-300",
   course: "bg-green-100 text-green-800 border-green-300",
   muscu: "bg-purple-100 text-purple-800 border-purple-300",
-  libre: "bg-toac-gray-100 text-toac-blue-900 border-toac-gray-200",
 };
 
 export const PLANNING: Creneau[] = [
@@ -40,11 +38,6 @@ export const PLANNING: Creneau[] = [
   { jour: "Vendredi", heure: "20h00", discipline: "muscu", lieu: "TOAC", detail: "Décharge signée requise" },
   { jour: "Samedi", heure: "8h50", discipline: "velo", lieu: "Site du TOAC", detail: "Encadré par des bénévoles · casque obligatoire" },
   { jour: "Samedi", heure: "9h30", discipline: "muscu", lieu: "TOAC", detail: "Décharge signée requise" },
-];
-
-export const CRENEAUX_LIBRES: Creneau[] = [
-  { jour: "Libre", heure: "—", discipline: "libre", lieu: "Lac de La Ramée", detail: "Natation libre, non encadrée par le TOAC" },
-  { jour: "Libre", heure: "—", discipline: "libre", lieu: "Pont de la Croix de Pierre, allée Fernand Jourdant (Toulouse)", detail: "Natation libre, non encadrée par le TOAC" },
 ];
 
 export const JOURS_ORDER = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
