@@ -8,7 +8,7 @@ import {
 } from "@/content/planning";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
-import { getCmsCatalog } from "@/lib/cms";
+import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
 
 export const metadata: Metadata = {
   title: "Planning des entraînements",
@@ -28,8 +28,16 @@ function guessCreneauColor(text: string): string {
   return DEFAULT_CRENEAU_COLOR;
 }
 
+const DEFAULT_NOTICE =
+  "**Casque strictement obligatoire** en sortie vélo — le coach peut refuser un adhérent si la sécurité " +
+  "du groupe est en jeu. La musculation nécessite une décharge signée, téléchargeable dans l'espace adhérents.";
+
 export default async function EntrainementsPage() {
-  const cmsCatalog = await getCmsCatalog();
+  const [cmsCatalog, sectionBlocks] = await Promise.all([
+    getCmsCatalog(),
+    getCmsPageBlocks("entrainements-sections"),
+  ]);
+  const noticeBlock = sectionBlocks?.[0];
   const planningSections = cmsCatalog?.filter((s) => s.name.startsWith(PLANNING_PREFIX)) ?? [];
   const cmsJours = planningSections.filter((s) => s.name.slice(PLANNING_PREFIX.length) !== "Libre");
 
@@ -122,9 +130,20 @@ export default async function EntrainementsPage() {
       )}
 
       <div className="mt-10 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-5 text-sm text-toac-blue-900">
-        <strong>Casque strictement obligatoire</strong> en sortie vélo — le coach peut refuser un adhérent si
-        la sécurité du groupe est en jeu. La musculation nécessite une décharge signée, téléchargeable dans
-        l'espace adhérents.
+        {noticeBlock ? (
+          <CmsEditableText
+            as="div"
+            value={noticeBlock.body || DEFAULT_NOTICE}
+            target={{ kind: "block", id: noticeBlock.id, field: "body" }}
+            multiline
+          />
+        ) : (
+          <>
+            <strong>Casque strictement obligatoire</strong> en sortie vélo — le coach peut refuser un
+            adhérent si la sécurité du groupe est en jeu. La musculation nécessite une décharge signée,
+            téléchargeable dans l&apos;espace adhérents.
+          </>
+        )}
       </div>
     </div>
     </Suspense>
