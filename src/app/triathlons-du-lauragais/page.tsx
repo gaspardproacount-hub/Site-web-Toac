@@ -62,10 +62,12 @@ export default async function TriathlonsDuLauragaisPage() {
           )}
           <div className="mt-8 flex flex-wrap gap-4">
             <a
-              href="#" // URL_INSCRIPTION_TDL — à compléter
+              href="https://half.toac-triathlon.com/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400"
             >
-              S'inscrire à la course
+              S&apos;inscrire à la course
             </a>
             <a
               href="https://www.instagram.com/triathlonsdulauragais"
