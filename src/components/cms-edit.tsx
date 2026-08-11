@@ -21,11 +21,34 @@ export function useCmsEditMode(): boolean {
   return searchParams.get("cms_edit") === "1";
 }
 
-// Permet d'insérer des liens cliquables dans un texte CMS avec la syntaxe
-// Markdown [texte du lien](/nous-rejoindre) — sans avoir besoin d'un éditeur
-// riche. Un lien commençant par http(s) s'ouvre dans un nouvel onglet.
+// Mise en forme légère façon Markdown dans les textes CMS, sans éditeur
+// riche : [texte du lien](/nous-rejoindre) pour un lien, **texte** pour du
+// gras, une ligne commençant par "- " pour une puce de liste. Le dashboard
+// Devanture (LinkableTextarea) propose des boutons qui écrivent cette
+// syntaxe automatiquement — inutile de la taper à la main.
 const LINK_PATTERN = /\[([^\]]+)\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g;
+const BOLD_PATTERN = /\*\*([^*]+)\*\*/g;
 
+function parseBold(text: string, keyPrefix: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  BOLD_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = BOLD_PATTERN.exec(text))) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(createElement("strong", { key: `${keyPrefix}-b-${key++}` }, match[1]));
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return parts;
+}
+
+/** Applique liens + gras sur une seule ligne de texte (pas de saut de ligne). */
 export function linkifyText(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
@@ -34,7 +57,7 @@ export function linkifyText(text: string): ReactNode[] {
   let match: RegExpExecArray | null;
   while ((match = LINK_PATTERN.exec(text))) {
     if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
+      parts.push(...parseBold(text.slice(lastIndex, match.index), `l${key}`));
     }
     const [, label, href] = match;
     const external = href.startsWith("http");
@@ -53,9 +76,54 @@ export function linkifyText(text: string): ReactNode[] {
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+    parts.push(...parseBold(text.slice(lastIndex), `l${key}`));
   }
   return parts;
+}
+
+/**
+ * Comme linkifyText, mais gère aussi les listes à puces (lignes commençant
+ * par "- " ou "• ", regroupées en <ul>) et les sauts de ligne entre
+ * paragraphes. Toujours rendu dans un conteneur bloc (jamais un <p>, un <ul>
+ * n'y serait pas valide) — voir CmsEditableText, qui force `as="div"` dès
+ * que multiline est activé.
+ */
+export function renderRichText(text: string): ReactNode[] {
+  const lines = text.split("\n");
+  const blocks: ReactNode[] = [];
+  let listBuffer: string[] = [];
+  let key = 0;
+  let needsBreakBeforeNextLine = false;
+
+  function flushList() {
+    if (!listBuffer.length) return;
+    blocks.push(
+      createElement(
+        "ul",
+        { key: `ul-${key++}`, className: "my-2 list-disc space-y-1 pl-5" },
+        listBuffer.map((item, i) => createElement("li", { key: i }, linkifyText(item)))
+      )
+    );
+    listBuffer = [];
+    needsBreakBeforeNextLine = false;
+  }
+
+  for (const line of lines) {
+    const bulletMatch = /^\s*[-•]\s+(.*)/.exec(line);
+    if (bulletMatch) {
+      listBuffer.push(bulletMatch[1]);
+      continue;
+    }
+    flushList();
+    if (needsBreakBeforeNextLine) {
+      blocks.push(createElement("br", { key: `br-${key++}` }));
+    }
+    blocks.push(...linkifyText(line));
+    needsBreakBeforeNextLine = true;
+  }
+  flushList();
+
+  return blocks;
 }
 
 export function postToDashboard(payload: Record<string, unknown>) {
@@ -82,9 +150,12 @@ export function CmsEditableText({
   multiline?: boolean;
 }) {
   const editMode = useCmsEditMode();
+  // Un <ul> (liste à puces) n'est pas un contenu valide dans un <p> : dès que
+  // multiline est activé, on rend toujours un <div>, quel que soit `as`.
+  const tag = multiline && as === "p" ? "div" : as;
 
   if (!editMode) {
-    return createElement(as, { className }, multiline ? linkifyText(value) : value);
+    return createElement(tag, { className }, multiline ? renderRichText(value) : value);
   }
 
   function handleBlur(e: FocusEvent<HTMLElement>) {
@@ -111,7 +182,7 @@ export function CmsEditableText({
   }
 
   return createElement(
-    as,
+    tag,
     {
       contentEditable: true,
       suppressContentEditableWarning: true,

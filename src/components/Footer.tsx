@@ -19,11 +19,14 @@ export default function Footer({
   footerBlocks,
   partenairesSection,
   socialLinks,
+  email,
 }: {
   footerBlocks?: CmsPageBlock[] | null;
   partenairesSection?: CmsCatalogSection;
   socialLinks?: CmsSiteSettings["social_links"];
+  email?: string;
 }) {
+  const contactEmail = email || "toac-triathlon-bureau@googlegroups.com";
   const infoBlock = footerBlocks?.[0];
   const partnerNames = partenairesSection?.products.length
     ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name }))
@@ -80,10 +83,11 @@ export default function Footer({
             Contact
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
-            <li>
-              <a href="mailto:toac-triathlon-bureau@googlegroups.com" className="hover:text-white">
-                toac-triathlon-bureau@googlegroups.com
+            <li className="flex items-center gap-2">
+              <a href={`mailto:${contactEmail}`} className="hover:text-white">
+                {contactEmail}
               </a>
+              <CmsEditPencil payload={{ type: "edit-info-field", field: "email" }} />
             </li>
             <li className="flex items-center gap-2">
               <a

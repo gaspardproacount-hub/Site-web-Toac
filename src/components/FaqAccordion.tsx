@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { FAQ_CATEGORIES, FAQ_ITEMS } from "@/content/faq";
-import { CmsEditableText, CmsAddTile, linkifyText } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile, renderRichText } from "@/components/cms-edit";
 
 type FaqItem = { id: string; categorie: string; question: string; reponse: string };
 
@@ -92,7 +92,9 @@ function AccordionItem({
               className="faq-panel-inner block pb-4 text-sm text-toac-blue-900/80"
             />
           ) : (
-            <p className="faq-panel-inner pb-4 text-sm text-toac-blue-900/80">{linkifyText(item.reponse)}</p>
+            <div className="faq-panel-inner block pb-4 text-sm text-toac-blue-900/80">
+              {renderRichText(item.reponse)}
+            </div>
           )}
         </div>
       </div>
