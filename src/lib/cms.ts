@@ -42,6 +42,7 @@ export type CmsProduct = {
   description: string;
   price: number | null;
   image_url: string | null;
+  url: string | null;
   position: number;
 };
 

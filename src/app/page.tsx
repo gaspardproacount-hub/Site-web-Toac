@@ -5,7 +5,9 @@ import InstagramFeed from "@/components/InstagramFeed";
 import { ACTUALITES } from "@/content/actualites";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsPartnerName, CmsAddTile } from "@/components/cms-edit";
+import { slugify } from "@/lib/slug";
+import HorizontalScroller from "@/components/HorizontalScroller";
 
 const STATS = [
   { value: "1992", label: "Année de fondation" },
@@ -232,28 +234,52 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="text-center font-display text-sm uppercase tracking-wide text-toac-blue-900/60">
-          Ils nous soutiennent
+        <h2 className="section-title text-center font-display text-2xl uppercase text-toac-blue-950 sm:text-3xl">
+          Nos partenaires
         </h2>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-          {partenairesSection || institutionnelsSection
-            ? [
-                ...(partenairesSection?.products.map((p) => ({ id: p.id, name: p.name })) ?? []),
-                ...(institutionnelsSection?.products.map((p) => ({ id: p.id, name: p.name })) ?? []),
-              ].map((p) => (
-                <CmsEditableText
-                  key={p.id}
-                  as="span"
-                  value={p.name}
-                  target={{ kind: "product", id: p.id, field: "name" }}
-                  className="font-display text-sm uppercase text-toac-blue-900/50"
-                />
-              ))
-            : [...PARTENAIRES.map((p) => p.name), ...PARTENAIRES_INSTITUTIONNELS].map((name) => (
-                <span key={name} className="font-display text-sm uppercase text-toac-blue-900/50">
-                  {name}
-                </span>
-              ))}
+        <div className="mt-8">
+          <HorizontalScroller>
+            {partenairesSection || institutionnelsSection
+              ? [
+                  ...(partenairesSection?.products ?? []),
+                  ...(institutionnelsSection?.products ?? []),
+                ].map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex w-40 shrink-0 snap-start flex-col items-center gap-3 rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm"
+                  >
+                    <CmsEditableImage
+                      src={p.image_url}
+                      alt={`Logo ${p.name}`}
+                      target={{ kind: "product", id: p.id }}
+                      className="flex h-16 w-full items-center justify-center"
+                      imgClassName="max-h-16 w-full object-contain"
+                    />
+                    <CmsPartnerName
+                      as="span"
+                      value={p.name}
+                      url={p.url}
+                      target={{ kind: "product", id: p.id, field: "name" }}
+                      className="text-center font-display text-sm uppercase text-toac-blue-900/70 hover:text-toac-blue-950"
+                    />
+                  </div>
+                ))
+              : [...PARTENAIRES, ...PARTENAIRES_INSTITUTIONNELS.map((name) => ({ name }))].map((p) => (
+                  <div
+                    key={p.name}
+                    className="flex w-40 shrink-0 snap-start flex-col items-center gap-3 rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm"
+                  >
+                    <SiteImage
+                      name={`partenaire-${slugify(p.name)}`}
+                      label={`Logo ${p.name}`}
+                      className="h-16 w-full"
+                    />
+                    <span className="text-center font-display text-sm uppercase text-toac-blue-900/70">
+                      {p.name}
+                    </span>
+                  </div>
+                ))}
+          </HorizontalScroller>
         </div>
       </section>
     </>

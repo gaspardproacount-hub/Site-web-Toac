@@ -5,7 +5,7 @@ import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsPartnerName, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Nos partenaires",
@@ -39,11 +39,12 @@ export default async function PartenairesPage() {
                   imgClassName="h-32 w-full object-cover"
                 />
                 <div className="p-4">
-                  <CmsEditableText
+                  <CmsPartnerName
                     as="div"
                     value={p.name}
+                    url={p.url}
                     target={{ kind: "product", id: p.id, field: "name" }}
-                    className="font-display uppercase text-toac-blue-950"
+                    className="font-display uppercase text-toac-blue-950 hover:text-toac-blue-700"
                   />
                   <CmsEditableText
                     as="div"
@@ -80,15 +81,26 @@ export default async function PartenairesPage() {
       </div>
 
       <h2 className="mt-14 font-display text-xl uppercase text-toac-blue-950">Partenaires institutionnels</h2>
-      <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm text-toac-blue-900/70">
+      <div className="mt-6 flex flex-wrap gap-x-10 gap-y-4 text-sm text-toac-blue-900/70">
         {institutionnelsSection
           ? institutionnelsSection.products.map((p) => (
-              <CmsEditableText
-                key={p.id}
-                as="span"
-                value={p.name}
-                target={{ kind: "product", id: p.id, field: "name" }}
-              />
+              <div key={p.id}>
+                <CmsPartnerName
+                  as="span"
+                  value={p.name}
+                  url={p.url}
+                  target={{ kind: "product", id: p.id, field: "name" }}
+                  className="font-medium text-toac-blue-900 hover:text-toac-blue-700"
+                />
+                {p.description && (
+                  <CmsEditableText
+                    as="div"
+                    value={p.description}
+                    target={{ kind: "product", id: p.id, field: "description" }}
+                    className="mt-0.5 max-w-xs text-xs text-toac-blue-900/60"
+                  />
+                )}
+              </div>
             ))
           : PARTENAIRES_INSTITUTIONNELS.map((name) => <span key={name}>{name}</span>)}
       </div>

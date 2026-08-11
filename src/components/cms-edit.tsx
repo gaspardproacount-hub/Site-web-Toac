@@ -450,6 +450,38 @@ export function CmsEditableText({
   );
 }
 
+/**
+ * Nom de partenaire éditable, devenant un lien hypertexte vers son site web
+ * dès qu'une URL est renseignée côté CMS (champ "Site web" du produit). Hors
+ * mode édition uniquement : en édition, on garde le texte simplement
+ * modifiable pour ne pas imbriquer un <a> autour d'un contentEditable.
+ */
+export function CmsPartnerName({
+  value,
+  url,
+  target,
+  as = "span",
+  className = "",
+}: {
+  value: string;
+  url?: string | null;
+  target: InlineTarget;
+  as?: "span" | "div" | "h3";
+  className?: string;
+}) {
+  const editMode = useCmsEditMode();
+
+  if (!editMode && url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className={className}>
+        {value}
+      </a>
+    );
+  }
+
+  return <CmsEditableText value={value} target={target} as={as} className={className} />;
+}
+
 export type ImageTarget = { kind: "product" | "block"; id: string };
 
 /**

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FOOTER_SITEMAP } from "@/lib/nav";
 import SiteLogo from "./SiteLogo";
-import { CmsEditableText, CmsEditPencil, CmsAddTile } from "./cms-edit";
+import { CmsEditableText, CmsPartnerName, CmsEditPencil, CmsAddTile } from "./cms-edit";
 import type { CmsPageBlock, CmsCatalogSection, CmsSiteSettings } from "@/lib/cms";
 
 const PARTNERS = [
@@ -33,7 +33,7 @@ export default function Footer({
   // librement sous les 4 colonnes (mentions, horaires, message ponctuel…).
   const extraBlocks = footerBlocks?.slice(1) ?? [];
   const partnerNames = partenairesSection?.products.length
-    ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name }))
+    ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name, url: p.url }))
     : null;
 
   return (
@@ -124,7 +124,17 @@ export default function Footer({
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
             {partnerNames
-              ? partnerNames.map((p) => <li key={p.id}>{p.name}</li>)
+              ? partnerNames.map((p) => (
+                  <li key={p.id}>
+                    <CmsPartnerName
+                      as="span"
+                      value={p.name}
+                      url={p.url}
+                      target={{ kind: "product", id: p.id, field: "name" }}
+                      className="hover:text-white"
+                    />
+                  </li>
+                ))
               : PARTNERS.map((partner) => <li key={partner}>{partner}</li>)}
           </ul>
           <Link
