@@ -2,10 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import InstagramFeed from "@/components/InstagramFeed";
-import { ACTUALITES } from "@/content/actualites";
+import ActualitesSection from "@/components/ActualitesSection";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText } from "@/components/cms-edit";
 
 const STATS = [
   { value: "1992", label: "Année de fondation" },
@@ -46,7 +46,6 @@ export default async function HomePage() {
   const instagramBlock = cmsBlocks?.[4];
 
   const statsSection = cmsCatalog?.find((s) => s.name === "Statistiques accueil");
-  const actualitesSection = cmsCatalog?.find((s) => s.name === "Actualités");
   const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
   const institutionnelsSection = cmsCatalog?.find((s) => s.name === "Partenaires institutionnels");
 
@@ -178,58 +177,7 @@ export default async function HomePage() {
 
       <InstagramFeed block={instagramBlock} />
 
-      <section className="bg-toac-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950 sm:text-3xl">
-            Actualités
-          </h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-3">
-            {actualitesSection
-              ? actualitesSection.products.map((news) => (
-                  <article
-                    key={news.id}
-                    className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-                  >
-                    <CmsEditableText
-                      as="h3"
-                      value={news.name}
-                      target={{ kind: "product", id: news.id, field: "name" }}
-                      className="font-display text-base uppercase text-toac-blue-950"
-                    />
-                    <CmsEditableText
-                      as="p"
-                      value={news.description}
-                      target={{ kind: "product", id: news.id, field: "description" }}
-                      multiline
-                      className="mt-2 block text-sm text-toac-blue-900/70"
-                    />
-                  </article>
-                ))
-              : ACTUALITES.map((news) => (
-                  <article
-                    key={news.slug}
-                    className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-                  >
-                    <time className="text-xs uppercase tracking-wide text-toac-blue-600" dateTime={news.date}>
-                      {new Date(news.date).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </time>
-                    <h3 className="mt-2 font-display text-base uppercase text-toac-blue-950">{news.title}</h3>
-                    <p className="mt-2 text-sm text-toac-blue-900/70">{news.excerpt}</p>
-                  </article>
-                ))}
-            {actualitesSection && (
-              <CmsAddTile
-                payload={{ type: "add-product", sectionId: actualitesSection.id }}
-                label="+ Ajouter une actualité"
-              />
-            )}
-          </div>
-        </div>
-      </section>
+      <ActualitesSection catalog={cmsCatalog} />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="text-center font-display text-sm uppercase tracking-wide text-toac-blue-900/60">
