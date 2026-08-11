@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import { getCmsPageBlocks, getCmsCatalog, getCmsSiteSettings } from "@/lib/cms";
+import { buildThemeCss } from "@/lib/theme";
 
 const anton = Anton({
   variable: "--font-anton",
@@ -50,9 +51,15 @@ export default async function RootLayout({
     getCmsSiteSettings(),
   ]);
   const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
+  const themeCss = buildThemeCss(cmsSettings?.theme);
 
   return (
     <html lang="fr" className={`${anton.variable} ${inter.variable} h-full antialiased`}>
+      {themeCss && (
+        <head>
+          <style id="cms-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />
+        </head>
+      )}
       <body className="flex min-h-full flex-col bg-white text-toac-blue-950">
         <AuthProvider>
           <Suspense fallback={null}>

@@ -32,6 +32,7 @@ export type CmsSiteSettings = {
   email: string;
   opening_hours: { jour: string; horaires: string }[];
   social_links: { facebook?: string; instagram?: string; site_web?: string; reservation_url?: string };
+  theme?: { pink?: string; blue?: string };
 };
 
 export type CmsProduct = {
