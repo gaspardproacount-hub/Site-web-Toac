@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FOOTER_SITEMAP } from "@/lib/nav";
 import SiteLogo from "./SiteLogo";
-import { CmsEditableText, CmsEditPencil } from "./cms-edit";
+import { CmsEditableText, CmsEditPencil, CmsAddTile } from "./cms-edit";
 import type { CmsPageBlock, CmsCatalogSection, CmsSiteSettings } from "@/lib/cms";
 
 const PARTNERS = [
@@ -28,6 +28,10 @@ export default function Footer({
 }) {
   const contactEmail = email || "toac-triathlon-bureau@googlegroups.com";
   const infoBlock = footerBlocks?.[0];
+  // Blocs supplémentaires ajoutés depuis le dashboard ("+ Ajouter un bloc") :
+  // le 1er bloc sert au logo/tagline/adresse, les suivants s'affichent
+  // librement sous les 4 colonnes (mentions, horaires, message ponctuel…).
+  const extraBlocks = footerBlocks?.slice(1) ?? [];
   const partnerNames = partenairesSection?.products.length
     ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name }))
     : null;
@@ -131,6 +135,31 @@ export default function Footer({
           </Link>
         </div>
       </div>
+
+      {(extraBlocks.length > 0 || infoBlock) && (
+        <div className="mx-auto max-w-7xl space-y-4 px-4 pb-10 sm:px-6 lg:px-8">
+          {extraBlocks.map((block) => (
+            <div key={block.id} className="border-t border-white/10 pt-4 text-sm text-white/70">
+              {block.heading && (
+                <CmsEditableText
+                  as="p"
+                  value={block.heading}
+                  target={{ kind: "block", id: block.id, field: "heading" }}
+                  className="block font-medium text-white/90"
+                />
+              )}
+              <CmsEditableText
+                as="div"
+                value={block.body}
+                target={{ kind: "block", id: block.id, field: "body" }}
+                multiline
+                className="mt-1 block"
+              />
+            </div>
+          ))}
+          <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc au pied de page" />
+        </div>
+      )}
 
       <div className="border-t border-white/10 px-4 py-6 text-center text-xs text-white/50 sm:px-6 lg:px-8">
         © {new Date().getFullYear()} TOAC Triathlon — Association affiliée FFTRI, soutenue par le Toulouse Olympique
