@@ -10,7 +10,7 @@ import type { CmsPageBlock } from "@/lib/cms";
  * (?cms_edit=1). Vide par défaut — à remplir depuis le dashboard.
  */
 export default function EtapeAccordionItem({ index, block }: { index: number; block: CmsPageBlock }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(index === 0);
   const panelId = `etape-panel-${block.id}`;
 
   return (
