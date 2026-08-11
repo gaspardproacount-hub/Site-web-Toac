@@ -64,6 +64,7 @@ export default async function RootLayout({
               footerBlocks={footerBlocks}
               partenairesSection={partenairesSection}
               socialLinks={cmsSettings?.social_links}
+              email={cmsSettings?.email}
             />
           </Suspense>
         </AuthProvider>

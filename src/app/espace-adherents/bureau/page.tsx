@@ -81,6 +81,12 @@ export default async function BureauDossiersPage() {
         >
           Demandes d&apos;adhésion →
         </Link>
+        <Link
+          href="/espace-adherents/bureau/preinscriptions"
+          className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
+        >
+          Pré-inscriptions →
+        </Link>
       </div>
 
       <div className="mt-8">

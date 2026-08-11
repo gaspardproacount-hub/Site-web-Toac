@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ContactForm from "@/components/ContactForm";
-import AdhesionForm from "@/components/AdhesionForm";
+import PreinscriptionForm from "@/components/PreinscriptionForm";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 import { resolveTarifsFromCatalog } from "@/lib/tarifs-cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
@@ -92,7 +92,7 @@ export default async function NousRejoindrePage() {
           <>
             <CmsEditableText
               as="h2"
-              value={adhesionSectionBlock.heading || "Formulaire d'adhésion et paiement"}
+              value={adhesionSectionBlock.heading || "Pré-inscription"}
               target={{ kind: "block", id: adhesionSectionBlock.id, field: "heading" }}
               className="font-display text-xl uppercase text-toac-blue-950"
             />
@@ -100,7 +100,7 @@ export default async function NousRejoindrePage() {
               as="p"
               value={
                 adhesionSectionBlock.body ||
-                "Un seul formulaire : vos informations, le tarif (plein ou réduit) et le paiement (cotisation + caution de bénévolat, prélevés ensemble). Votre inscription est enregistrée immédiatement et validée automatiquement dès que le paiement est confirmé."
+                "Étape 1 du parcours d'adhésion. Ce formulaire enregistre votre demande — aucun paiement à cette étape. Le bureau revient vers vous pour la suite : demande de licence FFTRI (à partir du 1er septembre 2026), validation par le club, puis paiement de la cotisation."
               }
               target={{ kind: "block", id: adhesionSectionBlock.id, field: "body" }}
               multiline
@@ -109,28 +109,70 @@ export default async function NousRejoindrePage() {
           </>
         ) : (
           <>
-            <h2 className="font-display text-xl uppercase text-toac-blue-950">
-              Formulaire d&apos;adhésion et paiement
-            </h2>
+            <h2 className="font-display text-xl uppercase text-toac-blue-950">Pré-inscription</h2>
             <p className="mt-2 text-sm text-toac-blue-900/70">
-              Un seul formulaire : vos informations, le tarif (plein ou réduit) et le paiement (cotisation +
-              caution de bénévolat, prélevés ensemble). Votre inscription est enregistrée immédiatement et
-              validée automatiquement dès que le paiement est confirmé.
+              Étape 1 du parcours d&apos;adhésion. Ce formulaire enregistre votre demande — aucun paiement à
+              cette étape. Le bureau revient vers vous pour la suite : demande de licence FFTRI (à partir du
+              1er septembre 2026), validation par le club, puis paiement de la cotisation.
             </p>
           </>
         )}
         <div className="mt-6">
-          <AdhesionForm
-            adhesionClubTarifs={tarifs.adhesionClub}
-            adhesionClubIsCms={tarifs.adhesionClubIsCms}
-            licenceTarifs={tarifs.licenceFFTri}
-            licenceIsCms={tarifs.licenceFFTriIsCms}
-            assuranceTarifs={tarifs.assurance}
-            assuranceIsCms={tarifs.assuranceIsCms}
-            caution={tarifs.caution}
-            cautionIsCms={tarifs.cautionIsCms}
-          />
+          <PreinscriptionForm />
         </div>
+      </section>
+
+      <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm text-sm text-toac-blue-900/90">
+        <h2 className="font-display text-xl uppercase text-toac-blue-950">
+          Demande de licence 2025/2026
+        </h2>
+        <p className="mt-2 text-sm text-toac-blue-900/70">
+          Une fois votre pré-inscription validée par le club, la suite se passe en 5 étapes :
+        </p>
+        <ol className="mt-4 list-decimal space-y-2 pl-5">
+          <li>
+            Vous payez votre part club via le{" "}
+            <a
+              href="https://www.payasso.fr/toac-triathlon/inscription-2025-2026"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-toac-blue-700 underline"
+            >
+              lien de paiement PayAsso
+            </a>{" "}
+            (si c&apos;est déjà fait, ne tenez pas compte de cette étape).
+          </li>
+          <li>
+            Vous transmettez votre chèque de caution à Nicolas Verdeyme (par courrier/boîte aux lettres ou en
+            main propre à un membre du bureau) : 72, chemin de Tournefeuille, 31300 Toulouse.
+          </li>
+          <li>
+            Vous demandez votre licence 25/26 sur le site FFTRI via{" "}
+            <a
+              href="https://espacetri.fftri.com/users/license/account-registration"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-toac-blue-700 underline"
+            >
+              ce lien
+            </a>{" "}
+            (nous vous enverrons un email dès que cette action sera possible — ajoutez votre photo dans votre
+            espace FFTRI et sélectionnez le paiement par CB).
+          </li>
+          <li>Le TOAC Triathlon valide votre demande.</li>
+          <li>
+            Vous payez votre part fédération sur le site FFTRI via{" "}
+            <a
+              href="https://espacetri.fftri.com/users/license/account-registration"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-toac-blue-700 underline"
+            >
+              ce lien
+            </a>
+            .
+          </li>
+        </ol>
       </section>
 
       <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
