@@ -14,6 +14,7 @@ import {
   type FocusEvent,
   type KeyboardEvent,
   type ReactNode,
+  type Ref,
 } from "react";
 
 export function useCmsEditMode(): boolean {
@@ -126,6 +127,72 @@ export function renderRichText(text: string): ReactNode[] {
   return blocks;
 }
 
+// Position du curseur/de la sélection dans un élément contentEditable,
+// exprimée en index de caractères dans son texte brut (indépendant de la
+// structure DOM interne) — permet d'insérer du texte au bon endroit avec de
+// simples découpages de chaîne, comme pour un <textarea>.
+function getCaretOffsets(el: HTMLElement): { start: number; end: number } | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+  const range = selection.getRangeAt(0);
+  if (!el.contains(range.commonAncestorContainer)) return null;
+
+  const preStart = range.cloneRange();
+  preStart.selectNodeContents(el);
+  preStart.setEnd(range.startContainer, range.startOffset);
+  const start = preStart.toString().length;
+
+  const preEnd = range.cloneRange();
+  preEnd.selectNodeContents(el);
+  preEnd.setEnd(range.endContainer, range.endOffset);
+  const end = preEnd.toString().length;
+
+  return { start, end };
+}
+
+type CaretPoint = { node: Node; offset: number };
+
+function findCaretPoint(el: HTMLElement, target: number): CaretPoint | null {
+  let charIndex = 0;
+  let result: CaretPoint | null = null;
+
+  function walk(node: Node) {
+    if (result) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      const length = node.textContent?.length ?? 0;
+      const nextCharIndex = charIndex + length;
+      if (target >= charIndex && target <= nextCharIndex) {
+        result = { node, offset: target - charIndex };
+      }
+      charIndex = nextCharIndex;
+    } else {
+      node.childNodes.forEach(walk);
+    }
+  }
+  walk(el);
+
+  return result;
+}
+
+function setCaretOffsets(el: HTMLElement, start: number, end: number) {
+  const selection = window.getSelection();
+  if (!selection) return;
+
+  const startPoint = findCaretPoint(el, start);
+  const endPoint = findCaretPoint(el, end);
+
+  const range = document.createRange();
+  if (startPoint) range.setStart(startPoint.node, startPoint.offset);
+  else range.setStart(el, 0);
+  if (endPoint) range.setEnd(endPoint.node, endPoint.offset);
+  else range.setEnd(el, 0);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+const toolbarButtonClass =
+  "rounded border border-toac-gray-200 bg-white px-1.5 py-0.5 text-[11px] font-medium text-toac-blue-900 hover:bg-toac-pink-300/10";
+
 export function postToDashboard(payload: Record<string, unknown>) {
   window.parent.postMessage({ source: "devanture-preview", ...payload }, "*");
 }
@@ -150,6 +217,7 @@ export function CmsEditableText({
   multiline?: boolean;
 }) {
   const editMode = useCmsEditMode();
+  const elRef = useRef<HTMLElement>(null);
   // Un <ul> (liste à puces) n'est pas un contenu valide dans un <p> : dès que
   // multiline est activé, on rend toujours un <div>, quel que soit `as`.
   const tag = multiline && as === "p" ? "div" : as;
@@ -181,16 +249,122 @@ export function CmsEditableText({
     }
   }
 
-  return createElement(
-    tag,
-    {
-      contentEditable: true,
-      suppressContentEditableWarning: true,
-      onBlur: handleBlur,
-      onKeyDown: handleKeyDown,
-      className: `cms-editable ${className}`,
-    },
-    value
+  // Insère/retire de la mise en forme légère (gras, liste, lien) directement
+  // au point du curseur dans l'aperçu, sans passer par le dashboard. Les
+  // offsets de sélection sont capturés AVANT tout window.prompt() (dont le
+  // comportement sur la sélection en cours varie selon les navigateurs) et
+  // réappliqués ensuite par leur position, pas par une référence au Range.
+  function toggleBold() {
+    const el = elRef.current;
+    if (!el) return;
+    const text = el.textContent ?? "";
+    const offsets = getCaretOffsets(el);
+    const start = offsets?.start ?? text.length;
+    const end = offsets?.end ?? text.length;
+    const selected = text.slice(start, end);
+    const before = text.slice(Math.max(0, start - 2), start);
+    const after = text.slice(end, end + 2);
+
+    el.focus();
+    if (selected.length >= 4 && selected.startsWith("**") && selected.endsWith("**")) {
+      const inner = selected.slice(2, -2);
+      el.textContent = text.slice(0, start) + inner + text.slice(end);
+      setCaretOffsets(el, start, start + inner.length);
+      return;
+    }
+    if (before === "**" && after === "**") {
+      el.textContent = text.slice(0, start - 2) + selected + text.slice(end + 2);
+      setCaretOffsets(el, start - 2, start - 2 + selected.length);
+      return;
+    }
+    const inner = selected || "texte en gras";
+    el.textContent = text.slice(0, start) + `**${inner}**` + text.slice(end);
+    setCaretOffsets(el, start + 2, start + 2 + inner.length);
+  }
+
+  function insertBulletList() {
+    const el = elRef.current;
+    if (!el) return;
+    const text = el.textContent ?? "";
+    const offsets = getCaretOffsets(el);
+    const start = offsets?.start ?? text.length;
+    const end = offsets?.end ?? text.length;
+    const selected = text.slice(start, end);
+
+    const inserted = selected
+      ? selected
+          .split("\n")
+          .map((line) => (line.trim() ? `- ${line.replace(/^\s*[-•]\s*/, "")}` : line))
+          .join("\n")
+      : "\n- élément 1\n- élément 2";
+
+    el.textContent = text.slice(0, start) + inserted + text.slice(end);
+    el.focus();
+    const selStart = selected ? start : start + 1;
+    setCaretOffsets(el, selStart, start + inserted.length);
+  }
+
+  function insertLink() {
+    const el = elRef.current;
+    if (!el) return;
+    const text = el.textContent ?? "";
+    const offsets = getCaretOffsets(el);
+    const start = offsets?.start ?? text.length;
+    const end = offsets?.end ?? text.length;
+    const selected = text.slice(start, end);
+
+    const label = window.prompt("Texte du lien (ce que le visiteur voit) :", selected || "cliquez ici");
+    if (!label) return;
+    const url = window.prompt(
+      "Adresse du lien : une page du site (ex. /nous-rejoindre) ou une adresse complète (https://...)",
+      "/"
+    );
+    if (!url) return;
+
+    const markdown = `[${label}](${url})`;
+    el.textContent = text.slice(0, start) + markdown + text.slice(end);
+    el.focus();
+    const cursor = start + markdown.length;
+    setCaretOffsets(el, cursor, cursor);
+  }
+
+  const Tag = tag;
+  const editable = (
+    <Tag
+      key="editable"
+      ref={elRef as Ref<HTMLDivElement>}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      className={`cms-editable ${className}`}
+    >
+      {value}
+    </Tag>
+  );
+
+  if (!multiline) return editable;
+
+  return (
+    <div className="cms-rich-wrap">
+      <div className="mb-1 flex gap-1" contentEditable={false}>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={toggleBold} className={toolbarButtonClass}>
+          Gras
+        </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={insertBulletList}
+          className={toolbarButtonClass}
+        >
+          • Liste
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertLink} className={toolbarButtonClass}>
+          🔗 Lien
+        </button>
+      </div>
+      {editable}
+    </div>
   );
 }
 
