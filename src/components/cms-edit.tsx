@@ -23,12 +23,17 @@ export function useCmsEditMode(): boolean {
 }
 
 // Mise en forme légère façon Markdown dans les textes CMS, sans éditeur
-// riche : [texte du lien](/nous-rejoindre) pour un lien, **texte** pour du
-// gras, une ligne commençant par "- " pour une puce de liste. Le dashboard
-// Devanture (LinkableTextarea) propose des boutons qui écrivent cette
-// syntaxe automatiquement — inutile de la taper à la main.
+// riche : [texte du lien](/nous-rejoindre) pour un lien, [[texte du bouton]](/url)
+// pour un bouton CTA, **texte** pour du gras, une ligne commençant par "- "
+// pour une puce de liste. Le dashboard Devanture (LinkableTextarea) propose
+// des boutons qui écrivent cette syntaxe automatiquement — inutile de la
+// taper à la main.
 const LINK_PATTERN = /\[([^\]]+)\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g;
+const BUTTON_PATTERN = /\[\[([^\]]+)\]\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g;
 const BOLD_PATTERN = /\*\*([^*]+)\*\*/g;
+
+const ctaButtonClassName =
+  "inline-flex items-center justify-center rounded-md bg-toac-pink-500 px-4 py-2 font-display text-sm uppercase tracking-wide text-white no-underline transition hover:bg-toac-pink-400";
 
 function parseBold(text: string, keyPrefix: string): ReactNode[] {
   const parts: ReactNode[] = [];
@@ -49,8 +54,8 @@ function parseBold(text: string, keyPrefix: string): ReactNode[] {
   return parts;
 }
 
-/** Applique liens + gras sur une seule ligne de texte (pas de saut de ligne). */
-export function linkifyText(text: string): ReactNode[] {
+/** Applique liens + gras sur un segment de texte (pas de bouton CTA). */
+function parseLinksAndBold(text: string, keyPrefix: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let key = 0;
@@ -58,7 +63,7 @@ export function linkifyText(text: string): ReactNode[] {
   let match: RegExpExecArray | null;
   while ((match = LINK_PATTERN.exec(text))) {
     if (match.index > lastIndex) {
-      parts.push(...parseBold(text.slice(lastIndex, match.index), `l${key}`));
+      parts.push(...parseBold(text.slice(lastIndex, match.index), `${keyPrefix}-l${key}`));
     }
     const [, label, href] = match;
     const external = href.startsWith("http");
@@ -66,7 +71,7 @@ export function linkifyText(text: string): ReactNode[] {
       createElement(
         "a",
         {
-          key: `link-${key++}`,
+          key: `${keyPrefix}-link-${key++}`,
           href,
           className: "underline decoration-1 underline-offset-2 hover:text-toac-pink-500",
           ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
@@ -77,7 +82,40 @@ export function linkifyText(text: string): ReactNode[] {
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) {
-    parts.push(...parseBold(text.slice(lastIndex), `l${key}`));
+    parts.push(...parseBold(text.slice(lastIndex), `${keyPrefix}-l${key}`));
+  }
+  return parts;
+}
+
+/** Applique boutons CTA + liens + gras sur une seule ligne de texte (pas de saut de ligne). */
+export function linkifyText(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+  BUTTON_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = BUTTON_PATTERN.exec(text))) {
+    if (match.index > lastIndex) {
+      parts.push(...parseLinksAndBold(text.slice(lastIndex, match.index), `b${key}`));
+    }
+    const [, label, href] = match;
+    const external = href.startsWith("http");
+    parts.push(
+      createElement(
+        "a",
+        {
+          key: `button-${key++}`,
+          href,
+          className: ctaButtonClassName,
+          ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
+        },
+        label
+      )
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(...parseLinksAndBold(text.slice(lastIndex), `b${key}`));
   }
   return parts;
 }
@@ -242,6 +280,22 @@ export function CmsEditableText({
     if (!multiline && e.key === "Enter") {
       e.preventDefault();
       e.currentTarget.blur();
+      return;
+    }
+    if (multiline && e.key === "Enter") {
+      // Empêche le navigateur d'insérer un <div>/<br> natif : ça découpe le
+      // texte en plusieurs nœuds DOM et le "\n" est perdu quand on relit
+      // el.textContent au blur, ce qui casse ensuite les listes à puces.
+      // On insère un vrai "\n" à la main, comme pour le gras/lien/liste.
+      e.preventDefault();
+      const el = e.currentTarget;
+      const text = el.textContent ?? "";
+      const offsets = getCaretOffsets(el);
+      const start = offsets?.start ?? text.length;
+      const end = offsets?.end ?? text.length;
+      el.textContent = text.slice(0, start) + "\n" + text.slice(end);
+      setCaretOffsets(el, start + 1, start + 1);
+      return;
     }
     if (e.key === "Escape") {
       e.currentTarget.textContent = value;
@@ -328,6 +382,30 @@ export function CmsEditableText({
     setCaretOffsets(el, cursor, cursor);
   }
 
+  function insertButton() {
+    const el = elRef.current;
+    if (!el) return;
+    const text = el.textContent ?? "";
+    const offsets = getCaretOffsets(el);
+    const start = offsets?.start ?? text.length;
+    const end = offsets?.end ?? text.length;
+    const selected = text.slice(start, end);
+
+    const label = window.prompt("Texte du bouton :", selected || "En savoir plus");
+    if (!label) return;
+    const url = window.prompt(
+      "Adresse du bouton : une page du site (ex. /nous-rejoindre) ou une adresse complète (https://...)",
+      "/"
+    );
+    if (!url) return;
+
+    const markdown = `[[${label}]](${url})`;
+    el.textContent = text.slice(0, start) + markdown + text.slice(end);
+    el.focus();
+    const cursor = start + markdown.length;
+    setCaretOffsets(el, cursor, cursor);
+  }
+
   const Tag = tag;
   const editable = (
     <Tag
@@ -361,6 +439,9 @@ export function CmsEditableText({
         </button>
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertLink} className={toolbarButtonClass}>
           🔗 Lien
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertButton} className={toolbarButtonClass}>
+          🔘 Bouton
         </button>
       </div>
       {editable}
