@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import ContactForm from "@/components/ContactForm";
-import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
-import { resolveTarifsFromCatalog } from "@/lib/tarifs-cms";
+import { getCmsPageBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 import EtapeAccordionItem from "@/components/EtapeAccordionItem";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
-  description: "Adhérer au TOAC Triathlon : parcours d'adhésion, paiement en ligne sécurisé Monetico.",
+  description: "Adhérer au TOAC Triathlon : parcours d'adhésion et pré-inscription en ligne.",
 };
 
 const ETAPES = [
@@ -19,30 +17,15 @@ const ETAPES = [
 ];
 
 export default async function NousRejoindrePage() {
-  const [cmsBlocks, sectionBlocks, cmsCatalog] = await Promise.all([
+  const [cmsBlocks, sectionBlocks] = await Promise.all([
     getCmsPageBlocks("nous-rejoindre"),
     getCmsPageBlocks("nous-rejoindre-sections"),
-    getCmsCatalog(),
   ]);
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
   const introBlock = cmsBlocks?.[0];
   const etapeBlocks = cmsBlocks?.slice(1) ?? [];
-  // bloc[0]=adhésion/paiement, bloc[1]=stage, bloc[2]=contact/préinscription,
-  // bloc[3]=demande de licence.
+  // bloc[0]=adhésion/préinscription.
   const adhesionSectionBlock = sectionBlocks?.[0];
-  const stageSectionBlock = sectionBlocks?.[1];
-  const contactSectionBlock = sectionBlocks?.[2];
-  const licenceSectionBlock = sectionBlocks?.[3];
-  const DEFAULT_LICENCE_BODY =
-    "Une fois votre pré-inscription validée par le club, la suite se passe en 5 étapes :\n" +
-    "- Vous payez votre part club via le [lien de paiement PayAsso](https://www.payasso.fr/toac-triathlon/inscription-2025-2026) (si c'est déjà fait, ne tenez pas compte de cette étape).\n" +
-    "- Vous transmettez votre chèque de caution à Nicolas Verdeyme (par courrier/boîte aux lettres ou en main propre à un membre du bureau) : 72, chemin de Tournefeuille, 31300 Toulouse.\n" +
-    "- Vous demandez votre licence 25/26 sur le site FFTRI via [ce lien](https://espacetri.fftri.com/users/license/account-registration) (nous vous enverrons un email dès que cette action sera possible — ajoutez votre photo dans votre espace FFTRI et sélectionnez le paiement par CB).\n" +
-    "- Le TOAC Triathlon valide votre demande.\n" +
-    "- Vous payez votre part fédération sur le site FFTRI via [ce lien](https://espacetri.fftri.com/users/license/account-registration).";
-
-  const tarifs = resolveTarifsFromCatalog(cmsCatalog);
-  const stagesSection = cmsCatalog?.find((s) => s.name === "Stages");
 
   return (
     <Suspense fallback={null}>
@@ -133,195 +116,6 @@ export default async function NousRejoindrePage() {
           >
             Chargement du formulaire…
           </iframe>
-        </div>
-      </section>
-
-      <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm text-sm text-toac-blue-900/90">
-        {licenceSectionBlock ? (
-          <>
-            <CmsEditableText
-              as="h2"
-              value={licenceSectionBlock.heading || "Demande de licence 2025/2026"}
-              target={{ kind: "block", id: licenceSectionBlock.id, field: "heading" }}
-              className="font-display text-xl uppercase text-toac-blue-950"
-            />
-            <CmsEditableText
-              as="div"
-              value={licenceSectionBlock.body || DEFAULT_LICENCE_BODY}
-              target={{ kind: "block", id: licenceSectionBlock.id, field: "body" }}
-              multiline
-              className="mt-3 block"
-            />
-          </>
-        ) : (
-          <>
-            <h2 className="font-display text-xl uppercase text-toac-blue-950">
-              Demande de licence 2025/2026
-            </h2>
-            <p className="mt-2 text-sm text-toac-blue-900/70">
-              Une fois votre pré-inscription validée par le club, la suite se passe en 5 étapes :
-            </p>
-            <ol className="mt-4 list-decimal space-y-2 pl-5">
-              <li>
-                Vous payez votre part club via le{" "}
-                <a
-                  href="https://www.payasso.fr/toac-triathlon/inscription-2025-2026"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-toac-blue-700 underline"
-                >
-                  lien de paiement PayAsso
-                </a>{" "}
-                (si c&apos;est déjà fait, ne tenez pas compte de cette étape).
-              </li>
-              <li>
-                Vous transmettez votre chèque de caution à Nicolas Verdeyme (par courrier/boîte aux lettres ou
-                en main propre à un membre du bureau) : 72, chemin de Tournefeuille, 31300 Toulouse.
-              </li>
-              <li>
-                Vous demandez votre licence 25/26 sur le site FFTRI via{" "}
-                <a
-                  href="https://espacetri.fftri.com/users/license/account-registration"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-toac-blue-700 underline"
-                >
-                  ce lien
-                </a>{" "}
-                (nous vous enverrons un email dès que cette action sera possible — ajoutez votre photo dans
-                votre espace FFTRI et sélectionnez le paiement par CB).
-              </li>
-              <li>Le TOAC Triathlon valide votre demande.</li>
-              <li>
-                Vous payez votre part fédération sur le site FFTRI via{" "}
-                <a
-                  href="https://espacetri.fftri.com/users/license/account-registration"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-toac-blue-700 underline"
-                >
-                  ce lien
-                </a>
-                .
-              </li>
-            </ol>
-          </>
-        )}
-      </section>
-
-      <section className="mt-14 rounded-lg border border-toac-gray-200 bg-white p-6 shadow-sm">
-        {stageSectionBlock ? (
-          <>
-            <CmsEditableText
-              as="h2"
-              value={stageSectionBlock.heading || "Payer un stage (Mer, Montagne…)"}
-              target={{ kind: "block", id: stageSectionBlock.id, field: "heading" }}
-              className="font-display text-xl uppercase text-toac-blue-950"
-            />
-            <CmsEditableText
-              as="p"
-              value={
-                stageSectionBlock.body ||
-                "Pour un stage uniquement, sans lien avec l'adhésion. Paiement sécurisé Monetico."
-              }
-              target={{ kind: "block", id: stageSectionBlock.id, field: "body" }}
-              multiline
-              className="mt-2 block text-sm text-toac-blue-900/70"
-            />
-          </>
-        ) : (
-          <>
-            <h2 className="font-display text-xl uppercase text-toac-blue-950">
-              Payer un stage (Mer, Montagne…)
-            </h2>
-            <p className="mt-2 text-sm text-toac-blue-900/70">
-              Pour un stage uniquement, sans lien avec l&apos;adhésion. Paiement sécurisé Monetico.
-            </p>
-          </>
-        )}
-
-        <form action="/api/monetico/init" method="POST" className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-toac-blue-900">
-              Votre email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
-            />
-          </div>
-          <div>
-            <label htmlFor="montantCentimes" className="mb-1 block text-sm font-medium text-toac-blue-900">
-              Stage
-            </label>
-            <select
-              id="montantCentimes"
-              name="montantCentimes"
-              required
-              className="w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
-            >
-              {tarifs.stages.map((t) => (
-                <option key={t.id} value={t.montantCentimes}>
-                  {t.label} ({(t.montantCentimes / 100).toFixed(2).replace(".", ",")} €)
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-toac-blue-900/50">
-              Nom et prix modifiables, et de nouveaux stages ajoutables à tout moment, depuis le dashboard →
-              Catalogue → rubrique « Stages ».
-            </p>
-            <div className="mt-2">
-              <CmsAddTile
-                payload={{ type: "add-product", sectionId: stagesSection?.id }}
-                label="+ Ajouter un stage"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 sm:w-auto"
-          >
-            Payer le stage en ligne
-          </button>
-        </form>
-        <p className="mt-3 text-xs text-toac-blue-900/60">
-          Le paiement nécessite que les variables d'environnement MONETICO_TPE, MONETICO_CODE_SOCIETE,
-          MONETICO_CLE_HMAC et MONETICO_URL_RETOUR soient configurées (voir .env.example et le README).
-        </p>
-      </section>
-
-      <section className="mt-14">
-        {contactSectionBlock ? (
-          <>
-            <CmsEditableText
-              as="h2"
-              value={contactSectionBlock.heading || "Contacter le bureau / préinscription"}
-              target={{ kind: "block", id: contactSectionBlock.id, field: "heading" }}
-              className="font-display text-xl uppercase text-toac-blue-950"
-            />
-            <CmsEditableText
-              as="p"
-              value={contactSectionBlock.body || "Un formulaire simple pour prendre contact avant votre adhésion."}
-              target={{ kind: "block", id: contactSectionBlock.id, field: "body" }}
-              multiline
-              className="mt-2 block text-sm text-toac-blue-900/70"
-            />
-          </>
-        ) : (
-          <>
-            <h2 className="font-display text-xl uppercase text-toac-blue-950">
-              Contacter le bureau / préinscription
-            </h2>
-            <p className="mt-2 text-sm text-toac-blue-900/70">
-              Un formulaire simple pour prendre contact avant votre adhésion.
-            </p>
-          </>
-        )}
-        <div className="mt-6">
-          <ContactForm />
         </div>
       </section>
     </div>
