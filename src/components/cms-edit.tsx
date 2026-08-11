@@ -415,6 +415,7 @@ export function CmsEditableText({
       suppressContentEditableWarning
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
+      onClick={(e) => e.stopPropagation()}
       className={`cms-editable ${className}`}
     >
       {value}

@@ -35,30 +35,35 @@ function AccordionItem({
     <div className="border-b border-toac-gray-200 last:border-0">
       <h3 className="flex items-center gap-2">
         {editable ? (
-          <span className="flex w-full items-center justify-between gap-4 py-4 text-left">
+          <span
+            role="button"
+            tabIndex={0}
+            aria-expanded={isOpen}
+            aria-controls={panelId}
+            aria-label="Ouvrir / fermer"
+            onClick={onToggle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onToggle();
+              }
+            }}
+            className="flex w-full cursor-pointer items-center justify-between gap-4 py-4 text-left"
+          >
             <CmsEditableText
               as="span"
               value={item.question}
               target={{ kind: "product", id: item.id, field: "name" }}
               className="font-medium text-toac-blue-950"
             />
-            <button
-              type="button"
-              aria-expanded={isOpen}
-              aria-controls={panelId}
-              onClick={onToggle}
-              aria-label="Ouvrir / fermer"
-              className="shrink-0 rounded p-1 hover:bg-toac-pink-300/10"
+            <svg
+              aria-hidden="true"
+              className={`h-4 w-4 shrink-0 text-toac-blue-700 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              viewBox="0 0 20 20"
+              fill="currentColor"
             >
-              <svg
-                aria-hidden="true"
-                className={`h-4 w-4 shrink-0 text-toac-blue-700 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-              </svg>
-            </button>
+              <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+            </svg>
           </span>
         ) : (
           <button

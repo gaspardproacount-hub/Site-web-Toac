@@ -20,30 +20,36 @@ export default function EtapeAccordionItem({ index, block }: { index: number; bl
           {index + 1}
         </span>
         <div className="flex-1">
-          <div className="flex items-center justify-between gap-2">
+          <div
+            role="button"
+            tabIndex={0}
+            aria-expanded={open}
+            aria-controls={panelId}
+            aria-label={open ? "Masquer les précisions" : "Afficher les précisions"}
+            onClick={() => setOpen((v) => !v)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setOpen((v) => !v);
+              }
+            }}
+            className="flex cursor-pointer items-center justify-between gap-2"
+          >
             <CmsEditableText
               as="span"
               value={block.heading}
               target={{ kind: "block", id: block.id, field: "heading" }}
               className="block pt-1 text-toac-blue-900/90"
             />
-            <button
-              type="button"
-              aria-expanded={open}
-              aria-controls={panelId}
-              onClick={() => setOpen((v) => !v)}
-              aria-label={open ? "Masquer les précisions" : "Afficher les précisions"}
-              className="shrink-0 rounded-full p-1 text-toac-blue-700 transition hover:bg-toac-pink-300/10"
-            >
+            <span aria-hidden="true" className="shrink-0 rounded-full p-1 text-toac-blue-700">
               <svg
-                aria-hidden="true"
                 className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
                 <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
               </svg>
-            </button>
+            </span>
           </div>
           <div id={panelId} className="faq-panel" data-open={open}>
             <div>
