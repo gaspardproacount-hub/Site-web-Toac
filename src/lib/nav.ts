@@ -32,7 +32,6 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { label: "Triathlons du Lauragais", href: "/triathlons-du-lauragais" },
   { label: "FAQ", href: "/faq" },
-  { label: "Nous rejoindre", href: "/nous-rejoindre" },
   { label: "Contact", href: "/contact" },
 ];
 
