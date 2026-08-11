@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import SiteImage from "./SiteImage";
 import RawEmbed from "./RawEmbed";
+import { CmsEditableText } from "./cms-edit";
+import type { CmsPageBlock } from "@/lib/cms";
 import { INSTAGRAM } from "@/content/instagram";
 
 declare global {
@@ -19,7 +21,7 @@ function InstagramIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export default function InstagramFeed() {
+export default function InstagramFeed({ block }: { block?: CmsPageBlock }) {
   const hasWidgetHtml = INSTAGRAM.widgetEmbedHtml.trim().length > 0;
   const hasWidgetIframe = INSTAGRAM.widgetIframeSrc.trim().length > 0;
   const hasPosts = INSTAGRAM.posts.length > 0;
@@ -43,9 +45,18 @@ export default function InstagramFeed() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950 sm:text-3xl">
-          Suivez-nous sur Instagram
-        </h2>
+        {block ? (
+          <CmsEditableText
+            as="h2"
+            value={block.heading || "Suivez-nous sur Instagram"}
+            target={{ kind: "block", id: block.id, field: "heading" }}
+            className="section-title block font-display text-2xl uppercase text-toac-blue-950 sm:text-3xl"
+          />
+        ) : (
+          <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950 sm:text-3xl">
+            Suivez-nous sur Instagram
+          </h2>
+        )}
         <a
           href={INSTAGRAM.profileUrl}
           target="_blank"
@@ -104,9 +115,18 @@ export default function InstagramFeed() {
         )}
       </div>
 
-      <p className="mt-6 text-center text-sm text-toac-blue-900/60">
-        Retrouvez toute l&apos;actualité du club en images sur notre compte Instagram.
-      </p>
+      {block ? (
+        <CmsEditableText
+          as="p"
+          value={block.body || "Retrouvez toute l'actualité du club en images sur notre compte Instagram."}
+          target={{ kind: "block", id: block.id, field: "body" }}
+          className="mt-6 block text-center text-sm text-toac-blue-900/60"
+        />
+      ) : (
+        <p className="mt-6 text-center text-sm text-toac-blue-900/60">
+          Retrouvez toute l&apos;actualité du club en images sur notre compte Instagram.
+        </p>
+      )}
     </section>
   );
 }

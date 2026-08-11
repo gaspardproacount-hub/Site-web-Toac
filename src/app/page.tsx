@@ -42,6 +42,8 @@ export default async function HomePage() {
   const heroSubtitle = heroBlock?.body || "Nager, rouler, courir à Toulouse depuis 1992";
   // bloc[1..3] = les 3 cartes "Le club en 3 temps" (le lien et la photo restent gérés dans le code).
   const cardBlocks = cmsBlocks?.slice(1, 1 + CARDS.length) ?? [];
+  // bloc[4] = titre + légende du bloc Instagram.
+  const instagramBlock = cmsBlocks?.[4];
 
   const statsSection = cmsCatalog?.find((s) => s.name === "Statistiques accueil");
   const actualitesSection = cmsCatalog?.find((s) => s.name === "Actualités");
@@ -174,7 +176,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <InstagramFeed />
+      <InstagramFeed block={instagramBlock} />
 
       <section className="bg-toac-gray-50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

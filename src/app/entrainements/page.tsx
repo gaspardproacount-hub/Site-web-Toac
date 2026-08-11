@@ -7,7 +7,7 @@ import {
   JOURS_ORDER,
 } from "@/content/planning";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile, CmsEditPencil } from "@/components/cms-edit";
 import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
 
 export const metadata: Metadata = {
@@ -81,7 +81,14 @@ export default async function EntrainementsPage() {
                 <h2 className="font-display text-lg uppercase text-toac-blue-950">{jour}</h2>
                 <ul className="mt-3 space-y-3">
                   {section.products.map((c) => (
-                    <li key={c.id} className="flex flex-col gap-1 border-b border-toac-gray-100 pb-3 last:border-0 last:pb-0">
+                    <li
+                      key={c.id}
+                      className="relative flex flex-col gap-1 border-b border-toac-gray-100 pb-3 pr-9 last:border-0 last:pb-0"
+                    >
+                      <CmsEditPencil
+                        payload={{ type: "edit-product", productId: c.id }}
+                        className="absolute right-0 top-0 h-6 w-6 text-[10px]"
+                      />
                       <CmsEditableText
                         as="div"
                         value={c.name}

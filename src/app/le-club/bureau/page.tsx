@@ -16,6 +16,7 @@ export default async function BureauPage() {
 
   const bureauSection = cmsCatalog?.find((s) => s.name === "Bureau 2026");
   const coachsSection = cmsCatalog?.find((s) => s.name === "Encadrement sportif");
+  const honneurSection = cmsCatalog?.find((s) => s.name === "Président d'honneur");
 
   return (
     <Suspense fallback={null}>
@@ -70,9 +71,47 @@ export default async function BureauPage() {
         />
       </div>
 
-      <div className="mt-8 rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5">
-        <div className="font-display uppercase text-toac-blue-950">{PRESIDENT_HONNEUR.name}</div>
-        <p className="mt-1 text-sm text-toac-blue-900/80">{PRESIDENT_HONNEUR.description}</p>
+      <div className="mt-8 space-y-4">
+        {honneurSection
+          ? honneurSection.products.map((m) => (
+              <div
+                key={m.id}
+                className="relative flex items-center gap-4 rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5"
+              >
+                <CmsEditableImage
+                  src={m.image_url}
+                  alt={m.name}
+                  target={{ kind: "product", id: m.id }}
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
+                  imgClassName="h-14 w-14 rounded-full object-cover"
+                />
+                <div>
+                  <CmsEditableText
+                    as="div"
+                    value={m.name}
+                    target={{ kind: "product", id: m.id, field: "name" }}
+                    className="font-display uppercase text-toac-blue-950"
+                  />
+                  <CmsEditableText
+                    as="div"
+                    value={m.description}
+                    target={{ kind: "product", id: m.id, field: "description" }}
+                    multiline
+                    className="mt-1 block text-sm text-toac-blue-900/80"
+                  />
+                </div>
+              </div>
+            ))
+          : (
+              <div className="rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5">
+                <div className="font-display uppercase text-toac-blue-950">{PRESIDENT_HONNEUR.name}</div>
+                <p className="mt-1 text-sm text-toac-blue-900/80">{PRESIDENT_HONNEUR.description}</p>
+              </div>
+            )}
+        <CmsAddTile
+          payload={{ type: "add-product", sectionId: honneurSection?.id }}
+          label="+ Ajouter un président d'honneur"
+        />
       </div>
 
       <h2 className="mt-14 font-display text-xl uppercase text-toac-blue-950">Encadrement sportif</h2>

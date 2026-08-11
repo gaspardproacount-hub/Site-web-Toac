@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 export default async function PartenairesPage() {
   const cmsCatalog = await getCmsCatalog();
   const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
+  const institutionnelsSection = cmsCatalog?.find((s) => s.name === "Partenaires institutionnels");
 
   return (
     <Suspense fallback={null}>
@@ -80,10 +81,21 @@ export default async function PartenairesPage() {
 
       <h2 className="mt-14 font-display text-xl uppercase text-toac-blue-950">Partenaires institutionnels</h2>
       <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm text-toac-blue-900/70">
-        {PARTENAIRES_INSTITUTIONNELS.map((name) => (
-          <span key={name}>{name}</span>
-        ))}
+        {institutionnelsSection
+          ? institutionnelsSection.products.map((p) => (
+              <CmsEditableText
+                key={p.id}
+                as="span"
+                value={p.name}
+                target={{ kind: "product", id: p.id, field: "name" }}
+              />
+            ))
+          : PARTENAIRES_INSTITUTIONNELS.map((name) => <span key={name}>{name}</span>)}
       </div>
+      <CmsAddTile
+        payload={{ type: "add-product", sectionId: institutionnelsSection?.id }}
+        label="+ Ajouter un partenaire institutionnel"
+      />
     </div>
     </Suspense>
   );
