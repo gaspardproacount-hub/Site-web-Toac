@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
-import { getCmsPageBlocks } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 
 export const metadata: Metadata = {
   title: "Triathlons du Lauragais",
@@ -13,7 +13,10 @@ export const metadata: Metadata = {
 const FORMATS = ["XS", "S", "M", "L", "Swimrun (SR)", "Jeunes 6-9 ans", "Jeunes 10-13 ans"];
 
 export default async function TriathlonsDuLauragaisPage() {
-  const cmsBlocks = await getCmsPageBlocks("triathlons-du-lauragais");
+  const [cmsBlocks, cmsCatalog] = await Promise.all([
+    getCmsPageBlocks("triathlons-du-lauragais"),
+    getCmsCatalog(),
+  ]);
   // Les blocs sont identifiés par leur titre (et non leur position) pour ne pas
   // dépendre de l'ordre de création — un bloc "180 bénévoles" déjà créé par le
   // client continue de s'afficher au bon endroit même si d'autres blocs
@@ -21,6 +24,10 @@ export default async function TriathlonsDuLauragaisPage() {
   const heroBlock = cmsBlocks?.find((b) => b.heading === "Triathlons du Lauragais");
   const objectifBlock = cmsBlocks?.find((b) => b.heading === "Objectif : 1 200 coureurs");
   const benevolesBlock = cmsBlocks?.find((b) => b.heading === "180 bénévoles nécessaires");
+  // Bloc sans titre visible sur le site (le champ "titre" ne sert qu'à le
+  // retrouver dans le dashboard) : le texte du bandeau rose "Épreuve support…".
+  const noticeBlock = cmsBlocks?.find((b) => b.heading === "Notice D3");
+  const formatsSection = cmsCatalog?.find((s) => s.name === "Formats Triathlons du Lauragais");
 
   return (
     <Suspense fallback={null}>
@@ -109,16 +116,40 @@ export default async function TriathlonsDuLauragaisPage() {
             </p>
           </>
         )}
-        <div className="mt-6 flex flex-wrap gap-3">
-          {FORMATS.map((f) => (
-            <span key={f} className="rounded-full border border-toac-blue-600 px-4 py-1.5 text-sm font-medium text-toac-blue-700">
-              {f}
-            </span>
-          ))}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {formatsSection
+            ? formatsSection.products.map((f) => (
+                <CmsEditableText
+                  key={f.id}
+                  as="span"
+                  value={f.name}
+                  target={{ kind: "product", id: f.id, field: "name" }}
+                  className="rounded-full border border-toac-blue-600 px-4 py-1.5 text-sm font-medium text-toac-blue-700"
+                />
+              ))
+            : FORMATS.map((f) => (
+                <span key={f} className="rounded-full border border-toac-blue-600 px-4 py-1.5 text-sm font-medium text-toac-blue-700">
+                  {f}
+                </span>
+              ))}
+          <CmsAddTile
+            payload={{ type: "add-product", sectionId: formatsSection?.id }}
+            label="+ Ajouter un format"
+          />
         </div>
-        <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
-          Épreuve support du challenge régional D3 (Nailloux, 6 juin).
-        </p>
+        {noticeBlock ? (
+          <CmsEditableText
+            as="p"
+            value={noticeBlock.body}
+            target={{ kind: "block", id: noticeBlock.id, field: "body" }}
+            multiline
+            className="mt-6 block rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900"
+          />
+        ) : (
+          <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
+            Épreuve support du challenge régional D3 (Nailloux, 6 juin).
+          </p>
+        )}
       </section>
 
       <div className="bg-toac-gray-50">
