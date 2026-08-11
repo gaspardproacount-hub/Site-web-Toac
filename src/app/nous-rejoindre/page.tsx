@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ContactForm from "@/components/ContactForm";
-import PreinscriptionForm from "@/components/PreinscriptionForm";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 import { resolveTarifsFromCatalog } from "@/lib/tarifs-cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
@@ -127,7 +126,13 @@ export default async function NousRejoindrePage() {
           </>
         )}
         <div className="mt-6">
-          <PreinscriptionForm />
+          <iframe
+            src="https://docs.google.com/forms/d/e/1FAIpQLScWyaV93iIERtoNNEhLNUrdnxDDfqQ-TRI61MOQCvvIwR_SFA/viewform?embedded=true"
+            title="Formulaire de pré-inscription"
+            className="h-[1200px] w-full rounded-md border border-toac-gray-200"
+          >
+            Chargement du formulaire…
+          </iframe>
         </div>
       </section>
 
