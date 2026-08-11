@@ -9,7 +9,7 @@ const ROUTES = [
   "/le-club/vie-du-club",
   "/le-club/partenaires",
   "/entrainements",
-  "/entrainements/ou-et-quand",
+  "/entrainements/points-de-rdv",
   "/triathlons-du-lauragais",
   "/faq",
   "/nous-rejoindre",
