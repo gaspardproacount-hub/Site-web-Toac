@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FOOTER_SITEMAP } from "@/lib/nav";
+import { FOOTER_SITEMAP, type NavLink } from "@/lib/nav";
 import SiteLogo from "./SiteLogo";
 import { CmsEditableText, CmsPartnerName, CmsEditPencil, CmsAddTile } from "./cms-edit";
 import type { CmsPageBlock, CmsCatalogSection, CmsSiteSettings } from "@/lib/cms";
@@ -17,16 +17,19 @@ const ADDRESS = "20 chemin de Garric\n31200 Toulouse";
 
 export default function Footer({
   footerBlocks,
+  footerItems,
   partenairesSection,
   socialLinks,
   email,
 }: {
   footerBlocks?: CmsPageBlock[] | null;
+  footerItems?: NavLink[] | null;
   partenairesSection?: CmsCatalogSection;
   socialLinks?: CmsSiteSettings["social_links"];
   email?: string;
 }) {
   const contactEmail = email || "toac-triathlon-bureau@googlegroups.com";
+  const sitemapLinks = footerItems && footerItems.length ? footerItems : FOOTER_SITEMAP;
   const infoBlock = footerBlocks?.[0];
   // Blocs supplémentaires ajoutés depuis le dashboard ("+ Ajouter un bloc") :
   // le 1er bloc sert au logo/tagline/adresse, les suivants s'affichent
@@ -72,7 +75,7 @@ export default function Footer({
             Plan du site
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
-            {FOOTER_SITEMAP.map((link) => (
+            {sitemapLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="hover:text-white">
                   {link.label}

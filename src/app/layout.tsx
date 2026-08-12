@@ -5,7 +5,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
-import { getCmsPageBlocks, getCmsCatalog, getCmsSiteSettings } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog, getCmsSiteSettings, getCmsNavigation } from "@/lib/cms";
 import { buildThemeCss } from "@/lib/theme";
 
 const anton = Anton({
@@ -44,8 +44,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [navBlocks, footerBlocks, cmsCatalog, cmsSettings] = await Promise.all([
-    getCmsPageBlocks("navigation"),
+  const [cmsNavigation, footerBlocks, cmsCatalog, cmsSettings] = await Promise.all([
+    getCmsNavigation(),
     getCmsPageBlocks("footer"),
     getCmsCatalog(),
     getCmsSiteSettings(),
@@ -63,12 +63,13 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col bg-white text-toac-blue-950">
         <AuthProvider>
           <Suspense fallback={null}>
-            <Navbar navBlocks={navBlocks} />
+            <Navbar items={cmsNavigation.nav} />
           </Suspense>
           <main className="flex-1">{children}</main>
           <Suspense fallback={null}>
             <Footer
               footerBlocks={footerBlocks}
+              footerItems={cmsNavigation.footer}
               partenairesSection={partenairesSection}
               socialLinks={cmsSettings?.social_links}
               email={cmsSettings?.email}
