@@ -51,8 +51,8 @@ export default async function PartenairesPage() {
                     src={p.image_url}
                     alt={`Logo ${p.name}`}
                     target={{ kind: "product", id: p.id }}
-                    className="h-32 w-full bg-toac-gray-100"
-                    imgClassName="h-32 w-full object-cover"
+                    className="flex h-32 w-full items-center justify-center bg-toac-gray-100 p-3"
+                    imgClassName="max-h-full max-w-full object-contain"
                   />
                 }
                 name={
@@ -105,8 +105,8 @@ export default async function PartenairesPage() {
                     src={p.image_url}
                     alt={`Logo ${p.name}`}
                     target={{ kind: "product", id: p.id }}
-                    className="h-32 w-full bg-toac-gray-100"
-                    imgClassName="h-32 w-full object-cover"
+                    className="flex h-32 w-full items-center justify-center bg-toac-gray-100 p-3"
+                    imgClassName="max-h-full max-w-full object-contain"
                   />
                 }
                 name={
