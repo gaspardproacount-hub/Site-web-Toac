@@ -6,7 +6,7 @@ import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
-  title: "Où & Quand",
+  title: "Lieux - Points de rdv",
   description: "Carte et fiches détaillées des lieux d'entraînement du TOAC Triathlon.",
 };
 
@@ -16,7 +16,7 @@ function parseLatLng(text: string): { lat: number; lng: number } | null {
   return { lat: parts[0], lng: parts[1] };
 }
 
-export default async function OuEtQuandPage() {
+export default async function PointsDeRdvPage() {
   const [cmsBlocks, cmsCatalog] = await Promise.all([
     getCmsPageBlocks("ou-et-quand"),
     getCmsCatalog(),
@@ -32,11 +32,7 @@ export default async function OuEtQuandPage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Où & Quand</h1>
-      <p className="mt-2 text-sm text-toac-blue-900/60">
-        Coordonnées GPS et texte de chaque fiche modifiables depuis le dashboard (rubrique « Coordonnées GPS »
-        du catalogue pour la position des marqueurs).
-      </p>
+      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Lieux - Points de rdv</h1>
 
       <div className="mt-8">
         <LieuxMap lieux={lieuxForMap} />

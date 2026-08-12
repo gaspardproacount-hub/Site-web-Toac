@@ -27,7 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/entrainements",
     children: [
       { label: "Planning de la semaine", href: "/entrainements" },
-      { label: "Où & Quand", href: "/entrainements/ou-et-quand" },
+      { label: "Lieux - Points de rdv", href: "/entrainements/points-de-rdv" },
     ],
   },
   { label: "Triathlons du Lauragais", href: "/triathlons-du-lauragais" },
