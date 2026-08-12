@@ -187,7 +187,7 @@ export default async function HomePage() {
         </h2>
         <div className="mt-8">
           <HorizontalScroller>
-            {partenairesSection || institutionnelsSection
+            {partenairesSection?.products.length || institutionnelsSection?.products.length
               ? [
                   ...(partenairesSection?.products ?? []),
                   ...(institutionnelsSection?.products ?? []),

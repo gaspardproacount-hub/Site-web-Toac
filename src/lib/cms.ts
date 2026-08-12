@@ -105,6 +105,13 @@ export async function getCmsCatalog(): Promise<CmsCatalogSection[] | null> {
   return result;
 }
 
+/**
+ * Renvoie null seulement si aucune page CMS de ce slug n'existe (le contenu
+ * par défaut du code s'applique alors). Dès que la page existe, son tableau
+ * de blocs est renvoyé tel quel — y compris vide — pour qu'un admin puisse
+ * volontairement vider une page (tout supprimer) sans faire réapparaître le
+ * contenu par défaut : un tableau vide affiche "rien", pas le texte du code.
+ */
 export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | null> {
   if (!isConfigured) return null;
 
@@ -127,8 +134,7 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
       next: { revalidate: 60 },
     });
     if (!res.ok) return null;
-    const blocks = (await res.json()) as CmsPageBlock[];
-    return blocks.length ? blocks : null;
+    return (await res.json()) as CmsPageBlock[];
   } catch {
     return null;
   }

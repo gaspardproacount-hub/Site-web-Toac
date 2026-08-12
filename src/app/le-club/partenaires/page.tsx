@@ -42,7 +42,7 @@ export default async function PartenairesPage() {
       </h1>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {partenairesSection
+        {partenairesSection?.products.length
           ? partenairesSection.products.map((p) => (
               <PartnerCard
                 key={p.id}
@@ -96,7 +96,7 @@ export default async function PartenairesPage() {
 
       <h2 className="mt-14 font-display text-xl uppercase text-toac-blue-950">Partenaires institutionnels</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {institutionnelsSection
+        {institutionnelsSection?.products.length
           ? institutionnelsSection.products.map((p) => (
               <PartnerCard
                 key={p.id}
