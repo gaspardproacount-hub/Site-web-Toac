@@ -4,6 +4,8 @@
 // Si CMS_CONFIG.siteId n'est pas renseigné, toutes les fonctions ci-dessous
 // renvoient null et les pages gardent leur contenu actuel (src/content/*).
 
+import type { NavItem, NavLink } from "@/lib/nav";
+
 const CMS_CONFIG = {
   supabaseUrl: "https://kekjsyqakhpuzxxeralm.supabase.co",
   supabaseAnonKey:
@@ -51,6 +53,16 @@ export type CmsCatalogSection = {
   name: string;
   position: number;
   products: CmsProduct[];
+};
+
+type CmsNavRow = {
+  id: string;
+  parent_id: string | null;
+  label: string;
+  href: string;
+  protected: boolean;
+  nav_position: number | null;
+  footer_position: number | null;
 };
 
 async function fetchFromCms<T>(table: string, query: string): Promise<T[] | null> {
@@ -132,4 +144,47 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   } catch {
     return null;
   }
+}
+
+// Menu de navigation et pied de page gérés depuis le CMS (dashboard →
+// Navigation). Renvoie null pour chaque liste quand le CMS n'a aucun lien
+// configuré, pour que l'appelant garde le menu par défaut codé en dur.
+export async function getCmsNavigation(): Promise<{
+  nav: NavItem[] | null;
+  footer: NavLink[] | null;
+}> {
+  const rows = await fetchFromCms<CmsNavRow>("nav_items", "&select=*");
+  if (!rows || rows.length === 0) return { nav: null, footer: null };
+
+  const byParent = new Map<string, CmsNavRow[]>();
+  for (const row of rows) {
+    if (!row.parent_id) continue;
+    if (!byParent.has(row.parent_id)) byParent.set(row.parent_id, []);
+    byParent.get(row.parent_id)!.push(row);
+  }
+
+  const nav: NavItem[] = rows
+    .filter((row) => !row.parent_id && row.nav_position !== null)
+    .sort((a, b) => (a.nav_position ?? 0) - (b.nav_position ?? 0))
+    .map((row) => {
+      const children = (byParent.get(row.id) ?? [])
+        .filter((child) => child.nav_position !== null)
+        .sort((a, b) => (a.nav_position ?? 0) - (b.nav_position ?? 0))
+        .map((child) => ({ label: child.label, href: child.href, protected: child.protected }));
+      return {
+        label: row.label,
+        href: row.href,
+        children: children.length ? children : undefined,
+      };
+    });
+
+  const footer: NavLink[] = rows
+    .filter((row) => row.footer_position !== null)
+    .sort((a, b) => (a.footer_position ?? 0) - (b.footer_position ?? 0))
+    .map((row) => ({ label: row.label, href: row.href, protected: row.protected }));
+
+  return {
+    nav: nav.length ? nav : null,
+    footer: footer.length ? footer : null,
+  };
 }
