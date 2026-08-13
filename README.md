@@ -37,7 +37,7 @@ Tant que vous n'avez pas importé vos propres comptes (voir § 4), deux comptes 
 2. Sur [vercel.com](https://vercel.com), importez le dépôt (le framework Next.js est détecté automatiquement).
 3. Dans **Settings → Environment Variables**, renseignez toutes les variables listées dans `.env.example`
    (`SESSION_SECRET`, `MONETICO_TPE`, `MONETICO_CODE_SOCIETE`, `MONETICO_CLE_HMAC`, `MONETICO_URL_RETOUR`,
-   `MONETICO_TEST_MODE`, et éventuellement `RESEND_API_KEY` / `RESEND_FROM_EMAIL`).
+   `MONETICO_TEST_MODE`, et éventuellement `BREVO_API_KEY` / `BREVO_FROM_EMAIL`).
 4. Déployez. Le plan gratuit ("Hobby") de Vercel suffit pour ce site.
 
 Important : `src/data/members.json` et `src/data/accounts.json` (les vraies données adhérents) sont
@@ -64,7 +64,7 @@ ignorés par git — ils ne seront donc **pas** présents sur Vercel après un d
 | Coordonnées des lieux | `src/content/lieux.ts` | Les latitudes/longitudes sont des approximations ; à vérifier/ajuster précisément si besoin. |
 | Variables Monetico | `.env` (Vercel ou local) | Voir § 5. |
 | `DATABASE_URL` | `.env` (Vercel ou local) | Voir § 5bis. |
-| `RESEND_API_KEY` | `.env` | Voir § 6. |
+| `BREVO_API_KEY` | `.env` | Voir § 6. |
 | Champs du formulaire d'adhésion | `src/components/AdhesionForm.tsx` | Les champs proposés (état civil, contact d'urgence, certificat médical…) sont ceux d'un bulletin d'adhésion classique de club de triathlon. Le Google Form externe n'étant pas accessible publiquement pour être recopié à l'identique, ajustez les champs ici si le bureau utilise des intitulés différents. |
 
 ## 4. Importer les adhérents (CSV) et gérer les comptes
@@ -193,8 +193,10 @@ conservé.
 Sans configuration, les messages du formulaire de contact sont simplement journalisés côté serveur (mode
 démo, visible dans les logs Vercel). Pour un envoi réel par email :
 
-1. Créez un compte sur [resend.com](https://resend.com) et une clé API.
-2. Renseignez `RESEND_API_KEY` (et `RESEND_FROM_EMAIL`, une adresse vérifiée sur votre domaine Resend).
+1. Dans votre compte [Brevo](https://www.brevo.com), créez une clé API (**SMTP & API → API Keys**).
+2. Vérifiez un expéditeur (**Senders, Domains & Dedicated IPs → Senders**) — l'adresse utilisée dans
+   `BREVO_FROM_EMAIL` doit être un expéditeur validé, sinon Brevo refuse l'envoi.
+3. Renseignez `BREVO_API_KEY` et `BREVO_FROM_EMAIL` dans les variables d'environnement Vercel.
 
 ## 7. Sécurité de l'espace adhérents
 
@@ -222,7 +224,7 @@ sans mot de passe, sinon les paiements en cours échoueraient.
 - `URL_INSCRIPTION_TDL` (lien d'inscription aux Triathlons du Lauragais)
 - `LIEN_COMMANDE_TENUES`
 - Documents PDF de l'espace adhérents
-- Variables d'environnement Monetico et Resend
+- Variables d'environnement Monetico et Brevo
 - Coordonnées GPS précises des lieux d'entraînement (approximations à vérifier)
 - `favicon.ico` (retiré du dépôt initial — vous pouvez en générer un à partir de `public/logo-toac.png`)
 - `package-lock.json` (non inclus dans ce commit — régénérez-le avec `npm install`)
