@@ -43,6 +43,7 @@ export const FOOTER_SITEMAP: NavLink[] = [
   { label: "FAQ", href: "/faq" },
   { label: "Nous rejoindre", href: "/nous-rejoindre" },
   { label: "Contact", href: "/contact" },
+  { label: "Règlement intérieur", href: "/reglement-interieur" },
   { label: "Mentions légales", href: "/mentions-legales" },
   { label: "Politique de confidentialité", href: "/confidentialite" },
 ];
