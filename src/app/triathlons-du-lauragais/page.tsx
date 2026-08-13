@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import AddToCalendarButton from "@/components/AddToCalendarButton";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 
@@ -48,14 +49,36 @@ export default async function TriathlonsDuLauragaisPage() {
   );
   const extraBlocks = cmsBlocks?.filter((b) => !knownBlockIds.has(b.id)) ?? [];
 
-  const makeEditableTileClassName =
-    "text-xs font-medium text-toac-pink-300 underline decoration-dotted underline-offset-2 hover:text-toac-pink-200";
-  const makeEditableTileClassNameLight =
-    "text-xs font-medium text-toac-blue-700 underline decoration-dotted underline-offset-2 hover:text-toac-pink-500";
+  // Emplacements fixes pas encore créés dans le CMS : créés automatiquement
+  // (sans clic) dès l'ouverture de l'aperçu dans le dashboard, pour que tout
+  // soit modifiable directement.
+  const missingSlots: EnsureBlockSpec[] = [
+    !editionBlock && {
+      slot: "edition",
+      heading: "Édition Triathlons du Lauragais",
+      body: "15e édition",
+    },
+    !heroBlock && {
+      slot: "hero",
+      heading: "Triathlons du Lauragais",
+      body: "6-7 juin 2026 — Nailloux",
+    },
+    !objectifBlock && {
+      slot: "objectif",
+      heading: "Objectif : 1 200 coureurs",
+      body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
+    },
+    !noticeBlock && {
+      slot: "notice",
+      heading: "Notice D3",
+      body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
+    },
+  ].filter((spec): spec is EnsureBlockSpec => Boolean(spec));
 
   return (
     <Suspense fallback={null}>
     <>
+      <EnsureCmsBlocks blocks={missingSlots} />
       <section className="relative flex min-h-[60vh] items-end bg-toac-blue-950 text-white">
         <SiteImage
           name="hero-triathlons-lauragais"
@@ -79,21 +102,9 @@ export default async function TriathlonsDuLauragaisPage() {
               />
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
-                15e édition
-              </span>
-              <CmsAddTile
-                payload={{
-                  type: "add-block",
-                  slot: "edition",
-                  heading: "Édition Triathlons du Lauragais",
-                  body: "15e édition",
-                }}
-                label="+ Rendre modifiable"
-                className={makeEditableTileClassName}
-              />
-            </div>
+            <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
+              15e édition
+            </span>
           )}
           {heroBlock ? (
             <div className="relative pr-9">
@@ -120,16 +131,6 @@ export default async function TriathlonsDuLauragaisPage() {
                 Triathlons du Lauragais
               </h1>
               <p className="mt-3 text-lg">6-7 juin 2026 — Nailloux</p>
-              <CmsAddTile
-                payload={{
-                  type: "add-block",
-                  slot: "hero",
-                  heading: "Triathlons du Lauragais",
-                  body: "6-7 juin 2026 — Nailloux",
-                }}
-                label="+ Rendre le titre et la date modifiables"
-                className={`mt-2 ${makeEditableTileClassName}`}
-              />
             </>
           )}
           <div className="mt-8 flex flex-wrap gap-4">
@@ -182,16 +183,6 @@ export default async function TriathlonsDuLauragaisPage() {
               Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du
               débutant au champion, en individuel, duo ou relais.
             </p>
-            <CmsAddTile
-              payload={{
-                type: "add-block",
-                slot: "objectif",
-                heading: "Objectif : 1 200 coureurs",
-                body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
-              }}
-              label="+ Rendre ce bloc modifiable"
-              className={`mt-2 ${makeEditableTileClassNameLight}`}
-            />
           </>
         )}
         <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -230,21 +221,9 @@ export default async function TriathlonsDuLauragaisPage() {
             />
           </div>
         ) : (
-          <div className="mt-6">
-            <p className="rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
-              Épreuve support du challenge régional D3 (Nailloux, 6 juin).
-            </p>
-            <CmsAddTile
-              payload={{
-                type: "add-block",
-                slot: "notice",
-                heading: "Notice D3",
-                body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
-              }}
-              label="+ Rendre ce bloc modifiable"
-              className={`mt-2 ${makeEditableTileClassNameLight}`}
-            />
-          </div>
+          <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
+            Épreuve support du challenge régional D3 (Nailloux, 6 juin).
+          </p>
         )}
       </section>
 
