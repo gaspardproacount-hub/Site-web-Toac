@@ -4,6 +4,7 @@ import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import AddToCalendarButton from "@/components/AddToCalendarButton";
+import { InstagramIcon, FacebookIcon } from "@/components/SocialIcons";
 import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenBlocks } from "@/lib/cms";
 
 export const metadata: Metadata = {
@@ -75,14 +76,23 @@ export default async function TriathlonsDuLauragaisPage() {
   // Idem : le champ "titre" n'est qu'un identifiant technique, seul le corps
   // ("15e édition") s'affiche, au-dessus du titre principal.
   const editionBlock = findSlot("edition", "Édition Triathlons du Lauragais");
+  // Le corps de ce bloc est directement l'URL de la page Facebook de
+  // l'évènement (pas un texte affiché) : le bouton n'affiche qu'une icône,
+  // le lien se modifie via le crayon (champ "Texte" du bloc dans le
+  // dashboard). Vide par défaut : le bouton reste caché tant qu'aucun lien
+  // n'a été renseigné.
+  const facebookBlock = findSlot("facebook", "Lien Facebook Triathlons du Lauragais");
   const formatsSection = cmsCatalog?.find((s) => s.name === "Formats Triathlons du Lauragais");
   // Blocs ajoutés librement par le client via "+ Ajouter un bloc de contenu"
-  // (ni le hero, ni l'objectif, ni la notice D3, ni l'édition) : affichés tels
-  // quels, dans l'ordre choisi dans le dashboard. C'est le cas notamment du
-  // bloc "bénévoles", entièrement géré par le client depuis le CMS (plus de
-  // texte par défaut codé en dur pour cette section).
+  // (ni le hero, ni l'objectif, ni la notice D3, ni l'édition, ni le lien
+  // Facebook) : affichés tels quels, dans l'ordre choisi dans le dashboard.
+  // C'est le cas notamment du bloc "bénévoles", entièrement géré par le
+  // client depuis le CMS (plus de texte par défaut codé en dur pour cette
+  // section).
   const knownBlockIds = new Set(
-    [heroBlock, objectifBlock, noticeBlock, editionBlock].filter(Boolean).map((b) => b!.id)
+    [heroBlock, objectifBlock, noticeBlock, editionBlock, facebookBlock]
+      .filter(Boolean)
+      .map((b) => b!.id)
   );
   const extraBlocks = cmsBlocks?.filter((b) => !knownBlockIds.has(b.id)) ?? [];
 
@@ -115,6 +125,12 @@ export default async function TriathlonsDuLauragaisPage() {
         slot: "notice",
         heading: "Notice D3",
         body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
+      },
+    !facebookBlock &&
+      !isSlotHidden("facebook", "Lien Facebook Triathlons du Lauragais") && {
+        slot: "facebook",
+        heading: "Lien Facebook Triathlons du Lauragais",
+        body: "",
       },
   ].filter((spec): spec is EnsureBlockSpec => Boolean(spec));
 
@@ -180,7 +196,7 @@ export default async function TriathlonsDuLauragaisPage() {
               </>
             )
           )}
-          <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <AddToCalendarButton
               title="Triathlons du Lauragais"
               description="Triathlons du Lauragais, à Nailloux. XS, S, M, L, swimrun et épreuves jeunes."
@@ -189,13 +205,41 @@ export default async function TriathlonsDuLauragaisPage() {
               endDate={eventDates.end}
             />
             <a
-              href="https://www.instagram.com/triathlonsdulauragais"
+              href="https://half.toac-triathlon.com/"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-md border-2 border-white px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-white hover:text-toac-blue-950"
             >
-              Instagram @triathlonsdulauragais
+              Site web de la course
             </a>
+            <a
+              href="https://www.instagram.com/triathlonsdulauragais"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @triathlonsdulauragais"
+              className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white text-white transition hover:bg-white hover:text-toac-blue-950"
+            >
+              <InstagramIcon className="h-5 w-5" />
+            </a>
+            {facebookBlock && (
+              <div className="relative">
+                <CmsEditPencil
+                  payload={{ type: "edit-block", blockId: facebookBlock.id }}
+                  className="absolute -right-1.5 -top-1.5 h-5 w-5 text-[9px]"
+                />
+                {facebookBlock.body && (
+                  <a
+                    href={facebookBlock.body}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Page Facebook des Triathlons du Lauragais"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white text-white transition hover:bg-white hover:text-toac-blue-950"
+                  >
+                    <FacebookIcon className="h-5 w-5" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
