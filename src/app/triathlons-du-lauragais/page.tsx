@@ -4,7 +4,7 @@ import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import AddToCalendarButton from "@/components/AddToCalendarButton";
-import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenSlots } from "@/lib/cms";
 
 export const metadata: Metadata = {
   title: "Triathlons du Lauragais",
@@ -15,9 +15,10 @@ export const metadata: Metadata = {
 const FORMATS = ["XS", "S", "M", "L", "Swimrun (SR)", "Jeunes 6-9 ans", "Jeunes 10-13 ans"];
 
 export default async function TriathlonsDuLauragaisPage() {
-  const [cmsBlocks, cmsCatalog] = await Promise.all([
+  const [cmsBlocks, cmsCatalog, hiddenSlots] = await Promise.all([
     getCmsPageBlocks("triathlons-du-lauragais"),
     getCmsCatalog(),
+    getCmsHiddenSlots("triathlons-du-lauragais"),
   ]);
   // Les blocs "à emplacement fixe" sont identifiés par un identifiant
   // technique stable (slot), invisible sur le site — pas par leur titre
@@ -53,26 +54,30 @@ export default async function TriathlonsDuLauragaisPage() {
   // (sans clic) dès l'ouverture de l'aperçu dans le dashboard, pour que tout
   // soit modifiable directement.
   const missingSlots: EnsureBlockSpec[] = [
-    !editionBlock && {
-      slot: "edition",
-      heading: "Édition Triathlons du Lauragais",
-      body: "15e édition",
-    },
-    !heroBlock && {
-      slot: "hero",
-      heading: "Triathlons du Lauragais",
-      body: "6-7 juin 2026 — Nailloux",
-    },
-    !objectifBlock && {
-      slot: "objectif",
-      heading: "Objectif : 1 200 coureurs",
-      body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
-    },
-    !noticeBlock && {
-      slot: "notice",
-      heading: "Notice D3",
-      body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
-    },
+    !editionBlock &&
+      !hiddenSlots.has("edition") && {
+        slot: "edition",
+        heading: "Édition Triathlons du Lauragais",
+        body: "15e édition",
+      },
+    !heroBlock &&
+      !hiddenSlots.has("hero") && {
+        slot: "hero",
+        heading: "Triathlons du Lauragais",
+        body: "6-7 juin 2026 — Nailloux",
+      },
+    !objectifBlock &&
+      !hiddenSlots.has("objectif") && {
+        slot: "objectif",
+        heading: "Objectif : 1 200 coureurs",
+        body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
+      },
+    !noticeBlock &&
+      !hiddenSlots.has("notice") && {
+        slot: "notice",
+        heading: "Notice D3",
+        body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
+      },
   ].filter((spec): spec is EnsureBlockSpec => Boolean(spec));
 
   return (
@@ -102,9 +107,11 @@ export default async function TriathlonsDuLauragaisPage() {
               />
             </div>
           ) : (
-            <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
-              15e édition
-            </span>
+            !hiddenSlots.has("edition") && (
+              <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
+                15e édition
+              </span>
+            )
           )}
           {heroBlock ? (
             <div className="relative pr-9">
@@ -126,12 +133,14 @@ export default async function TriathlonsDuLauragaisPage() {
               />
             </div>
           ) : (
-            <>
-              <h1 className="mt-2 font-display text-4xl uppercase leading-tight sm:text-5xl">
-                Triathlons du Lauragais
-              </h1>
-              <p className="mt-3 text-lg">6-7 juin 2026 — Nailloux</p>
-            </>
+            !hiddenSlots.has("hero") && (
+              <>
+                <h1 className="mt-2 font-display text-4xl uppercase leading-tight sm:text-5xl">
+                  Triathlons du Lauragais
+                </h1>
+                <p className="mt-3 text-lg">6-7 juin 2026 — Nailloux</p>
+              </>
+            )
           )}
           <div className="mt-8 flex flex-wrap gap-4">
             <AddToCalendarButton
@@ -175,15 +184,17 @@ export default async function TriathlonsDuLauragaisPage() {
             />
           </div>
         ) : (
-          <>
-            <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
-              Objectif : 1 200 coureurs
-            </h2>
-            <p className="mt-4 text-toac-blue-900/90">
-              Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du
-              débutant au champion, en individuel, duo ou relais.
-            </p>
-          </>
+          !hiddenSlots.has("objectif") && (
+            <>
+              <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
+                Objectif : 1 200 coureurs
+              </h2>
+              <p className="mt-4 text-toac-blue-900/90">
+                Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du
+                débutant au champion, en individuel, duo ou relais.
+              </p>
+            </>
+          )
         )}
         <div className="mt-6 flex flex-wrap items-center gap-3">
           {formatsSection
@@ -221,9 +232,11 @@ export default async function TriathlonsDuLauragaisPage() {
             />
           </div>
         ) : (
-          <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
-            Épreuve support du challenge régional D3 (Nailloux, 6 juin).
-          </p>
+          !hiddenSlots.has("notice") && (
+            <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
+              Épreuve support du challenge régional D3 (Nailloux, 6 juin).
+            </p>
+          )
         )}
       </section>
 

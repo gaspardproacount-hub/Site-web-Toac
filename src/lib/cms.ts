@@ -156,6 +156,47 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   }
 }
 
+/**
+ * Slots masqués (page_blocks.hidden = true) pour une page — utilisé par les
+ * blocs "à emplacement fixe" qui ont un texte par défaut codé en dur : sans
+ * ça, masquer un tel bloc dans le CMS le fait juste disparaître de
+ * getCmsPageBlocks, et la page réaffiche le texte par défaut à la place (qui
+ * a souvent le même contenu), donnant l'impression que "masquer" ne marche
+ * pas. Ne concerne pas les blocs libres, qui n'ont pas de texte par défaut :
+ * ils disparaissent déjà correctement quand ils sont masqués.
+ */
+export async function getCmsHiddenSlots(slug: string): Promise<Set<string>> {
+  if (!isConfigured) return new Set();
+
+  const pages = await fetchFromCms<{ id: string }>(
+    "pages",
+    "&slug=eq." + encodeURIComponent(slug) + "&select=id"
+  );
+  const page = pages && pages[0];
+  if (!page) return new Set();
+
+  const url =
+    CMS_CONFIG.supabaseUrl +
+    "/rest/v1/page_blocks?page_id=eq." +
+    page.id +
+    "&hidden=eq.true&slot=not.is.null&select=slot";
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: CMS_CONFIG.supabaseAnonKey,
+        Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
+      },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return new Set();
+    const rows = (await res.json()) as { slot: string }[];
+    return new Set(rows.map((r) => r.slot));
+  } catch {
+    return new Set();
+  }
+}
+
 // Menu de navigation et pied de page gérés depuis le CMS (dashboard →
 // Navigation). Renvoie null pour chaque liste quand le CMS n'a aucun lien
 // configuré, pour que l'appelant garde le menu par défaut codé en dur.
