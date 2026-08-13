@@ -9,10 +9,42 @@ import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenBlocks } from "@/lib/cms";
 export const metadata: Metadata = {
   title: "Triathlons du Lauragais",
   description:
-    "15e édition des Triathlons du Lauragais, les 6 et 7 juin 2026 à Nailloux. XS, S, M, L, swimrun et épreuves jeunes.",
+    "Triathlons du Lauragais, à Nailloux. XS, S, M, L, swimrun et épreuves jeunes.",
 };
 
 const FORMATS = ["XS", "S", "M", "L", "Swimrun (SR)", "Jeunes 6-9 ans", "Jeunes 10-13 ans"];
+
+const MONTHS_FR: Record<string, string> = {
+  janvier: "01",
+  février: "02",
+  fevrier: "02",
+  mars: "03",
+  avril: "04",
+  mai: "05",
+  juin: "06",
+  juillet: "07",
+  août: "08",
+  aout: "08",
+  septembre: "09",
+  octobre: "10",
+  novembre: "11",
+  décembre: "12",
+  decembre: "12",
+};
+
+// Lit les dates de l'évènement directement dans le texte affiché ("5-6 juin
+// 2027 — Nailloux", modifiable dans le CMS) plutôt que de les recopier en dur
+// dans le bouton d'agenda — sans ça, chaque nouvelle édition oblige à
+// modifier le code en plus du texte du site.
+function parseEventDates(text: string): { start: string; end: string } | null {
+  const match = /(\d{1,2})\s*-\s*(\d{1,2})\s+([a-zéûô]+)\s+(\d{4})/i.exec(text);
+  if (!match) return null;
+  const [, day1, day2, monthRaw, year] = match;
+  const month = MONTHS_FR[monthRaw.toLowerCase()];
+  if (!month) return null;
+  const pad = (n: string) => n.padStart(2, "0");
+  return { start: `${year}${month}${pad(day1)}`, end: `${year}${month}${pad(day2)}` };
+}
 
 export default async function TriathlonsDuLauragaisPage() {
   const [cmsBlocks, cmsCatalog, hiddenBlocks] = await Promise.all([
@@ -53,6 +85,8 @@ export default async function TriathlonsDuLauragaisPage() {
     [heroBlock, objectifBlock, noticeBlock, editionBlock].filter(Boolean).map((b) => b!.id)
   );
   const extraBlocks = cmsBlocks?.filter((b) => !knownBlockIds.has(b.id)) ?? [];
+
+  const eventDates = parseEventDates(heroBlock?.body ?? "") ?? { start: "20270605", end: "20270606" };
 
   // Emplacements fixes pas encore créés dans le CMS : créés automatiquement
   // (sans clic) dès l'ouverture de l'aperçu dans le dashboard, pour que tout
@@ -149,10 +183,10 @@ export default async function TriathlonsDuLauragaisPage() {
           <div className="mt-8 flex flex-wrap gap-4">
             <AddToCalendarButton
               title="Triathlons du Lauragais"
-              description="15e édition des Triathlons du Lauragais, à Nailloux. XS, S, M, L, swimrun et épreuves jeunes."
+              description="Triathlons du Lauragais, à Nailloux. XS, S, M, L, swimrun et épreuves jeunes."
               location="Nailloux"
-              startDate="20260606"
-              endDate="20260607"
+              startDate={eventDates.start}
+              endDate={eventDates.end}
             />
             <a
               href="https://www.instagram.com/triathlonsdulauragais"
