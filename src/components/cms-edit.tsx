@@ -16,6 +16,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
 
 export function useCmsEditMode(): boolean {
   const searchParams = useSearchParams();
@@ -496,19 +497,41 @@ export function CmsEditableImage({
   target,
   className = "",
   imgClassName = "",
+  zoomable = false,
 }: {
   src: string | null;
   alt: string;
   target: ImageTarget;
   className?: string;
   imgClassName?: string;
+  /** Ouvre la photo en grand au clic, hors mode édition (où le clic sert déjà à la changer). */
+  zoomable?: boolean;
 }) {
   const editMode = useCmsEditMode();
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(src);
   const [uploading, setUploading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   if (!editMode) {
+    if (src && zoomable) {
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            aria-label={`Agrandir la photo — ${alt}`}
+            className={`block cursor-zoom-in p-0 ${className}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={alt} className={imgClassName} />
+          </button>
+          {lightboxOpen && (
+            <PhotoLightbox src={src} alt={alt} onClose={() => setLightboxOpen(false)} />
+          )}
+        </>
+      );
+    }
     return (
       <div className={className}>
         {/* eslint-disable-next-line @next/next/no-img-element */}

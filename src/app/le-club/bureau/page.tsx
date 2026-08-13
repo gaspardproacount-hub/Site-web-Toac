@@ -39,6 +39,7 @@ export default async function BureauPage() {
                   target={{ kind: "product", id: m.id }}
                   className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                   imgClassName="h-14 w-14 rounded-full object-cover"
+                  zoomable
                 />
                 <div>
                   <CmsEditableText
@@ -58,7 +59,7 @@ export default async function BureauPage() {
             ))
           : BUREAU_2026.map((m, i) => (
               <div key={`${m.name}-${m.role}-${i}`} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <SiteImage name={`bureau-${slugify(m.name)}`} label={m.name} className="h-14 w-14 shrink-0 rounded-full" />
+                <SiteImage name={`bureau-${slugify(m.name)}`} label={m.name} className="h-14 w-14 shrink-0 rounded-full" zoomable />
                 <div>
                   <div className="font-medium text-toac-blue-950">{m.name}</div>
                   <div className="text-sm text-toac-blue-900/70">{m.role}</div>
@@ -84,6 +85,7 @@ export default async function BureauPage() {
                   target={{ kind: "product", id: m.id }}
                   className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                   imgClassName="h-14 w-14 rounded-full object-cover"
+                  zoomable
                 />
                 <div>
                   <CmsEditableText
@@ -128,6 +130,7 @@ export default async function BureauPage() {
                   target={{ kind: "product", id: c.id }}
                   className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                   imgClassName="h-14 w-14 rounded-full object-cover"
+                  zoomable
                 />
                 <div>
                   <CmsEditableText
@@ -147,7 +150,7 @@ export default async function BureauPage() {
             ))
           : COACHS.map((c) => (
               <div key={c.name} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <SiteImage name={`coach-${slugify(c.name)}`} label={c.name} className="h-14 w-14 shrink-0 rounded-full" />
+                <SiteImage name={`coach-${slugify(c.name)}`} label={c.name} className="h-14 w-14 shrink-0 rounded-full" zoomable />
                 <div>
                   <div className="font-medium text-toac-blue-950">{c.name}</div>
                   <div className="text-sm text-toac-blue-900/70">{c.discipline}</div>
