@@ -156,30 +156,35 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   }
 }
 
+export type CmsHiddenBlock = { slot: string | null; heading: string };
+
 /**
- * Slots masqués (page_blocks.hidden = true) pour une page — utilisé par les
+ * Blocs masqués (page_blocks.hidden = true) pour une page — utilisé par les
  * blocs "à emplacement fixe" qui ont un texte par défaut codé en dur : sans
  * ça, masquer un tel bloc dans le CMS le fait juste disparaître de
  * getCmsPageBlocks, et la page réaffiche le texte par défaut à la place (qui
  * a souvent le même contenu), donnant l'impression que "masquer" ne marche
  * pas. Ne concerne pas les blocs libres, qui n'ont pas de texte par défaut :
  * ils disparaissent déjà correctement quand ils sont masqués.
+ * Renvoie slot ET heading (pas que le slot) car un bloc masqué créé avant
+ * l'existence des slots n'en a pas encore — il ne serait alors identifiable
+ * que par son ancien titre exact, comme pour findSlot côté page.
  */
-export async function getCmsHiddenSlots(slug: string): Promise<Set<string>> {
-  if (!isConfigured) return new Set();
+export async function getCmsHiddenBlocks(slug: string): Promise<CmsHiddenBlock[]> {
+  if (!isConfigured) return [];
 
   const pages = await fetchFromCms<{ id: string }>(
     "pages",
     "&slug=eq." + encodeURIComponent(slug) + "&select=id"
   );
   const page = pages && pages[0];
-  if (!page) return new Set();
+  if (!page) return [];
 
   const url =
     CMS_CONFIG.supabaseUrl +
     "/rest/v1/page_blocks?page_id=eq." +
     page.id +
-    "&hidden=eq.true&slot=not.is.null&select=slot";
+    "&hidden=eq.true&select=slot,heading";
 
   try {
     const res = await fetch(url, {
@@ -189,11 +194,10 @@ export async function getCmsHiddenSlots(slug: string): Promise<Set<string>> {
       },
       next: { revalidate: 60 },
     });
-    if (!res.ok) return new Set();
-    const rows = (await res.json()) as { slot: string }[];
-    return new Set(rows.map((r) => r.slot));
+    if (!res.ok) return [];
+    return (await res.json()) as CmsHiddenBlock[];
   } catch {
-    return new Set();
+    return [];
   }
 }
 

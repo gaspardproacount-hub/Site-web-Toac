@@ -4,7 +4,7 @@ import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import AddToCalendarButton from "@/components/AddToCalendarButton";
-import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenSlots } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenBlocks } from "@/lib/cms";
 
 export const metadata: Metadata = {
   title: "Triathlons du Lauragais",
@@ -15,21 +15,25 @@ export const metadata: Metadata = {
 const FORMATS = ["XS", "S", "M", "L", "Swimrun (SR)", "Jeunes 6-9 ans", "Jeunes 10-13 ans"];
 
 export default async function TriathlonsDuLauragaisPage() {
-  const [cmsBlocks, cmsCatalog, hiddenSlots] = await Promise.all([
+  const [cmsBlocks, cmsCatalog, hiddenBlocks] = await Promise.all([
     getCmsPageBlocks("triathlons-du-lauragais"),
     getCmsCatalog(),
-    getCmsHiddenSlots("triathlons-du-lauragais"),
+    getCmsHiddenBlocks("triathlons-du-lauragais"),
   ]);
   // Les blocs "à emplacement fixe" sont identifiés par un identifiant
   // technique stable (slot), invisible sur le site — pas par leur titre
   // affiché, qui peut être renommé sans casser le lien avec cet emplacement.
   // Repli sur l'ancien titre exact pour les blocs créés avant l'existence du
-  // slot (pas encore migrés).
+  // slot (pas encore migrés) — y compris pour savoir si un tel bloc est
+  // masqué : getCmsHiddenBlocks renvoie aussi les blocs masqués sans slot.
   function findSlot(slot: string, legacyHeading: string) {
     return (
       cmsBlocks?.find((b) => b.slot === slot) ??
       cmsBlocks?.find((b) => !b.slot && b.heading === legacyHeading)
     );
+  }
+  function isSlotHidden(slot: string, legacyHeading: string) {
+    return hiddenBlocks.some((b) => b.slot === slot || (!b.slot && b.heading === legacyHeading));
   }
   const heroBlock = findSlot("hero", "Triathlons du Lauragais");
   const objectifBlock = findSlot("objectif", "Objectif : 1 200 coureurs");
@@ -55,25 +59,25 @@ export default async function TriathlonsDuLauragaisPage() {
   // soit modifiable directement.
   const missingSlots: EnsureBlockSpec[] = [
     !editionBlock &&
-      !hiddenSlots.has("edition") && {
+      !isSlotHidden("edition", "Édition Triathlons du Lauragais") && {
         slot: "edition",
         heading: "Édition Triathlons du Lauragais",
         body: "15e édition",
       },
     !heroBlock &&
-      !hiddenSlots.has("hero") && {
+      !isSlotHidden("hero", "Triathlons du Lauragais") && {
         slot: "hero",
         heading: "Triathlons du Lauragais",
         body: "6-7 juin 2026 — Nailloux",
       },
     !objectifBlock &&
-      !hiddenSlots.has("objectif") && {
+      !isSlotHidden("objectif", "Objectif : 1 200 coureurs") && {
         slot: "objectif",
         heading: "Objectif : 1 200 coureurs",
         body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
       },
     !noticeBlock &&
-      !hiddenSlots.has("notice") && {
+      !isSlotHidden("notice", "Notice D3") && {
         slot: "notice",
         heading: "Notice D3",
         body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
@@ -107,7 +111,7 @@ export default async function TriathlonsDuLauragaisPage() {
               />
             </div>
           ) : (
-            !hiddenSlots.has("edition") && (
+            !isSlotHidden("edition", "Édition Triathlons du Lauragais") && (
               <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
                 15e édition
               </span>
@@ -133,7 +137,7 @@ export default async function TriathlonsDuLauragaisPage() {
               />
             </div>
           ) : (
-            !hiddenSlots.has("hero") && (
+            !isSlotHidden("hero", "Triathlons du Lauragais") && (
               <>
                 <h1 className="mt-2 font-display text-4xl uppercase leading-tight sm:text-5xl">
                   Triathlons du Lauragais
@@ -184,7 +188,7 @@ export default async function TriathlonsDuLauragaisPage() {
             />
           </div>
         ) : (
-          !hiddenSlots.has("objectif") && (
+          !isSlotHidden("objectif", "Objectif : 1 200 coureurs") && (
             <>
               <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
                 Objectif : 1 200 coureurs
@@ -232,7 +236,7 @@ export default async function TriathlonsDuLauragaisPage() {
             />
           </div>
         ) : (
-          !hiddenSlots.has("notice") && (
+          !isSlotHidden("notice", "Notice D3") && (
             <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
               Épreuve support du challenge régional D3 (Nailloux, 6 juin).
             </p>
