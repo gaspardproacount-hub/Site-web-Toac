@@ -108,7 +108,7 @@ export default function Footer({
                 rel="noopener noreferrer"
                 className="hover:text-white"
               >
-                Instagram @triathlonsdulauragais
+                {socialLinks?.instagram_label || "Instagram @triathlonsdulauragais"}
               </a>
               <CmsEditPencil payload={{ type: "edit-info-field", field: "instagram" }} />
             </li>
@@ -119,7 +119,7 @@ export default function Footer({
                 rel="noopener noreferrer"
                 className="hover:text-white"
               >
-                Facebook Triathlons du Lauragais
+                {socialLinks?.facebook_label || "Facebook Triathlons du Lauragais"}
               </a>
               <CmsEditPencil payload={{ type: "edit-info-field", field: "facebook" }} />
             </li>
