@@ -586,9 +586,11 @@ export function CmsEditPencil({
 export function CmsAddTile({
   payload,
   label,
+  className,
 }: {
   payload: Record<string, unknown>;
   label: string;
+  className?: string;
 }) {
   const editMode = useCmsEditMode();
   if (!editMode) return null;
@@ -597,7 +599,10 @@ export function CmsAddTile({
     <button
       type="button"
       onClick={() => postToDashboard(payload)}
-      className="flex min-h-[56px] w-full items-center justify-center rounded-xl border-2 border-dashed border-toac-blue-900/30 bg-toac-blue-900/5 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-900/10"
+      className={
+        className ??
+        "flex min-h-[56px] w-full items-center justify-center rounded-xl border-2 border-dashed border-toac-blue-900/30 bg-toac-blue-900/5 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-900/10"
+      }
     >
       {label}
     </button>

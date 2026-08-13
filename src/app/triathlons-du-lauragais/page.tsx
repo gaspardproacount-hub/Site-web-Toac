@@ -28,14 +28,22 @@ export default async function TriathlonsDuLauragaisPage() {
   // Bloc sans titre visible sur le site (le champ "titre" ne sert qu'à le
   // retrouver dans le dashboard) : le texte du bandeau rose "Épreuve support…".
   const noticeBlock = cmsBlocks?.find((b) => b.heading === "Notice D3");
+  // Idem : le champ "titre" n'est qu'un identifiant technique, seul le corps
+  // ("15e édition") s'affiche, au-dessus du titre principal.
+  const editionBlock = cmsBlocks?.find((b) => b.heading === "Édition Triathlons du Lauragais");
   const formatsSection = cmsCatalog?.find((s) => s.name === "Formats Triathlons du Lauragais");
   // Blocs ajoutés librement par le client via "+ Ajouter un bloc de contenu"
-  // (ni le hero, ni l'objectif, ni les bénévoles, ni la notice D3) : affichés
-  // tels quels, dans l'ordre choisi dans le dashboard.
+  // (ni le hero, ni l'objectif, ni les bénévoles, ni la notice D3, ni l'édition)
+  // : affichés tels quels, dans l'ordre choisi dans le dashboard.
   const knownBlockIds = new Set(
-    [heroBlock, objectifBlock, benevolesBlock, noticeBlock].filter(Boolean).map((b) => b!.id)
+    [heroBlock, objectifBlock, benevolesBlock, noticeBlock, editionBlock]
+      .filter(Boolean)
+      .map((b) => b!.id)
   );
   const extraBlocks = cmsBlocks?.filter((b) => !knownBlockIds.has(b.id)) ?? [];
+
+  const makeEditableTileClassName =
+    "text-xs font-medium text-toac-pink-300 underline decoration-dotted underline-offset-2 hover:text-toac-pink-200";
 
   return (
     <Suspense fallback={null}>
@@ -49,9 +57,35 @@ export default async function TriathlonsDuLauragaisPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-toac-blue-950 via-toac-blue-950/40 to-transparent" />
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6 lg:px-8">
-          <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            15e édition
-          </span>
+          {editionBlock ? (
+            <div className="relative inline-block pr-8">
+              <CmsEditPencil
+                payload={{ type: "edit-block", blockId: editionBlock.id }}
+                className="absolute -right-1 -top-1 h-5 w-5 text-[9px]"
+              />
+              <CmsEditableText
+                as="span"
+                value={editionBlock.body || "15e édition"}
+                target={{ kind: "block", id: editionBlock.id, field: "body" }}
+                className="font-display text-sm uppercase tracking-wide text-toac-pink-400"
+              />
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-display text-sm uppercase tracking-wide text-toac-pink-400">
+                15e édition
+              </span>
+              <CmsAddTile
+                payload={{
+                  type: "add-block",
+                  heading: "Édition Triathlons du Lauragais",
+                  body: "15e édition",
+                }}
+                label="+ Rendre modifiable"
+                className={makeEditableTileClassName}
+              />
+            </div>
+          )}
           {heroBlock ? (
             <div className="relative pr-9">
               <CmsEditPencil
@@ -77,6 +111,15 @@ export default async function TriathlonsDuLauragaisPage() {
                 Triathlons du Lauragais
               </h1>
               <p className="mt-3 text-lg">6-7 juin 2026 — Nailloux</p>
+              <CmsAddTile
+                payload={{
+                  type: "add-block",
+                  heading: "Triathlons du Lauragais",
+                  body: "6-7 juin 2026 — Nailloux",
+                }}
+                label="+ Rendre le titre et la date modifiables"
+                className={`mt-2 ${makeEditableTileClassName}`}
+              />
             </>
           )}
           <div className="mt-8 flex flex-wrap gap-4">
