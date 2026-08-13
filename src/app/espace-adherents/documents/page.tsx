@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const DOCUMENTS = [
   { label: "Décharge musculation (PDF)", href: "#" },
   { label: "Formulaire d'adhésion (PDF)", href: "#" },
-  { label: "Règlement intérieur (PDF)", href: "#" },
+  { label: "Règlement intérieur", href: "/reglement-interieur" },
   { label: "Compte-rendu AG 2025 (PDF)", href: "#" },
   { label: "Bilan financier 2025 (PDF)", href: "#" },
 ];
