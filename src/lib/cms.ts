@@ -24,6 +24,7 @@ export type CmsPageBlock = {
   body: string;
   image_url: string | null;
   position: number;
+  slot: string | null;
 };
 
 export type CmsSiteSettings = {

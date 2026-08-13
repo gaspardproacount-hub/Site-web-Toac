@@ -18,16 +18,25 @@ export default async function TriathlonsDuLauragaisPage() {
     getCmsPageBlocks("triathlons-du-lauragais"),
     getCmsCatalog(),
   ]);
-  // Les blocs sont identifiés par leur titre (et non leur position) pour ne pas
-  // dépendre de l'ordre de création.
-  const heroBlock = cmsBlocks?.find((b) => b.heading === "Triathlons du Lauragais");
-  const objectifBlock = cmsBlocks?.find((b) => b.heading === "Objectif : 1 200 coureurs");
+  // Les blocs "à emplacement fixe" sont identifiés par un identifiant
+  // technique stable (slot), invisible sur le site — pas par leur titre
+  // affiché, qui peut être renommé sans casser le lien avec cet emplacement.
+  // Repli sur l'ancien titre exact pour les blocs créés avant l'existence du
+  // slot (pas encore migrés).
+  function findSlot(slot: string, legacyHeading: string) {
+    return (
+      cmsBlocks?.find((b) => b.slot === slot) ??
+      cmsBlocks?.find((b) => !b.slot && b.heading === legacyHeading)
+    );
+  }
+  const heroBlock = findSlot("hero", "Triathlons du Lauragais");
+  const objectifBlock = findSlot("objectif", "Objectif : 1 200 coureurs");
   // Bloc sans titre visible sur le site (le champ "titre" ne sert qu'à le
   // retrouver dans le dashboard) : le texte du bandeau rose "Épreuve support…".
-  const noticeBlock = cmsBlocks?.find((b) => b.heading === "Notice D3");
+  const noticeBlock = findSlot("notice", "Notice D3");
   // Idem : le champ "titre" n'est qu'un identifiant technique, seul le corps
   // ("15e édition") s'affiche, au-dessus du titre principal.
-  const editionBlock = cmsBlocks?.find((b) => b.heading === "Édition Triathlons du Lauragais");
+  const editionBlock = findSlot("edition", "Édition Triathlons du Lauragais");
   const formatsSection = cmsCatalog?.find((s) => s.name === "Formats Triathlons du Lauragais");
   // Blocs ajoutés librement par le client via "+ Ajouter un bloc de contenu"
   // (ni le hero, ni l'objectif, ni la notice D3, ni l'édition) : affichés tels
@@ -77,6 +86,7 @@ export default async function TriathlonsDuLauragaisPage() {
               <CmsAddTile
                 payload={{
                   type: "add-block",
+                  slot: "edition",
                   heading: "Édition Triathlons du Lauragais",
                   body: "15e édition",
                 }}
@@ -113,6 +123,7 @@ export default async function TriathlonsDuLauragaisPage() {
               <CmsAddTile
                 payload={{
                   type: "add-block",
+                  slot: "hero",
                   heading: "Triathlons du Lauragais",
                   body: "6-7 juin 2026 — Nailloux",
                 }}
@@ -174,6 +185,7 @@ export default async function TriathlonsDuLauragaisPage() {
             <CmsAddTile
               payload={{
                 type: "add-block",
+                slot: "objectif",
                 heading: "Objectif : 1 200 coureurs",
                 body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
               }}
@@ -225,6 +237,7 @@ export default async function TriathlonsDuLauragaisPage() {
             <CmsAddTile
               payload={{
                 type: "add-block",
+                slot: "notice",
                 heading: "Notice D3",
                 body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
               }}
