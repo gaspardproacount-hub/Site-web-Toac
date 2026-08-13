@@ -23,7 +23,7 @@ export default function MentionsLegalesPage() {
                 <br />
                 Siège social : 20 chemin de Garric, 31200 Toulouse.
                 <br />
-                Contact : toac-triathlon-bureau@googlegroups.com
+                Contact : contact@toac-triathlon.com
               </p>
             </section>
             <section>

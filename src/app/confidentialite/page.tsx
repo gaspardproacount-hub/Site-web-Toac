@@ -37,7 +37,7 @@ export default function ConfidentialitePage() {
               <h2 className="font-display text-base uppercase text-toac-blue-950">Vos droits</h2>
               <p className="mt-2">
                 Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos
-                données. Pour l'exercer, contactez le bureau à toac-triathlon-bureau@googlegroups.com.
+                données. Pour l'exercer, contactez le bureau à contact@toac-triathlon.com.
               </p>
             </section>
           </div>

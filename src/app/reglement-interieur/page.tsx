@@ -441,8 +441,8 @@ export default function ReglementInterieurPage() {
             d&rsquo;accès, de rectification, d&rsquo;effacement et de limitation du traitement de ses
             données, ainsi que d&rsquo;un droit d&rsquo;opposition pour motif légitime. Ces droits peuvent
             être exercés par écrit auprès du Bureau du TOAC Triathlon, à l&rsquo;adresse{" "}
-            <a href="mailto:toac-triathlon-bureau@googlegroups.com" className="text-toac-blue-600 underline">
-              toac-triathlon-bureau@googlegroups.com
+            <a href="mailto:contact@toac-triathlon.com" className="text-toac-blue-600 underline">
+              contact@toac-triathlon.com
             </a>
             .
           </p>

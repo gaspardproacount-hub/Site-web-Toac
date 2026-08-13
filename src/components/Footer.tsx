@@ -31,7 +31,7 @@ export default function Footer({
   // email === undefined : CMS injoignable, on garde l'adresse par défaut.
   // email === "" : l'admin a volontairement vidé le champ dans Informations
   // pour ne plus afficher d'adresse dans le pied de page.
-  const contactEmail = email === undefined ? "toac-triathlon-bureau@googlegroups.com" : email;
+  const contactEmail = email === undefined ? "contact@toac-triathlon.com" : email;
   const sitemapLinks = footerItems && footerItems.length ? footerItems : FOOTER_SITEMAP;
   const infoBlock = footerBlocks?.[0];
   // Blocs supplémentaires ajoutés depuis le dashboard ("+ Ajouter un bloc") :

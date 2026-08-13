@@ -20,7 +20,7 @@ const DOCUMENTS = [
 const CANAUX = [
   {
     titre: "Questions au bureau",
-    detail: "toac-triathlon-bureau@googlegroups.com",
+    detail: "contact@toac-triathlon.com",
   },
   {
     titre: "Échanges entre membres",
