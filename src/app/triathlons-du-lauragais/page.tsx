@@ -19,12 +19,9 @@ export default async function TriathlonsDuLauragaisPage() {
     getCmsCatalog(),
   ]);
   // Les blocs sont identifiés par leur titre (et non leur position) pour ne pas
-  // dépendre de l'ordre de création — un bloc "180 bénévoles" déjà créé par le
-  // client continue de s'afficher au bon endroit même si d'autres blocs
-  // (hero, objectif) sont ajoutés après coup.
+  // dépendre de l'ordre de création.
   const heroBlock = cmsBlocks?.find((b) => b.heading === "Triathlons du Lauragais");
   const objectifBlock = cmsBlocks?.find((b) => b.heading === "Objectif : 1 200 coureurs");
-  const benevolesBlock = cmsBlocks?.find((b) => b.heading === "180 bénévoles nécessaires");
   // Bloc sans titre visible sur le site (le champ "titre" ne sert qu'à le
   // retrouver dans le dashboard) : le texte du bandeau rose "Épreuve support…".
   const noticeBlock = cmsBlocks?.find((b) => b.heading === "Notice D3");
@@ -33,12 +30,12 @@ export default async function TriathlonsDuLauragaisPage() {
   const editionBlock = cmsBlocks?.find((b) => b.heading === "Édition Triathlons du Lauragais");
   const formatsSection = cmsCatalog?.find((s) => s.name === "Formats Triathlons du Lauragais");
   // Blocs ajoutés librement par le client via "+ Ajouter un bloc de contenu"
-  // (ni le hero, ni l'objectif, ni les bénévoles, ni la notice D3, ni l'édition)
-  // : affichés tels quels, dans l'ordre choisi dans le dashboard.
+  // (ni le hero, ni l'objectif, ni la notice D3, ni l'édition) : affichés tels
+  // quels, dans l'ordre choisi dans le dashboard. C'est le cas notamment du
+  // bloc "bénévoles", entièrement géré par le client depuis le CMS (plus de
+  // texte par défaut codé en dur pour cette section).
   const knownBlockIds = new Set(
-    [heroBlock, objectifBlock, benevolesBlock, noticeBlock, editionBlock]
-      .filter(Boolean)
-      .map((b) => b!.id)
+    [heroBlock, objectifBlock, noticeBlock, editionBlock].filter(Boolean).map((b) => b!.id)
   );
   const extraBlocks = cmsBlocks?.filter((b) => !knownBlockIds.has(b.id)) ?? [];
 
@@ -241,49 +238,8 @@ export default async function TriathlonsDuLauragaisPage() {
       <div className="bg-toac-gray-50">
         <section className="py-16">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            {benevolesBlock ? (
-              <div className="relative pr-9">
-                <CmsEditPencil
-                  payload={{ type: "edit-block", blockId: benevolesBlock.id }}
-                  className="absolute right-0 top-0"
-                />
-                <CmsEditableText
-                  as="h2"
-                  value={benevolesBlock.heading}
-                  target={{ kind: "block", id: benevolesBlock.id, field: "heading" }}
-                  className="section-title font-display text-2xl uppercase text-toac-blue-950"
-                />
-                <CmsEditableText
-                  as="p"
-                  value={benevolesBlock.body}
-                  target={{ kind: "block", id: benevolesBlock.id, field: "body" }}
-                  multiline
-                  className="mt-4 block text-toac-blue-900/90"
-                />
-              </div>
-            ) : (
-              <>
-                <h2 className="section-title font-display text-2xl uppercase text-toac-blue-950">
-                  180 bénévoles nécessaires
-                </h2>
-                <p className="mt-4 text-toac-blue-900/90">
-                  L'organisation mobilise 180 bénévoles sur 4 jours : installation le vendredi, course le week-end,
-                  derniers retours le lundi. Cet événement finance la vie du club (sortie club, cadeaux adhérents,
-                  D3, investissements).
-                </p>
-                <CmsAddTile
-                  payload={{
-                    type: "add-block",
-                    heading: "180 bénévoles nécessaires",
-                    body: "L'organisation mobilise 180 bénévoles sur 4 jours : installation le vendredi, course le week-end, derniers retours le lundi. Cet événement finance la vie du club (sortie club, cadeaux adhérents, D3, investissements).",
-                  }}
-                  label="+ Rendre ce bloc modifiable"
-                  className={`mt-2 ${makeEditableTileClassNameLight}`}
-                />
-              </>
-            )}
-            {extraBlocks.map((block) => (
-              <div key={block.id} className="relative mt-12 pr-9">
+            {extraBlocks.map((block, index) => (
+              <div key={block.id} className={`relative pr-9 ${index > 0 ? "mt-12" : ""}`}>
                 <CmsEditPencil
                   payload={{ type: "edit-block", blockId: block.id }}
                   className="absolute right-0 top-0"
