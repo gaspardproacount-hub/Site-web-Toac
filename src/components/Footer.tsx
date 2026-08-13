@@ -90,7 +90,9 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            Contact
+            <Link href="/contact" className="hover:text-toac-pink-300">
+              Contact
+            </Link>
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
             {contactEmail && (
@@ -128,7 +130,9 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            Partenaires
+            <Link href="/le-club/partenaires" className="hover:text-toac-pink-300">
+              Partenaires
+            </Link>
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
             {partnerNames
@@ -145,12 +149,6 @@ export default function Footer({
                 ))
               : PARTNERS.map((partner) => <li key={partner}>{partner}</li>)}
           </ul>
-          <Link
-            href="/le-club/partenaires"
-            className="mt-3 inline-block text-sm font-medium text-toac-pink-400 hover:text-toac-pink-300"
-          >
-            Voir tous nos partenaires →
-          </Link>
         </div>
       </div>
 
