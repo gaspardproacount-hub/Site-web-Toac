@@ -631,3 +631,22 @@ export function CmsAddTile({
     </button>
   );
 }
+
+// Comme CmsAddTile, mais inclut aussi son conteneur (marges/paddings) : le tout
+// disparaît complètement hors mode édition, au lieu de laisser un espace vide.
+export function CmsAddBlockSection({
+  payload,
+  label,
+}: {
+  payload: Record<string, unknown>;
+  label: string;
+}) {
+  const editMode = useCmsEditMode();
+  if (!editMode) return null;
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 pb-16 sm:px-6 lg:px-8">
+      <CmsAddTile payload={payload} label={label} />
+    </div>
+  );
+}
