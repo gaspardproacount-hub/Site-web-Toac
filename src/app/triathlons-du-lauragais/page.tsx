@@ -44,6 +44,8 @@ export default async function TriathlonsDuLauragaisPage() {
 
   const makeEditableTileClassName =
     "text-xs font-medium text-toac-pink-300 underline decoration-dotted underline-offset-2 hover:text-toac-pink-200";
+  const makeEditableTileClassNameLight =
+    "text-xs font-medium text-toac-blue-700 underline decoration-dotted underline-offset-2 hover:text-toac-pink-500";
 
   return (
     <Suspense fallback={null}>
@@ -172,6 +174,15 @@ export default async function TriathlonsDuLauragaisPage() {
               Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du
               débutant au champion, en individuel, duo ou relais.
             </p>
+            <CmsAddTile
+              payload={{
+                type: "add-block",
+                heading: "Objectif : 1 200 coureurs",
+                body: "Deux jours de course dans une ambiance chaleureuse et festive à l'image du club, ouverts à tous du débutant au champion, en individuel, duo ou relais.",
+              }}
+              label="+ Rendre ce bloc modifiable"
+              className={`mt-2 ${makeEditableTileClassNameLight}`}
+            />
           </>
         )}
         <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -210,9 +221,20 @@ export default async function TriathlonsDuLauragaisPage() {
             />
           </div>
         ) : (
-          <p className="mt-6 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
-            Épreuve support du challenge régional D3 (Nailloux, 6 juin).
-          </p>
+          <div className="mt-6">
+            <p className="rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-4 text-sm text-toac-blue-900">
+              Épreuve support du challenge régional D3 (Nailloux, 6 juin).
+            </p>
+            <CmsAddTile
+              payload={{
+                type: "add-block",
+                heading: "Notice D3",
+                body: "Épreuve support du challenge régional D3 (Nailloux, 6 juin).",
+              }}
+              label="+ Rendre ce bloc modifiable"
+              className={`mt-2 ${makeEditableTileClassNameLight}`}
+            />
+          </div>
         )}
       </section>
 
@@ -249,6 +271,15 @@ export default async function TriathlonsDuLauragaisPage() {
                   derniers retours le lundi. Cet événement finance la vie du club (sortie club, cadeaux adhérents,
                   D3, investissements).
                 </p>
+                <CmsAddTile
+                  payload={{
+                    type: "add-block",
+                    heading: "180 bénévoles nécessaires",
+                    body: "L'organisation mobilise 180 bénévoles sur 4 jours : installation le vendredi, course le week-end, derniers retours le lundi. Cet événement finance la vie du club (sortie club, cadeaux adhérents, D3, investissements).",
+                  }}
+                  label="+ Rendre ce bloc modifiable"
+                  className={`mt-2 ${makeEditableTileClassNameLight}`}
+                />
               </>
             )}
             {extraBlocks.map((block) => (
