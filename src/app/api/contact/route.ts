@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const BUREAU_EMAIL = "toac-triathlon-bureau@googlegroups.com";
+const BUREAU_EMAIL = "contact@toac-triathlon.com";
 
 /**
  * Envoie les messages du formulaire de contact / préinscription via l'API
