@@ -135,7 +135,10 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   if (!page) return null;
 
   const blocksUrl =
-    CMS_CONFIG.supabaseUrl + "/rest/v1/page_blocks?page_id=eq." + page.id + "&select=*&order=position.asc";
+    CMS_CONFIG.supabaseUrl +
+    "/rest/v1/page_blocks?page_id=eq." +
+    page.id +
+    "&hidden=eq.false&select=*&order=position.asc";
 
   try {
     const res = await fetch(blocksUrl, {
