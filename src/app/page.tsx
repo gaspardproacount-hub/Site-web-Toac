@@ -202,6 +202,7 @@ export default async function HomePage() {
                       target={{ kind: "product", id: p.id }}
                       className="flex h-16 w-full items-center justify-center"
                       imgClassName="max-h-16 w-full object-contain"
+                      zoomable
                     />
                     <CmsPartnerName
                       as="span"
@@ -221,6 +222,7 @@ export default async function HomePage() {
                       name={`partenaire-${slugify(p.name)}`}
                       label={`Logo ${p.name}`}
                       className="h-16 w-full"
+                      zoomable
                     />
                     <span className="text-center font-display text-sm uppercase text-toac-blue-900/70">
                       {p.name}

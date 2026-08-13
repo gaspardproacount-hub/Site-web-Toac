@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import LieuxMap from "@/components/LieuxMap";
+import SiteImage from "@/components/SiteImage";
 import { LIEUX } from "@/content/lieux";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Lieux - Points de rdv",
@@ -42,6 +43,16 @@ export default async function PointsDeRdvPage() {
         {cmsBlocks
           ? cmsBlocks.map((block) => (
               <div key={block.id} className="relative rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+                {block.image_url && (
+                  <CmsEditableImage
+                    src={block.image_url}
+                    alt={block.heading}
+                    target={{ kind: "block", id: block.id }}
+                    className="mb-4 aspect-video w-full overflow-hidden rounded-md"
+                    imgClassName="aspect-video w-full rounded-md object-cover"
+                    zoomable
+                  />
+                )}
                 <CmsEditableText
                   as="h2"
                   value={block.heading}
@@ -59,6 +70,12 @@ export default async function PointsDeRdvPage() {
             ))
           : LIEUX.map((lieu) => (
               <div key={lieu.id} className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+                <SiteImage
+                  name={`lieu-${lieu.id}`}
+                  label={lieu.nom}
+                  className="mb-4 aspect-video w-full rounded-md"
+                  zoomable
+                />
                 <h2 className="font-display text-base uppercase text-toac-blue-950">{lieu.nom}</h2>
                 <p className="mt-1 text-sm text-toac-blue-900/70">{lieu.adresse}</p>
                 <p className="mt-2 text-sm">
