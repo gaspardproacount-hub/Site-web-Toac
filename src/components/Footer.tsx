@@ -75,7 +75,9 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            Plan du site
+            <Link href="/" className="hover:text-toac-pink-300">
+              Accueil
+            </Link>
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
             {sitemapLinks.map((link) => (
