@@ -19,13 +19,21 @@ export const metadata: Metadata = {
 const PALMARES_TITLE_SLOT = "palmares-title";
 const PALMARES_TITLE_LEGACY = "Ils portent nos couleurs — Palmarès 2025";
 
+// La rubrique catalogue a été renommée "Champions TOAC" (ex "Palmarès 2025") :
+// on reconnaît encore l'ancien nom tant qu'un admin n'a pas renommé la
+// rubrique depuis Dashboard → Catalogue.
+const CHAMPIONS_SECTION_NAME = "Champions TOAC";
+const CHAMPIONS_SECTION_LEGACY_NAME = "Palmarès 2025";
+
 export default async function LeClubPage() {
   const [cmsCatalog, cmsBlocks, hiddenBlocks] = await Promise.all([
     getCmsCatalog(),
     getCmsPageBlocks("le-club"),
     getCmsHiddenBlocks("le-club"),
   ]);
-  const palmaresSection = cmsCatalog?.find((s) => s.name === "Palmarès 2025");
+  const palmaresSection =
+    cmsCatalog?.find((s) => s.name === CHAMPIONS_SECTION_NAME) ??
+    cmsCatalog?.find((s) => s.name === CHAMPIONS_SECTION_LEGACY_NAME);
 
   const palmaresTitleBlock =
     cmsBlocks?.find((b) => b.slot === PALMARES_TITLE_SLOT) ??
@@ -162,6 +170,7 @@ export default async function LeClubPage() {
                       target={{ kind: "product", id: p.id }}
                       className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                       imgClassName="h-14 w-14 rounded-full object-cover"
+                      zoomable
                     />
                     <div>
                       <CmsEditableText
@@ -182,7 +191,12 @@ export default async function LeClubPage() {
                 ))
               : PALMARES_2025.map((p) => (
                   <div key={p.name} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                    <SiteImage name={`palmares-${slugify(p.name)}`} label={p.name} className="h-14 w-14 shrink-0 rounded-full" />
+                    <SiteImage
+                      name={`palmares-${slugify(p.name)}`}
+                      label={p.name}
+                      className="h-14 w-14 shrink-0 rounded-full"
+                      zoomable
+                    />
                     <div>
                       <div className="font-display text-base uppercase text-toac-blue-950">{p.name}</div>
                       <div className="mt-1 text-sm text-toac-blue-900/70">{p.exploit}</div>
