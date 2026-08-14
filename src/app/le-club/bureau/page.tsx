@@ -5,6 +5,7 @@ import { slugify } from "@/lib/slug";
 import { BUREAU_2026, PRESIDENT_HONNEUR, COACHS } from "@/content/bureau";
 import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import EnsureCmsProduct from "@/components/EnsureCmsProduct";
 
 export const metadata: Metadata = {
   title: "Le bureau & les coachs",
@@ -24,6 +25,15 @@ export default async function BureauPage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+      <EnsureCmsProduct
+        product={
+          !honneurSection && {
+            sectionName: "Président d'honneur",
+            name: PRESIDENT_HONNEUR.name,
+            description: PRESIDENT_HONNEUR.description,
+          }
+        }
+      />
       <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
         Le bureau & les coachs
       </h1>
