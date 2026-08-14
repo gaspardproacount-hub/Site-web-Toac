@@ -217,6 +217,18 @@ d'afficher quoi que ce soit sur le site. Laissez la variable vide (ou supprimez-
 en public. La notification de paiement Monetico (`/api/monetico/retour`) reste volontairement accessible
 sans mot de passe, sinon les paiements en cours échoueraient.
 
+### Fermer l'URL Vercel (*.vercel.app) une fois le vrai domaine en ligne
+
+Une fois `toac-triathlon.com` branché (voir domaine personnalisé ci-dessus), l'URL générée par Vercel
+(`site-web-toac.vercel.app`) reste accessible en parallèle — pratique pour les devs, mais pas destinée au
+public. Pour la fermer sans toucher au domaine de production :
+
+- Renseignez `PREVIEW_SITE_PASSWORD` dans les variables d'environnement Vercel : seule cette URL demandera
+  un identifiant/mot de passe (même mécanisme que `SITE_PASSWORD` ci-dessus), `toac-triathlon.com` reste
+  public. Laissez vide pour ne pas la verrouiller.
+- Elle est aussi exclue des moteurs de recherche par défaut (en-tête `X-Robots-Tag: noindex`, voir
+  `next.config.ts`), qu'un mot de passe soit renseigné ou non.
+
 ## 8. Placeholders restants — récapitulatif
 
 - Toutes les photos (`ImagePlaceholder`)
