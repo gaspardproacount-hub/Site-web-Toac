@@ -11,10 +11,26 @@ export const metadata: Metadata = {
   description: "Carte et fiches détaillées des lieux d'entraînement du TOAC Triathlon.",
 };
 
+// Accepte "lat, lng" ou "lat; lng", avec un point OU une virgule comme
+// séparateur décimal (le point-virgule permet de lever l'ambiguïté quand la
+// virgule sert de séparateur décimal à la française, ex. "43,6115; 1,4225").
 function parseLatLng(text: string): { lat: number; lng: number } | null {
-  const parts = text.split(",").map((p) => Number(p.trim()));
+  const raw = text.trim();
+  const separator = raw.includes(";") ? ";" : ",";
+  const parts = raw.split(separator).map((p) => Number(p.trim().replace(",", ".")));
   if (parts.length !== 2 || !parts.every((n) => Number.isFinite(n))) return null;
   return { lat: parts[0], lng: parts[1] };
+}
+
+// Ignore casse, espaces superflus, et variantes d'apostrophes/tirets pour
+// rapprocher le nom d'un produit du Catalogue de celui d'un lieu.
+function normalizeName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/[—–]/g, "-")
+    .replace(/\s+/g, " ");
 }
 
 export default async function PointsDeRdvPage() {
@@ -31,7 +47,7 @@ export default async function PointsDeRdvPage() {
   // (Dashboard → Pages → Lieux - Points de rdv), ce sont eux la source de
   // vérité, chacun avec son propre texte et sa propre image.
   const lieuxForMap = LIEUX.map((lieu) => {
-    const override = gpsSection?.products.find((p) => p.name === lieu.nom);
+    const override = gpsSection?.products.find((p) => normalizeName(p.name) === normalizeName(lieu.nom));
     const coords = override ? parseLatLng(override.description) : null;
     return coords ? { ...lieu, lat: coords.lat, lng: coords.lng } : lieu;
   });
