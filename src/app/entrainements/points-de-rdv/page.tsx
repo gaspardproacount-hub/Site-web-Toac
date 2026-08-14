@@ -38,16 +38,17 @@ export default async function PointsDeRdvPage() {
     getCmsPageBlocks("ou-et-quand"),
     getCmsCatalog(),
   ]);
-  const gpsSection = cmsCatalog?.find((s) => normalizeName(s.name) === normalizeName("Coordonnées GPS"));
-
   // Le visuel de la liste par défaut (LIEUX) est géré comme ses coordonnées
-  // GPS : via le produit "Coordonnées GPS" du même nom dans le Catalogue
-  // (Dashboard → Catalogue). Cette liste par défaut ne sert que de repli
-  // quand la page n'a pas encore de blocs CMS ; une fois des blocs créés
-  // (Dashboard → Pages → Lieux - Points de rdv), ce sont eux la source de
-  // vérité, chacun avec son propre texte et sa propre image.
+  // GPS : via un produit du même nom dans le Catalogue (Dashboard →
+  // Catalogue), quelle que soit la rubrique dans laquelle il se trouve — le
+  // rapprochement se fait uniquement par nom, pas par rubrique, pour ne pas
+  // casser si la rubrique est renommée. Cette liste par défaut ne sert que
+  // de repli quand la page n'a pas encore de blocs CMS ; une fois des blocs
+  // créés (Dashboard → Pages → Lieux - Points de rdv), ce sont eux la
+  // source de vérité, chacun avec son propre texte et sa propre image.
+  const catalogProducts = cmsCatalog?.flatMap((section) => section.products) ?? [];
   const lieuxForMap = LIEUX.map((lieu) => {
-    const override = gpsSection?.products.find((p) => normalizeName(p.name) === normalizeName(lieu.nom));
+    const override = catalogProducts.find((p) => normalizeName(p.name) === normalizeName(lieu.nom));
     const coords = override ? parseLatLng(override.description) : null;
     return coords ? { ...lieu, lat: coords.lat, lng: coords.lng } : lieu;
   });
