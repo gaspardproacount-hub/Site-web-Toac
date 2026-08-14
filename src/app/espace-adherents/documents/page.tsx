@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
+import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Documents & infos internes",
@@ -40,7 +40,10 @@ export default async function DocumentsPage() {
   const session = await getSession();
   if (!session) redirect("/connexion?next=/espace-adherents/documents");
 
-  const cmsCatalog = await getCmsCatalog();
+  const [cmsCatalog, pageBlocks] = await Promise.all([
+    getCmsCatalog(),
+    getCmsPageBlocks("espace-documents"),
+  ]);
   const documentsSection = cmsCatalog?.find((s) => s.name === "Documents adhérents");
   const canauxSection = cmsCatalog?.find((s) => s.name === "Canaux de communication");
 
@@ -50,6 +53,40 @@ export default async function DocumentsPage() {
         Documents & infos internes
       </h1>
 
+      <div className="mt-8 space-y-4">
+        {pageBlocks?.map((block) => (
+          <div key={block.id} className="relative rounded-lg">
+            {block.image_url && (
+              <CmsEditableImage
+                src={block.image_url}
+                alt={block.heading}
+                target={{ kind: "block", id: block.id }}
+                className="mb-4 aspect-video w-full overflow-hidden rounded-lg"
+                imgClassName="aspect-video w-full rounded-lg object-cover"
+              />
+            )}
+            {block.heading && (
+              <CmsEditableText
+                as="h2"
+                value={block.heading}
+                target={{ kind: "block", id: block.id, field: "heading" }}
+                className="font-display text-lg uppercase text-toac-blue-950"
+              />
+            )}
+            {block.body && (
+              <CmsEditableText
+                as="div"
+                value={block.body}
+                target={{ kind: "block", id: block.id, field: "body" }}
+                multiline
+                className="mt-2 block text-sm text-toac-blue-900/90"
+              />
+            )}
+          </div>
+        ))}
+        <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc de texte" />
+      </div>
+
       <h2 className="mt-10 font-display text-lg uppercase text-toac-blue-950">Documents à télécharger</h2>
       <p className="mt-1 text-xs text-toac-blue-900/50">
         Le nom du document est modifiable directement ; le lien de téléchargement se modifie via le champ
@@ -58,7 +95,11 @@ export default async function DocumentsPage() {
       <ul className="mt-4 space-y-2">
         {documentsSection
           ? documentsSection.products.map((doc) => (
-              <li key={doc.id}>
+              <li key={doc.id} className="relative pr-9">
+                <CmsEditPencil
+                  payload={{ type: "edit-product", productId: doc.id }}
+                  className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 text-[10px]"
+                />
                 <a
                   href={doc.description || "#"}
                   className="flex items-center gap-2 rounded-md border border-toac-gray-200 bg-white px-4 py-3 text-sm text-toac-blue-950 shadow-sm hover:bg-toac-gray-50"
@@ -91,7 +132,11 @@ export default async function DocumentsPage() {
       <ul className="mt-4 space-y-3">
         {canauxSection
           ? canauxSection.products.map((c) => (
-              <li key={c.id} className="rounded-md border border-toac-gray-200 bg-white p-4 text-sm shadow-sm">
+              <li key={c.id} className="relative rounded-md border border-toac-gray-200 bg-white p-4 pr-9 text-sm shadow-sm">
+                <CmsEditPencil
+                  payload={{ type: "edit-product", productId: c.id }}
+                  className="absolute right-2 top-2 h-6 w-6 text-[10px]"
+                />
                 <CmsEditableText
                   as="div"
                   value={c.name}
