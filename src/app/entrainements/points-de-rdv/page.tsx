@@ -43,16 +43,14 @@ export default async function PointsDeRdvPage() {
         {cmsBlocks
           ? cmsBlocks.map((block) => (
               <div key={block.id} className="relative rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
-                {block.image_url && (
-                  <CmsEditableImage
-                    src={block.image_url}
-                    alt={block.heading}
-                    target={{ kind: "block", id: block.id }}
-                    className="mb-4 aspect-video w-full overflow-hidden rounded-md"
-                    imgClassName="aspect-video w-full rounded-md object-cover"
-                    zoomable
-                  />
-                )}
+                <CmsEditableImage
+                  src={block.image_url}
+                  alt={block.heading}
+                  target={{ kind: "block", id: block.id }}
+                  className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-toac-gray-100"
+                  imgClassName="aspect-video w-full rounded-md object-cover"
+                  zoomable
+                />
                 <CmsEditableText
                   as="h2"
                   value={block.heading}
