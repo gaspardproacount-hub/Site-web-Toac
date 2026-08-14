@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import LieuxMap from "@/components/LieuxMap";
 import SiteImage from "@/components/SiteImage";
 import { LIEUX } from "@/content/lieux";
-import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
+import { getCmsCatalog } from "@/lib/cms";
+import { CmsEditableImage } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
   title: "Lieux - Points de rdv",
@@ -18,16 +18,21 @@ function parseLatLng(text: string): { lat: number; lng: number } | null {
 }
 
 export default async function PointsDeRdvPage() {
-  const [cmsBlocks, cmsCatalog] = await Promise.all([
-    getCmsPageBlocks("ou-et-quand"),
-    getCmsCatalog(),
-  ]);
+  const cmsCatalog = await getCmsCatalog();
   const gpsSection = cmsCatalog?.find((s) => s.name === "Coordonnées GPS");
 
-  const lieuxForMap = LIEUX.map((lieu) => {
+  // Le visuel de chaque lieu est géré comme ses coordonnées GPS : via le
+  // produit "Coordonnées GPS" du même nom dans le Catalogue (Dashboard →
+  // Catalogue), pas via un bloc de page — c'est là que les photos sont
+  // effectivement chargées.
+  const lieuxData = LIEUX.map((lieu) => {
     const override = gpsSection?.products.find((p) => p.name === lieu.nom);
     const coords = override ? parseLatLng(override.description) : null;
-    return coords ? { ...lieu, lat: coords.lat, lng: coords.lng } : lieu;
+    return {
+      lieu: coords ? { ...lieu, lat: coords.lat, lng: coords.lng } : lieu,
+      imageUrl: override?.image_url ?? null,
+      productId: override?.id,
+    };
   });
 
   return (
@@ -36,60 +41,44 @@ export default async function PointsDeRdvPage() {
       <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Lieux - Points de rdv</h1>
 
       <div className="mt-8">
-        <LieuxMap lieux={lieuxForMap} />
+        <LieuxMap lieux={lieuxData.map((d) => d.lieu)} />
       </div>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
-        {cmsBlocks
-          ? cmsBlocks.map((block) => (
-              <div key={block.id} className="relative rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
-                <CmsEditableImage
-                  src={block.image_url}
-                  alt={block.heading}
-                  target={{ kind: "block", id: block.id }}
-                  className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-toac-gray-100"
-                  imgClassName="aspect-video w-full rounded-md object-cover"
-                  zoomable
-                />
-                <CmsEditableText
-                  as="h2"
-                  value={block.heading}
-                  target={{ kind: "block", id: block.id, field: "heading" }}
-                  className="font-display text-base uppercase text-toac-blue-950"
-                />
-                <CmsEditableText
-                  as="p"
-                  value={block.body}
-                  target={{ kind: "block", id: block.id, field: "body" }}
-                  multiline
-                  className="mt-2 block whitespace-pre-line text-sm text-toac-blue-900/80"
-                />
-              </div>
-            ))
-          : LIEUX.map((lieu) => (
-              <div key={lieu.id} className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
-                <SiteImage
-                  name={`lieu-${lieu.id}`}
-                  label={lieu.nom}
-                  className="mb-4 aspect-video w-full rounded-md"
-                  zoomable
-                />
-                <h2 className="font-display text-base uppercase text-toac-blue-950">{lieu.nom}</h2>
-                <p className="mt-1 text-sm text-toac-blue-900/70">{lieu.adresse}</p>
-                <p className="mt-2 text-sm">
-                  <span className="font-medium">Discipline(s) :</span> {lieu.disciplines.join(", ")}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Créneaux :</span> {lieu.creneaux}
-                </p>
-                {lieu.consignes && (
-                  <p className="mt-2 rounded-md bg-toac-pink-300/10 p-2 text-xs text-toac-blue-900">
-                    ⚠️ {lieu.consignes}
-                  </p>
-                )}
-              </div>
-            ))}
-        <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un lieu" />
+        {lieuxData.map(({ lieu, imageUrl, productId }) => (
+          <div key={lieu.id} className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+            {productId ? (
+              <CmsEditableImage
+                src={imageUrl}
+                alt={lieu.nom}
+                target={{ kind: "product", id: productId }}
+                className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-toac-gray-100"
+                imgClassName="aspect-video w-full rounded-md object-cover"
+                zoomable
+              />
+            ) : (
+              <SiteImage
+                name={`lieu-${lieu.id}`}
+                label={lieu.nom}
+                className="mb-4 aspect-video w-full rounded-md"
+                zoomable
+              />
+            )}
+            <h2 className="font-display text-base uppercase text-toac-blue-950">{lieu.nom}</h2>
+            <p className="mt-1 text-sm text-toac-blue-900/70">{lieu.adresse}</p>
+            <p className="mt-2 text-sm">
+              <span className="font-medium">Discipline(s) :</span> {lieu.disciplines.join(", ")}
+            </p>
+            <p className="text-sm">
+              <span className="font-medium">Créneaux :</span> {lieu.creneaux}
+            </p>
+            {lieu.consignes && (
+              <p className="mt-2 rounded-md bg-toac-pink-300/10 p-2 text-xs text-toac-blue-900">
+                ⚠️ {lieu.consignes}
+              </p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
     </Suspense>
