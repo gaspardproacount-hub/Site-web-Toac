@@ -38,7 +38,7 @@ export default async function PointsDeRdvPage() {
     getCmsPageBlocks("ou-et-quand"),
     getCmsCatalog(),
   ]);
-  const gpsSection = cmsCatalog?.find((s) => s.name === "Coordonnées GPS");
+  const gpsSection = cmsCatalog?.find((s) => normalizeName(s.name) === normalizeName("Coordonnées GPS"));
 
   // Le visuel de la liste par défaut (LIEUX) est géré comme ses coordonnées
   // GPS : via le produit "Coordonnées GPS" du même nom dans le Catalogue
