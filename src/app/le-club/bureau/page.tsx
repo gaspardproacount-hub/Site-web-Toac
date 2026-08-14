@@ -149,7 +149,7 @@ export default async function BureauPage() {
                     as="div"
                     value={m.name}
                     target={{ kind: "product", id: m.id, field: "name" }}
-                    className="font-display uppercase text-toac-blue-950"
+                    className="font-medium text-toac-blue-950"
                   />
                   <CmsEditableText
                     as="div"
@@ -163,7 +163,7 @@ export default async function BureauPage() {
             ))
           : (
               <div className="rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5">
-                <div className="font-display uppercase text-toac-blue-950">{PRESIDENT_HONNEUR.name}</div>
+                <div className="font-medium text-toac-blue-950">{PRESIDENT_HONNEUR.name}</div>
                 <p className="mt-1 text-sm text-toac-blue-900/80">{PRESIDENT_HONNEUR.description}</p>
               </div>
             )}
