@@ -276,10 +276,12 @@ Le Bureau est chargé de son application et peut préciser, lorsque cela est né
     body: `Cette annexe précise chaque saison les modalités pratiques d'application de l'Article 7 et de l'Article 6. Elle peut être mise à jour par le Bureau sans modification du règlement intérieur en cours d'année et selon les besoins opérationnels afin de garantir le bon fonctionnement des activités.
 
 **1. Créneaux actuels**
-- Lundi — 7h00 — 4 lignes d'eau — bassin 25 m — 8 nageurs max/ligne — capacité maximum 32 ;
-- Mardi — 21h00 — 3 lignes d'eau — bassin 50 m — 12 nageurs max/ligne — capacité maximum 36 ;
-- Jeudi — 7h00 — 3 lignes d'eau — bassin 25 m — 8 nageurs max/ligne — capacité maximum 24 ;
-- Vendredi — 7h00 — 5 lignes d'eau (partagées avec le TOAC Natation) — bassin 25 m — 6 nageurs max/ligne — capacité maximum 30.
+| Jour | Horaire | Lignes d'eau | Bassin | Nageurs max/ligne | Capacité maximum |
+| --- | --- | --- | --- | --- | --- |
+| Lundi | 7h00 | 4 lignes | 25 m | 8 | 32 |
+| Mardi | 21h00 | 3 lignes | 50 m | 12 | 36 |
+| Jeudi | 7h00 | 3 lignes | 25 m | 8 | 24 |
+| Vendredi | 7h00 | 5 lignes (partagées avec le TOAC Natation) | 25 m | 6 | 30 |
 
 **2. Évolutions prévues à compter de la rentrée 2026/2027**
 - Tests chronométriques sur 400 m, organisés deux fois par saison (un en septembre, un en janvier) ; possibilité pour l'adhérent d'effectuer le test chronométrique de son côté et de fournir le chrono au club ensuite.

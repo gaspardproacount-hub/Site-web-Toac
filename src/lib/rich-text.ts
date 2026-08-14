@@ -1,9 +1,11 @@
 // Mise en forme légère façon Markdown dans les textes CMS, sans éditeur
 // riche : [texte du lien](/nous-rejoindre) pour un lien, [[texte du bouton]](/url)
 // pour un bouton CTA, **texte** pour du gras, une ligne commençant par "- "
-// pour une puce de liste. Le dashboard Devanture (LinkableTextarea) propose
-// des boutons qui écrivent cette syntaxe automatiquement — inutile de la
-// taper à la main.
+// pour une puce de liste, et un tableau façon Markdown (une ligne d'en-tête
+// "| Colonne 1 | Colonne 2 |" suivie d'une ligne de séparation
+// "| --- | --- |" puis des lignes de données). Le dashboard Devanture
+// (LinkableTextarea) propose des boutons qui écrivent cette syntaxe
+// automatiquement — inutile de la taper à la main.
 //
 // Module sans "use client" (contrairement à components/cms-edit.tsx) : ces
 // fonctions ne font qu'assembler des éléments React à partir de texte, sans
@@ -103,12 +105,62 @@ export function linkifyText(text: string): ReactNode[] {
   return parts;
 }
 
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.length > 1;
+}
+
+/** Ligne "| --- | --- |" (tirets, avec ou sans ":" d'alignement) sous l'en-tête d'un tableau. */
+function isTableSeparatorRow(line: string): boolean {
+  if (!isTableRow(line)) return false;
+  const cells = parseTableRow(line);
+  return cells.length > 0 && cells.every((cell) => /^:?-{1,}:?$/.test(cell));
+}
+
+function parseTableRow(line: string): string[] {
+  const trimmed = line.trim().slice(1, -1);
+  return trimmed.split("|").map((cell) => cell.trim());
+}
+
+function buildTable(headerCells: string[], rows: string[][], key: string): ReactNode {
+  return createElement(
+    "div",
+    { key, className: "my-3 overflow-x-auto rounded-md border border-toac-gray-200" },
+    createElement(
+      "table",
+      { className: "w-full min-w-[480px] border-collapse text-left text-sm" },
+      createElement(
+        "thead",
+        null,
+        createElement(
+          "tr",
+          { className: "bg-toac-gray-50 text-xs uppercase tracking-wide text-toac-blue-900/70" },
+          headerCells.map((cell, i) =>
+            createElement("th", { key: i, className: "border-b border-toac-gray-200 px-3 py-2" }, linkifyText(cell))
+          )
+        )
+      ),
+      createElement(
+        "tbody",
+        null,
+        rows.map((row, ri) =>
+          createElement(
+            "tr",
+            { key: ri, className: "border-b border-toac-gray-200 last:border-0" },
+            row.map((cell, ci) => createElement("td", { key: ci, className: "px-3 py-2" }, linkifyText(cell)))
+          )
+        )
+      )
+    )
+  );
+}
+
 /**
  * Comme linkifyText, mais gère aussi les listes à puces (lignes commençant
- * par "- " ou "• ", regroupées en <ul>) et les sauts de ligne entre
- * paragraphes. Toujours rendu dans un conteneur bloc (jamais un <p>, un <ul>
- * n'y serait pas valide) — voir CmsEditableText, qui force `as="div"` dès
- * que multiline est activé.
+ * par "- " ou "• ", regroupées en <ul>), les tableaux façon Markdown, et les
+ * sauts de ligne entre paragraphes. Toujours rendu dans un conteneur bloc
+ * (jamais un <p>, un <ul>/<table> n'y serait pas valide) — voir
+ * CmsEditableText, qui force `as="div"` dès que multiline est activé.
  */
 export function renderRichText(text: string): ReactNode[] {
   const lines = text.split("\n");
@@ -130,10 +182,29 @@ export function renderRichText(text: string): ReactNode[] {
     needsBreakBeforeNextLine = false;
   }
 
-  for (const line of lines) {
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (isTableRow(line) && i + 1 < lines.length && isTableSeparatorRow(lines[i + 1])) {
+      flushList();
+      const headerCells = parseTableRow(line);
+      const rows: string[][] = [];
+      let j = i + 2;
+      while (j < lines.length && isTableRow(lines[j])) {
+        rows.push(parseTableRow(lines[j]));
+        j++;
+      }
+      blocks.push(buildTable(headerCells, rows, `table-${key++}`));
+      i = j;
+      needsBreakBeforeNextLine = false;
+      continue;
+    }
+
     const bulletMatch = /^\s*[-•]\s+(.*)/.exec(line);
     if (bulletMatch) {
       listBuffer.push(bulletMatch[1]);
+      i++;
       continue;
     }
     flushList();
@@ -142,6 +213,7 @@ export function renderRichText(text: string): ReactNode[] {
     }
     blocks.push(...linkifyText(line));
     needsBreakBeforeNextLine = true;
+    i++;
   }
   flushList();
 

@@ -221,6 +221,23 @@ export function CmsEditableText({
     setCaretOffsets(el, selStart, start + inserted.length);
   }
 
+  function insertTable() {
+    const el = elRef.current;
+    if (!el) return;
+    const text = el.textContent ?? "";
+    const offsets = getCaretOffsets(el);
+    const start = offsets?.start ?? text.length;
+    const end = offsets?.end ?? text.length;
+
+    const template =
+      "\n| Colonne 1 | Colonne 2 | Colonne 3 |\n| --- | --- | --- |\n| Valeur | Valeur | Valeur |";
+    el.textContent = text.slice(0, start) + template + text.slice(end);
+    el.focus();
+    // Sélectionne tout le tableau inséré (hors le "\n" initial) pour que la
+    // personne puisse directement remplacer les valeurs d'exemple.
+    setCaretOffsets(el, start + 1, start + template.length);
+  }
+
   function insertLink() {
     const el = elRef.current;
     if (!el) return;
@@ -306,6 +323,9 @@ export function CmsEditableText({
         </button>
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertButton} className={toolbarButtonClass}>
           🔘 Bouton
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertTable} className={toolbarButtonClass}>
+          ▦ Tableau
         </button>
       </div>
       {editable}
