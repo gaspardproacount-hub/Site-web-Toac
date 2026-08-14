@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         destination: "/entrainements/points-de-rdv",
         permanent: true,
       },
+      {
+        source: "/ou-et-quand",
+        destination: "/entrainements/points-de-rdv",
+        permanent: true,
+      },
     ];
   },
 };
