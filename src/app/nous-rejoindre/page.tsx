@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getCmsPageBlocks } from "@/lib/cms";
+import { getCmsPageBlocks, getCmsHiddenBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 import EtapeAccordionItem from "@/components/EtapeAccordionItem";
-import TarifsAccordion from "@/components/TarifsAccordion";
+import TarifsAccordion, { TARIFS_SLOT, DEFAULT_HEADING as TARIFS_HEADING, DEFAULT_BODY as TARIFS_BODY } from "@/components/TarifsAccordion";
+import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -18,18 +19,42 @@ const ETAPES = [
 ];
 
 export default async function NousRejoindrePage() {
-  const [cmsBlocks, tarifsBlocks] = await Promise.all([
+  const [cmsBlocks, hiddenBlocks] = await Promise.all([
     getCmsPageBlocks("nous-rejoindre"),
-    getCmsPageBlocks("nous-rejoindre-tarifs"),
+    getCmsHiddenBlocks("nous-rejoindre"),
   ]);
+
+  // Le bloc Tarifs a son propre emplacement fixe (comme le titre "Le club en
+  // 3 temps" sur l'accueil) et ne doit pas compter dans l'indexation
+  // positionnelle ci-dessous (intro, étapes), qui reste par position pour ne
+  // pas casser les blocs existants.
+  const tarifsBlock =
+    cmsBlocks?.find((b) => b.slot === TARIFS_SLOT) ??
+    cmsBlocks?.find((b) => !b.slot && b.heading === TARIFS_HEADING);
+  const tarifsHidden = hiddenBlocks.some(
+    (b) => b.slot === TARIFS_SLOT || (!b.slot && b.heading === TARIFS_HEADING)
+  );
+  const positionalBlocks = cmsBlocks?.filter((b) => b.id !== tarifsBlock?.id) ?? cmsBlocks;
+
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
-  const introBlock = cmsBlocks?.[0];
-  const etapeBlocks = cmsBlocks?.slice(1) ?? [];
-  const tarifsBlock = tarifsBlocks?.[0];
+  const introBlock = positionalBlocks?.[0];
+  const etapeBlocks = positionalBlocks?.slice(1) ?? [];
+
+  // Emplacement fixe pas encore créé dans le CMS : créé automatiquement (sans
+  // clic) dès l'ouverture de l'aperçu dans le dashboard.
+  const missingSlots: EnsureBlockSpec[] = [
+    !tarifsBlock &&
+      !tarifsHidden && {
+        slot: TARIFS_SLOT,
+        heading: TARIFS_HEADING,
+        body: TARIFS_BODY,
+      },
+  ].filter((spec): spec is EnsureBlockSpec => Boolean(spec));
 
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <EnsureCmsBlocks blocks={missingSlots} />
       {introBlock ? (
         <>
           <CmsEditableText
@@ -60,9 +85,11 @@ export default async function NousRejoindrePage() {
         </>
       )}
 
-      <div className="mt-10">
-        <TarifsAccordion block={tarifsBlock} />
-      </div>
+      {!tarifsHidden && (
+        <div className="mt-10">
+          <TarifsAccordion block={tarifsBlock} />
+        </div>
+      )}
 
       <ol className="mt-4 space-y-4">
         {etapeBlocks.length

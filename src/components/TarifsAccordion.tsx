@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CmsEditableText, renderRichText } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditPencil, renderRichText } from "@/components/cms-edit";
 import type { CmsPageBlock } from "@/lib/cms";
 
-const DEFAULT_HEADING = "Tarifs";
+export const TARIFS_SLOT = "nous-rejoindre-tarifs";
+export const DEFAULT_HEADING = "Tarifs";
 
-const DEFAULT_BODY = `**Cotisation club**
+export const DEFAULT_BODY = `**Cotisation club**
 - Cotisation annuelle au club : 145 €
 - Dépôt de garantie : 100 € (remboursé en cas de départ du club si engagement bénévole effectué)
 - Trifonction : 95 € (uniquement pour les nouveaux)
@@ -21,17 +22,28 @@ Au choix parmi les 2 types de licence ci-dessous :
 - Entre 4,80 € et 190 € selon la formule choisie`;
 
 /**
- * Bloc "Tarifs" replié par défaut, placé au-dessus des étapes de
- * "Nous rejoindre". Éditable via le CMS (page "nous-rejoindre-tarifs",
- * 1er bloc) dès qu'elle existe côté dashboard — sinon affiche ce contenu
- * de secours, non éditable.
+ * Bloc "Tarifs" à emplacement fixe (slot "nous-rejoindre-tarifs"), replié
+ * par défaut, placé au-dessus des étapes de "Nous rejoindre". Le bloc est
+ * créé automatiquement en base dès l'ouverture de l'aperçu dans le
+ * dashboard (voir EnsureCmsBlocks dans la page) — éditable immédiatement,
+ * sans étape manuelle. `block` est undefined seulement le temps que cette
+ * création automatique ait lieu, ou hors mode édition avant qu'un admin
+ * n'ait jamais ouvert l'aperçu : dans ce cas ce contenu de secours
+ * s'affiche déjà correctement formaté (gras + listes), juste pas encore
+ * éditable.
  */
 export default function TarifsAccordion({ block }: { block: CmsPageBlock | undefined }) {
   const [open, setOpen] = useState(false);
   const panelId = "tarifs-panel";
 
   return (
-    <div className="mb-8 rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+    <div className="relative mb-8 rounded-lg border border-toac-gray-200 bg-white p-5 pr-10 shadow-sm">
+      {block && (
+        <CmsEditPencil
+          payload={{ type: "edit-block", blockId: block.id }}
+          className="absolute right-3 top-3"
+        />
+      )}
       <div
         role="button"
         tabIndex={0}
