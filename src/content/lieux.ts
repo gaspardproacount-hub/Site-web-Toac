@@ -58,14 +58,4 @@ export const LIEUX: Lieu[] = [
     disciplines: ["Course à pied", "Musculation", "Vélo (samedi)"],
     creneaux: "Mercredi 18h30 (course) · mardi/jeudi/vendredi/samedi (muscu) · samedi 8h50 (vélo)",
   },
-  {
-    id: "croix-de-pierre",
-    nom: "Pont de la Croix de Pierre",
-    adresse: "Allée Fernand Jourdant, Toulouse",
-    lat: 43.5877,
-    lng: 1.4232,
-    disciplines: ["Natation libre"],
-    creneaux: "Libre, non encadré",
-    consignes: "Le TOAC n'encadre pas et n'est pas responsable de ces sessions.",
-  },
 ];

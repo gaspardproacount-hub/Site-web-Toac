@@ -3,8 +3,9 @@ import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { BUREAU_2026, PRESIDENT_HONNEUR, COACHS } from "@/content/bureau";
-import { getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
+import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
+import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import EnsureCmsProduct from "@/components/EnsureCmsProduct";
 
 export const metadata: Metadata = {
   title: "Le bureau & les coachs",
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function BureauPage() {
-  const cmsCatalog = await getCmsCatalog();
+  const [cmsCatalog, pageBlocks] = await Promise.all([
+    getCmsCatalog(),
+    getCmsPageBlocks("bureau"),
+  ]);
 
   const bureauSection = cmsCatalog?.find((s) => s.name === "Bureau 2026");
   const coachsSection = cmsCatalog?.find((s) => s.name === "Encadrement sportif");
@@ -21,9 +25,54 @@ export default async function BureauPage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+      <EnsureCmsProduct
+        product={
+          !honneurSection && {
+            sectionName: "Président d'honneur",
+            name: PRESIDENT_HONNEUR.name,
+            description: PRESIDENT_HONNEUR.description,
+          }
+        }
+      />
       <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
         Le bureau & les coachs
       </h1>
+
+      {/* Blocs de texte libres : intro modifiable, affichée au-dessus des
+          membres. D'autres blocs peuvent être ajoutés ici depuis l'aperçu. */}
+      <div className="mt-8 space-y-4">
+        {pageBlocks?.map((block) => (
+          <div key={block.id} className="relative rounded-lg">
+            {block.image_url && (
+              <CmsEditableImage
+                src={block.image_url}
+                alt={block.heading}
+                target={{ kind: "block", id: block.id }}
+                className="mb-4 aspect-video w-full overflow-hidden rounded-lg"
+                imgClassName="aspect-video w-full rounded-lg object-cover"
+              />
+            )}
+            {block.heading && (
+              <CmsEditableText
+                as="h2"
+                value={block.heading}
+                target={{ kind: "block", id: block.id, field: "heading" }}
+                className="font-display text-xl uppercase text-toac-blue-950"
+              />
+            )}
+            {block.body && (
+              <CmsEditableText
+                as="div"
+                value={block.body}
+                target={{ kind: "block", id: block.id, field: "body" }}
+                multiline
+                className="mt-2 block text-toac-blue-900/90"
+              />
+            )}
+          </div>
+        ))}
+        <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc de texte" />
+      </div>
 
       <h2 className="mt-10 font-display text-xl uppercase text-toac-blue-950">Bureau 2026</h2>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -31,14 +80,19 @@ export default async function BureauPage() {
           ? bureauSection.products.map((m) => (
               <div
                 key={m.id}
-                className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
+                className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 pr-9 shadow-sm"
               >
+                <CmsEditPencil
+                  payload={{ type: "edit-product", productId: m.id }}
+                  className="absolute right-2 top-2 h-6 w-6 text-[10px]"
+                />
                 <CmsEditableImage
                   src={m.image_url}
                   alt={m.name}
                   target={{ kind: "product", id: m.id }}
                   className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                   imgClassName="h-14 w-14 rounded-full object-cover"
+                  zoomable
                 />
                 <div>
                   <CmsEditableText
@@ -58,7 +112,7 @@ export default async function BureauPage() {
             ))
           : BUREAU_2026.map((m, i) => (
               <div key={`${m.name}-${m.role}-${i}`} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <SiteImage name={`bureau-${slugify(m.name)}`} label={m.name} className="h-14 w-14 shrink-0 rounded-full" />
+                <SiteImage name={`bureau-${slugify(m.name)}`} label={m.name} className="h-14 w-14 shrink-0 rounded-full" zoomable />
                 <div>
                   <div className="font-medium text-toac-blue-950">{m.name}</div>
                   <div className="text-sm text-toac-blue-900/70">{m.role}</div>
@@ -76,21 +130,26 @@ export default async function BureauPage() {
           ? honneurSection.products.map((m) => (
               <div
                 key={m.id}
-                className="relative flex items-center gap-4 rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5"
+                className="relative flex items-center gap-4 rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5 pr-9"
               >
+                <CmsEditPencil
+                  payload={{ type: "edit-product", productId: m.id }}
+                  className="absolute right-2 top-2 h-6 w-6 text-[10px]"
+                />
                 <CmsEditableImage
                   src={m.image_url}
                   alt={m.name}
                   target={{ kind: "product", id: m.id }}
                   className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                   imgClassName="h-14 w-14 rounded-full object-cover"
+                  zoomable
                 />
                 <div>
                   <CmsEditableText
                     as="div"
                     value={m.name}
                     target={{ kind: "product", id: m.id, field: "name" }}
-                    className="font-display uppercase text-toac-blue-950"
+                    className="font-medium text-toac-blue-950"
                   />
                   <CmsEditableText
                     as="div"
@@ -104,7 +163,7 @@ export default async function BureauPage() {
             ))
           : (
               <div className="rounded-lg border border-toac-pink-500/40 bg-toac-pink-300/10 p-5">
-                <div className="font-display uppercase text-toac-blue-950">{PRESIDENT_HONNEUR.name}</div>
+                <div className="font-medium text-toac-blue-950">{PRESIDENT_HONNEUR.name}</div>
                 <p className="mt-1 text-sm text-toac-blue-900/80">{PRESIDENT_HONNEUR.description}</p>
               </div>
             )}
@@ -120,14 +179,19 @@ export default async function BureauPage() {
           ? coachsSection.products.map((c) => (
               <div
                 key={c.id}
-                className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm"
+                className="relative flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 pr-9 shadow-sm"
               >
+                <CmsEditPencil
+                  payload={{ type: "edit-product", productId: c.id }}
+                  className="absolute right-2 top-2 h-6 w-6 text-[10px]"
+                />
                 <CmsEditableImage
                   src={c.image_url}
                   alt={c.name}
                   target={{ kind: "product", id: c.id }}
                   className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-toac-gray-200"
                   imgClassName="h-14 w-14 rounded-full object-cover"
+                  zoomable
                 />
                 <div>
                   <CmsEditableText
@@ -147,7 +211,7 @@ export default async function BureauPage() {
             ))
           : COACHS.map((c) => (
               <div key={c.name} className="flex items-center gap-4 rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-                <SiteImage name={`coach-${slugify(c.name)}`} label={c.name} className="h-14 w-14 shrink-0 rounded-full" />
+                <SiteImage name={`coach-${slugify(c.name)}`} label={c.name} className="h-14 w-14 shrink-0 rounded-full" zoomable />
                 <div>
                   <div className="font-medium text-toac-blue-950">{c.name}</div>
                   <div className="text-sm text-toac-blue-900/70">{c.discipline}</div>

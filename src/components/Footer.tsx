@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { FOOTER_SITEMAP } from "@/lib/nav";
+import { FOOTER_SITEMAP, type NavLink } from "@/lib/nav";
 import SiteLogo from "./SiteLogo";
-import { CmsEditableText, CmsEditPencil, CmsAddTile } from "./cms-edit";
+import { CmsEditableText, CmsPartnerName, CmsEditPencil, CmsAddTile } from "./cms-edit";
 import type { CmsPageBlock, CmsCatalogSection, CmsSiteSettings } from "@/lib/cms";
 
 const PARTNERS = [
@@ -17,23 +17,29 @@ const ADDRESS = "20 chemin de Garric\n31200 Toulouse";
 
 export default function Footer({
   footerBlocks,
+  footerItems,
   partenairesSection,
   socialLinks,
   email,
 }: {
   footerBlocks?: CmsPageBlock[] | null;
+  footerItems?: NavLink[] | null;
   partenairesSection?: CmsCatalogSection;
   socialLinks?: CmsSiteSettings["social_links"];
   email?: string;
 }) {
-  const contactEmail = email || "toac-triathlon-bureau@googlegroups.com";
+  // email === undefined : CMS injoignable, on garde l'adresse par défaut.
+  // email === "" : l'admin a volontairement vidé le champ dans Informations
+  // pour ne plus afficher d'adresse dans le pied de page.
+  const contactEmail = email === undefined ? "contact@toac-triathlon.com" : email;
+  const sitemapLinks = footerItems && footerItems.length ? footerItems : FOOTER_SITEMAP;
   const infoBlock = footerBlocks?.[0];
   // Blocs supplémentaires ajoutés depuis le dashboard ("+ Ajouter un bloc") :
   // le 1er bloc sert au logo/tagline/adresse, les suivants s'affichent
   // librement sous les 4 colonnes (mentions, horaires, message ponctuel…).
   const extraBlocks = footerBlocks?.slice(1) ?? [];
   const partnerNames = partenairesSection?.products.length
-    ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name }))
+    ? partenairesSection.products.map((p) => ({ id: p.id, name: p.name, url: p.url }))
     : null;
 
   return (
@@ -69,10 +75,12 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            Plan du site
+            <Link href="/" className="hover:text-toac-pink-300">
+              Accueil
+            </Link>
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
-            {FOOTER_SITEMAP.map((link) => (
+            {sitemapLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="hover:text-white">
                   {link.label}
@@ -84,15 +92,19 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            Contact
+            <Link href="/contact" className="hover:text-toac-pink-300">
+              Contact
+            </Link>
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
-            <li className="flex items-center gap-2">
-              <a href={`mailto:${contactEmail}`} className="hover:text-white">
-                {contactEmail}
-              </a>
-              <CmsEditPencil payload={{ type: "edit-info-field", field: "email" }} />
-            </li>
+            {contactEmail && (
+              <li className="flex items-center gap-2">
+                <a href={`mailto:${contactEmail}`} className="hover:text-white">
+                  {contactEmail}
+                </a>
+                <CmsEditPencil payload={{ type: "edit-info-field", field: "email" }} />
+              </li>
+            )}
             <li className="flex items-center gap-2">
               <a
                 href={socialLinks?.instagram || "https://www.instagram.com/triathlonsdulauragais"}
@@ -100,7 +112,7 @@ export default function Footer({
                 rel="noopener noreferrer"
                 className="hover:text-white"
               >
-                Instagram @triathlonsdulauragais
+                {socialLinks?.instagram_label || "Instagram @triathlonsdulauragais"}
               </a>
               <CmsEditPencil payload={{ type: "edit-info-field", field: "instagram" }} />
             </li>
@@ -111,7 +123,7 @@ export default function Footer({
                 rel="noopener noreferrer"
                 className="hover:text-white"
               >
-                Facebook Triathlons du Lauragais
+                {socialLinks?.facebook_label || "Facebook Triathlons du Lauragais"}
               </a>
               <CmsEditPencil payload={{ type: "edit-info-field", field: "facebook" }} />
             </li>
@@ -120,19 +132,25 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            Partenaires
+            <Link href="/le-club/partenaires" className="hover:text-toac-pink-300">
+              Partenaires
+            </Link>
           </h3>
           <ul className="space-y-2 text-sm text-white/80">
             {partnerNames
-              ? partnerNames.map((p) => <li key={p.id}>{p.name}</li>)
+              ? partnerNames.map((p) => (
+                  <li key={p.id}>
+                    <CmsPartnerName
+                      as="span"
+                      value={p.name}
+                      url={p.url}
+                      target={{ kind: "product", id: p.id, field: "name" }}
+                      className="hover:text-white"
+                    />
+                  </li>
+                ))
               : PARTNERS.map((partner) => <li key={partner}>{partner}</li>)}
           </ul>
-          <Link
-            href="/le-club/partenaires"
-            className="mt-3 inline-block text-sm font-medium text-toac-pink-400 hover:text-toac-pink-300"
-          >
-            Voir tous nos partenaires →
-          </Link>
         </div>
       </div>
 

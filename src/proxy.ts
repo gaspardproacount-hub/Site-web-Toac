@@ -9,14 +9,26 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
  * d'afficher n'importe quelle page. Laissez SITE_PASSWORD vide pour un site
  * public normal (comportement par défaut).
  *
+ * Sur l'URL Vercel générée (*.vercel.app), c'est PREVIEW_SITE_PASSWORD (si
+ * définie) qui s'applique à la place — ça permet de garder cette URL fermée
+ * aux devs/tests même une fois le vrai domaine (toac-triathlon.com) public.
+ *
  * Exclu de ce verrou : la notification de paiement Monetico
  * (/api/monetico/retour), qui doit rester joignable par les serveurs
  * Monetico sans authentification navigateur.
  */
 const SITE_LOCK_EXCLUDED_PATHS = ["/api/monetico/retour"];
 
+function getSiteLockPassword(request: NextRequest): string | undefined {
+  const host = request.headers.get("host") ?? "";
+  if (host.endsWith(".vercel.app")) {
+    return process.env.PREVIEW_SITE_PASSWORD || process.env.SITE_PASSWORD;
+  }
+  return process.env.SITE_PASSWORD;
+}
+
 function checkSiteLock(request: NextRequest): NextResponse | null {
-  const password = process.env.SITE_PASSWORD;
+  const password = getSiteLockPassword(request);
   if (!password) return null;
   if (SITE_LOCK_EXCLUDED_PATHS.some((p) => request.nextUrl.pathname.startsWith(p))) {
     return null;

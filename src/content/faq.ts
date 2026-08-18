@@ -83,7 +83,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     categorie: "Entraînements",
     question: "Où et quand ont lieu les entraînements ?",
     reponse:
-      "Consultez le planning de la semaine et la page « Où & Quand ». L'application IDO regroupe toutes les séances du club (horaires, lieux, contenus).",
+      "Consultez le planning de la semaine et la page « Lieux - Points de rdv ». L'application IDO regroupe toutes les séances du club (horaires, lieux, contenus).",
   },
   {
     id: "casque",
@@ -132,6 +132,6 @@ export const FAQ_ITEMS: FaqItem[] = [
     categorie: "Vie du club",
     question: "Qui contacter pour une question ?",
     reponse:
-      "Le bureau du club, à toac-triathlon-bureau@googlegroups.com, ou via le formulaire de la page Contact.",
+      "Le bureau du club, à contact@toac-triathlon.com, ou via le formulaire de la page Contact.",
   },
 ];

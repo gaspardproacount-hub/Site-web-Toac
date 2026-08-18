@@ -13,157 +13,20 @@ import {
   type ChangeEvent,
   type FocusEvent,
   type KeyboardEvent,
-  type ReactNode,
   type Ref,
 } from "react";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
+import { linkifyText, renderRichText } from "@/lib/rich-text";
 
 export function useCmsEditMode(): boolean {
   const searchParams = useSearchParams();
   return searchParams.get("cms_edit") === "1";
 }
 
-// Mise en forme légère façon Markdown dans les textes CMS, sans éditeur
-// riche : [texte du lien](/nous-rejoindre) pour un lien, [[texte du bouton]](/url)
-// pour un bouton CTA, **texte** pour du gras, une ligne commençant par "- "
-// pour une puce de liste. Le dashboard Devanture (LinkableTextarea) propose
-// des boutons qui écrivent cette syntaxe automatiquement — inutile de la
-// taper à la main.
-const LINK_PATTERN = /\[([^\]]+)\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g;
-const BUTTON_PATTERN = /\[\[([^\]]+)\]\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g;
-const BOLD_PATTERN = /\*\*([^*]+)\*\*/g;
-
-const ctaButtonClassName =
-  "inline-flex items-center justify-center rounded-md bg-toac-pink-500 px-4 py-2 font-display text-sm uppercase tracking-wide text-white no-underline transition hover:bg-toac-pink-400";
-
-function parseBold(text: string, keyPrefix: string): ReactNode[] {
-  const parts: ReactNode[] = [];
-  let lastIndex = 0;
-  let key = 0;
-  BOLD_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = BOLD_PATTERN.exec(text))) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-    parts.push(createElement("strong", { key: `${keyPrefix}-b-${key++}` }, match[1]));
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-  return parts;
-}
-
-/** Applique liens + gras sur un segment de texte (pas de bouton CTA). */
-function parseLinksAndBold(text: string, keyPrefix: string): ReactNode[] {
-  const parts: ReactNode[] = [];
-  let lastIndex = 0;
-  let key = 0;
-  LINK_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = LINK_PATTERN.exec(text))) {
-    if (match.index > lastIndex) {
-      parts.push(...parseBold(text.slice(lastIndex, match.index), `${keyPrefix}-l${key}`));
-    }
-    const [, label, href] = match;
-    const external = href.startsWith("http");
-    parts.push(
-      createElement(
-        "a",
-        {
-          key: `${keyPrefix}-link-${key++}`,
-          href,
-          className: "underline decoration-1 underline-offset-2 hover:text-toac-pink-500",
-          ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
-        },
-        label
-      )
-    );
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push(...parseBold(text.slice(lastIndex), `${keyPrefix}-l${key}`));
-  }
-  return parts;
-}
-
-/** Applique boutons CTA + liens + gras sur une seule ligne de texte (pas de saut de ligne). */
-export function linkifyText(text: string): ReactNode[] {
-  const parts: ReactNode[] = [];
-  let lastIndex = 0;
-  let key = 0;
-  BUTTON_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = BUTTON_PATTERN.exec(text))) {
-    if (match.index > lastIndex) {
-      parts.push(...parseLinksAndBold(text.slice(lastIndex, match.index), `b${key}`));
-    }
-    const [, label, href] = match;
-    const external = href.startsWith("http");
-    parts.push(
-      createElement(
-        "a",
-        {
-          key: `button-${key++}`,
-          href,
-          className: ctaButtonClassName,
-          ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
-        },
-        label
-      )
-    );
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    parts.push(...parseLinksAndBold(text.slice(lastIndex), `b${key}`));
-  }
-  return parts;
-}
-
-/**
- * Comme linkifyText, mais gère aussi les listes à puces (lignes commençant
- * par "- " ou "• ", regroupées en <ul>) et les sauts de ligne entre
- * paragraphes. Toujours rendu dans un conteneur bloc (jamais un <p>, un <ul>
- * n'y serait pas valide) — voir CmsEditableText, qui force `as="div"` dès
- * que multiline est activé.
- */
-export function renderRichText(text: string): ReactNode[] {
-  const lines = text.split("\n");
-  const blocks: ReactNode[] = [];
-  let listBuffer: string[] = [];
-  let key = 0;
-  let needsBreakBeforeNextLine = false;
-
-  function flushList() {
-    if (!listBuffer.length) return;
-    blocks.push(
-      createElement(
-        "ul",
-        { key: `ul-${key++}`, className: "my-2 list-disc space-y-1 pl-5" },
-        listBuffer.map((item, i) => createElement("li", { key: i }, linkifyText(item)))
-      )
-    );
-    listBuffer = [];
-    needsBreakBeforeNextLine = false;
-  }
-
-  for (const line of lines) {
-    const bulletMatch = /^\s*[-•]\s+(.*)/.exec(line);
-    if (bulletMatch) {
-      listBuffer.push(bulletMatch[1]);
-      continue;
-    }
-    flushList();
-    if (needsBreakBeforeNextLine) {
-      blocks.push(createElement("br", { key: `br-${key++}` }));
-    }
-    blocks.push(...linkifyText(line));
-    needsBreakBeforeNextLine = true;
-  }
-  flushList();
-
-  return blocks;
-}
+// Réexportés pour compatibilité : historiquement définis ici, maintenant
+// dans lib/rich-text.ts (module sans "use client", pour pouvoir aussi être
+// appelés depuis un Server Component).
+export { linkifyText, renderRichText };
 
 // Position du curseur/de la sélection dans un élément contentEditable,
 // exprimée en index de caractères dans son texte brut (indépendant de la
@@ -358,6 +221,23 @@ export function CmsEditableText({
     setCaretOffsets(el, selStart, start + inserted.length);
   }
 
+  function insertTable() {
+    const el = elRef.current;
+    if (!el) return;
+    const text = el.textContent ?? "";
+    const offsets = getCaretOffsets(el);
+    const start = offsets?.start ?? text.length;
+    const end = offsets?.end ?? text.length;
+
+    const template =
+      "\n| Colonne 1 | Colonne 2 | Colonne 3 |\n| --- | --- | --- |\n| Valeur | Valeur | Valeur |";
+    el.textContent = text.slice(0, start) + template + text.slice(end);
+    el.focus();
+    // Sélectionne tout le tableau inséré (hors le "\n" initial) pour que la
+    // personne puisse directement remplacer les valeurs d'exemple.
+    setCaretOffsets(el, start + 1, start + template.length);
+  }
+
   function insertLink() {
     const el = elRef.current;
     if (!el) return;
@@ -444,10 +324,45 @@ export function CmsEditableText({
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertButton} className={toolbarButtonClass}>
           🔘 Bouton
         </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={insertTable} className={toolbarButtonClass}>
+          ▦ Tableau
+        </button>
       </div>
       {editable}
     </div>
   );
+}
+
+/**
+ * Nom de partenaire éditable, devenant un lien hypertexte vers son site web
+ * dès qu'une URL est renseignée côté CMS (champ "Site web" du produit). Hors
+ * mode édition uniquement : en édition, on garde le texte simplement
+ * modifiable pour ne pas imbriquer un <a> autour d'un contentEditable.
+ */
+export function CmsPartnerName({
+  value,
+  url,
+  target,
+  as = "span",
+  className = "",
+}: {
+  value: string;
+  url?: string | null;
+  target: InlineTarget;
+  as?: "span" | "div" | "h3";
+  className?: string;
+}) {
+  const editMode = useCmsEditMode();
+
+  if (!editMode && url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className={className}>
+        {value}
+      </a>
+    );
+  }
+
+  return <CmsEditableText value={value} target={target} as={as} className={className} />;
 }
 
 export type ImageTarget = { kind: "product" | "block"; id: string };
@@ -464,19 +379,41 @@ export function CmsEditableImage({
   target,
   className = "",
   imgClassName = "",
+  zoomable = false,
 }: {
   src: string | null;
   alt: string;
   target: ImageTarget;
   className?: string;
   imgClassName?: string;
+  /** Ouvre la photo en grand au clic, hors mode édition (où le clic sert déjà à la changer). */
+  zoomable?: boolean;
 }) {
   const editMode = useCmsEditMode();
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(src);
   const [uploading, setUploading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   if (!editMode) {
+    if (src && zoomable) {
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            aria-label={`Agrandir la photo — ${alt}`}
+            className={`block cursor-zoom-in p-0 ${className}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={alt} className={imgClassName} />
+          </button>
+          {lightboxOpen && (
+            <PhotoLightbox src={src} alt={alt} onClose={() => setLightboxOpen(false)} />
+          )}
+        </>
+      );
+    }
     return (
       <div className={className}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -554,9 +491,11 @@ export function CmsEditPencil({
 export function CmsAddTile({
   payload,
   label,
+  className,
 }: {
   payload: Record<string, unknown>;
   label: string;
+  className?: string;
 }) {
   const editMode = useCmsEditMode();
   if (!editMode) return null;
@@ -565,9 +504,31 @@ export function CmsAddTile({
     <button
       type="button"
       onClick={() => postToDashboard(payload)}
-      className="flex min-h-[56px] w-full items-center justify-center rounded-xl border-2 border-dashed border-toac-blue-900/30 bg-toac-blue-900/5 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-900/10"
+      className={
+        className ??
+        "flex min-h-[56px] w-full items-center justify-center rounded-xl border-2 border-dashed border-toac-blue-900/30 bg-toac-blue-900/5 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-900/10"
+      }
     >
       {label}
     </button>
+  );
+}
+
+// Comme CmsAddTile, mais inclut aussi son conteneur (marges/paddings) : le tout
+// disparaît complètement hors mode édition, au lieu de laisser un espace vide.
+export function CmsAddBlockSection({
+  payload,
+  label,
+}: {
+  payload: Record<string, unknown>;
+  label: string;
+}) {
+  const editMode = useCmsEditMode();
+  if (!editMode) return null;
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 pb-16 sm:px-6 lg:px-8">
+      <CmsAddTile payload={payload} label={label} />
+    </div>
   );
 }

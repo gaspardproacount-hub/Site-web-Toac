@@ -19,24 +19,27 @@ export default function ContactForm() {
       message: form.get("message"),
     };
 
+    let response: Response;
     try {
-      const response = await fetch("/api/contact", {
+      response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setErrorMessage(data.error ?? "Une erreur est survenue.");
-        setStatus("error");
-        return;
-      }
-      setStatus("sent");
-      event.currentTarget.reset();
     } catch {
       setErrorMessage("Erreur réseau. Réessayez plus tard.");
       setStatus("error");
+      return;
     }
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      setErrorMessage(data?.error ?? "Une erreur est survenue. Réessayez plus tard.");
+      setStatus("error");
+      return;
+    }
+    setStatus("sent");
+    event.currentTarget.reset();
   }
 
   if (status === "sent") {

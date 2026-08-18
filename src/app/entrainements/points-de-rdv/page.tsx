@@ -1,30 +1,54 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import LieuxMap from "@/components/LieuxMap";
+import SiteImage from "@/components/SiteImage";
 import { LIEUX } from "@/content/lieux";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
-import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
 
 export const metadata: Metadata = {
-  title: "Où & Quand",
+  title: "Lieux - Points de rdv",
   description: "Carte et fiches détaillées des lieux d'entraînement du TOAC Triathlon.",
 };
 
+// Accepte "lat, lng" ou "lat; lng", avec un point OU une virgule comme
+// séparateur décimal (le point-virgule permet de lever l'ambiguïté quand la
+// virgule sert de séparateur décimal à la française, ex. "43,6115; 1,4225").
 function parseLatLng(text: string): { lat: number; lng: number } | null {
-  const parts = text.split(",").map((p) => Number(p.trim()));
+  const raw = text.trim();
+  const separator = raw.includes(";") ? ";" : ",";
+  const parts = raw.split(separator).map((p) => Number(p.trim().replace(",", ".")));
   if (parts.length !== 2 || !parts.every((n) => Number.isFinite(n))) return null;
   return { lat: parts[0], lng: parts[1] };
 }
 
-export default async function OuEtQuandPage() {
+// Ignore casse, espaces superflus, et variantes d'apostrophes/tirets pour
+// rapprocher le nom d'un produit du Catalogue de celui d'un lieu.
+function normalizeName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/[—–]/g, "-")
+    .replace(/\s+/g, " ");
+}
+
+export default async function PointsDeRdvPage() {
   const [cmsBlocks, cmsCatalog] = await Promise.all([
     getCmsPageBlocks("ou-et-quand"),
     getCmsCatalog(),
   ]);
-  const gpsSection = cmsCatalog?.find((s) => s.name === "Coordonnées GPS");
-
+  // Le visuel de la liste par défaut (LIEUX) est géré comme ses coordonnées
+  // GPS : via un produit du même nom dans le Catalogue (Dashboard →
+  // Catalogue), quelle que soit la rubrique dans laquelle il se trouve — le
+  // rapprochement se fait uniquement par nom, pas par rubrique, pour ne pas
+  // casser si la rubrique est renommée. Cette liste par défaut ne sert que
+  // de repli quand la page n'a pas encore de blocs CMS ; une fois des blocs
+  // créés (Dashboard → Pages → Lieux - Points de rdv), ce sont eux la
+  // source de vérité, chacun avec son propre texte et sa propre image.
+  const catalogProducts = cmsCatalog?.flatMap((section) => section.products) ?? [];
   const lieuxForMap = LIEUX.map((lieu) => {
-    const override = gpsSection?.products.find((p) => p.name === lieu.nom);
+    const override = catalogProducts.find((p) => normalizeName(p.name) === normalizeName(lieu.nom));
     const coords = override ? parseLatLng(override.description) : null;
     return coords ? { ...lieu, lat: coords.lat, lng: coords.lng } : lieu;
   });
@@ -32,11 +56,7 @@ export default async function OuEtQuandPage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Où & Quand</h1>
-      <p className="mt-2 text-sm text-toac-blue-900/60">
-        Coordonnées GPS et texte de chaque fiche modifiables depuis le dashboard (rubrique « Coordonnées GPS »
-        du catalogue pour la position des marqueurs).
-      </p>
+      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">Lieux - Points de rdv</h1>
 
       <div className="mt-8">
         <LieuxMap lieux={lieuxForMap} />
@@ -46,6 +66,14 @@ export default async function OuEtQuandPage() {
         {cmsBlocks
           ? cmsBlocks.map((block) => (
               <div key={block.id} className="relative rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+                <CmsEditableImage
+                  src={block.image_url}
+                  alt={block.heading}
+                  target={{ kind: "block", id: block.id }}
+                  className="mb-4 aspect-video w-full overflow-hidden rounded-md bg-toac-gray-100"
+                  imgClassName="aspect-video w-full rounded-md object-cover"
+                  zoomable
+                />
                 <CmsEditableText
                   as="h2"
                   value={block.heading}
@@ -63,6 +91,12 @@ export default async function OuEtQuandPage() {
             ))
           : LIEUX.map((lieu) => (
               <div key={lieu.id} className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+                <SiteImage
+                  name={`lieu-${lieu.id}`}
+                  label={lieu.nom}
+                  className="mb-4 aspect-video w-full rounded-md"
+                  zoomable
+                />
                 <h2 className="font-display text-base uppercase text-toac-blue-950">{lieu.nom}</h2>
                 <p className="mt-1 text-sm text-toac-blue-900/70">{lieu.adresse}</p>
                 <p className="mt-2 text-sm">
