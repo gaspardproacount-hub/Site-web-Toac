@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 // URL Vercel générée automatiquement pour ce projet : on la garde hors des
-// index de recherche (le vrai domaine public est toac-triathlon.com).
+// index de recherche (le vrai domaine public est www.toac-triathlon.com).
 const VERCEL_APP_HOST = "site-web-toac.vercel.app";
 
 const nextConfig: NextConfig = {
