@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getCmsPageBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
 import EtapeAccordionItem from "@/components/EtapeAccordionItem";
+import TarifsAccordion from "@/components/TarifsAccordion";
 
 export const metadata: Metadata = {
   title: "Nous rejoindre",
@@ -17,10 +18,14 @@ const ETAPES = [
 ];
 
 export default async function NousRejoindrePage() {
-  const cmsBlocks = await getCmsPageBlocks("nous-rejoindre");
+  const [cmsBlocks, tarifsBlocks] = await Promise.all([
+    getCmsPageBlocks("nous-rejoindre"),
+    getCmsPageBlocks("nous-rejoindre-tarifs"),
+  ]);
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
   const introBlock = cmsBlocks?.[0];
   const etapeBlocks = cmsBlocks?.slice(1) ?? [];
+  const tarifsBlock = tarifsBlocks?.[0];
 
   return (
     <Suspense fallback={null}>
@@ -55,7 +60,11 @@ export default async function NousRejoindrePage() {
         </>
       )}
 
-      <ol className="mt-10 space-y-4">
+      <div className="mt-10">
+        <TarifsAccordion block={tarifsBlock} />
+      </div>
+
+      <ol className="mt-4 space-y-4">
         {etapeBlocks.length
           ? etapeBlocks.map((block, i) => (
               <EtapeAccordionItem key={block.id} index={i} block={block} />
