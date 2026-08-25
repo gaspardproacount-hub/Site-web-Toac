@@ -27,17 +27,18 @@ export default async function NousRejoindrePage() {
   // Le bloc Tarifs a son propre emplacement fixe (comme le titre "Le club en
   // 3 temps" sur l'accueil) et ne doit pas compter dans l'indexation
   // positionnelle ci-dessous (intro, étapes), qui reste par position pour ne
-  // pas casser les blocs existants. On exclut TOUS les blocs correspondants
-  // (pas juste le premier trouvé) : en cas de doublon créé par une création
-  // concurrente (cache de 60s sur getCmsPageBlocks, deux aperçus ouverts
-  // avant que le premier bloc créé ne soit visible), les doublons restent en
-  // base mais n'apparaissent plus comme fausses étapes.
-  const tarifsMatches =
-    cmsBlocks?.filter((b) => b.slot === TARIFS_SLOT || (!b.slot && b.heading === TARIFS_HEADING)) ?? [];
+  // pas casser les blocs existants. Identifié UNIQUEMENT par son slot (pas
+  // de repli sur le titre "Tarifs" : contrairement au titre du club, ce
+  // bloc n'a pas d'historique pré-slot à rattraper, et matcher sur le titre
+  // ferait qu'une étape renommée "Tarifs" par erreur soit traitée comme LE
+  // bloc Tarifs). On exclut TOUS les blocs du slot (pas juste le premier) :
+  // en cas de doublon créé par une création concurrente (cache de 60s sur
+  // getCmsPageBlocks, deux aperçus ouverts avant que le premier bloc créé ne
+  // soit visible), les doublons restent en base mais n'apparaissent plus
+  // comme fausses étapes.
+  const tarifsMatches = cmsBlocks?.filter((b) => b.slot === TARIFS_SLOT) ?? [];
   const tarifsBlock = tarifsMatches.at(0);
-  const tarifsHidden = hiddenBlocks.some(
-    (b) => b.slot === TARIFS_SLOT || (!b.slot && b.heading === TARIFS_HEADING)
-  );
+  const tarifsHidden = hiddenBlocks.some((b) => b.slot === TARIFS_SLOT);
   const positionalBlocks = cmsBlocks?.filter((b) => !tarifsMatches.some((m) => m.id === b.id)) ?? cmsBlocks;
 
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
