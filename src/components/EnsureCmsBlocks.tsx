@@ -12,14 +12,21 @@ import { postToDashboard, useCmsEditMode } from "@/components/cms-edit";
 
 export type EnsureBlockSpec = { slot: string; heading: string; body: string };
 
-export default function EnsureCmsBlocks({ blocks }: { blocks: EnsureBlockSpec[] }) {
+/**
+ * `slug` : slug réel de la page du site (celui passé à getCmsPageBlocks),
+ * transmis au dashboard pour qu'il crée le bloc sur la BONNE page — une
+ * page "-sections" prévisualise via sa page parente (même URL d'aperçu,
+ * voir lib/preview-url.ts côté Devanture), donc l'écran dashboard
+ * actuellement ouvert n'est pas forcément celui de cette page-ci.
+ */
+export default function EnsureCmsBlocks({ slug, blocks }: { slug: string; blocks: EnsureBlockSpec[] }) {
   const editMode = useCmsEditMode();
   const blocksRef = useRef(blocks);
 
   useEffect(() => {
     if (!editMode || blocksRef.current.length === 0) return;
-    postToDashboard({ type: "ensure-blocks", blocks: blocksRef.current });
-  }, [editMode]);
+    postToDashboard({ type: "ensure-blocks", slug, blocks: blocksRef.current });
+  }, [editMode, slug]);
 
   return null;
 }

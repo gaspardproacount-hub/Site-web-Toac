@@ -88,7 +88,7 @@ export default async function HomePage() {
   return (
     <Suspense fallback={null}>
     <>
-      <EnsureCmsBlocks blocks={missingSlots} />
+      <EnsureCmsBlocks slug="accueil" blocks={missingSlots} />
       <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-toac-blue-950 text-white">
         <SiteImage
           name="hero-accueil"

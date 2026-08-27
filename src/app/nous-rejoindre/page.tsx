@@ -59,7 +59,7 @@ export default async function NousRejoindrePage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <EnsureCmsBlocks blocks={missingSlots} />
+      <EnsureCmsBlocks slug="nous-rejoindre" blocks={missingSlots} />
       {introBlock ? (
         <>
           <CmsEditableText

@@ -75,7 +75,7 @@ export default async function ReglementInterieurPage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-      <EnsureCmsBlocks blocks={missingSlots} />
+      <EnsureCmsBlocks slug="reglement-interieur" blocks={missingSlots} />
       <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
         Règlement intérieur
       </h1>

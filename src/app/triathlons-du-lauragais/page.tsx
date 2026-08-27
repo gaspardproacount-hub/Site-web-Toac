@@ -137,7 +137,7 @@ export default async function TriathlonsDuLauragaisPage() {
   return (
     <Suspense fallback={null}>
     <>
-      <EnsureCmsBlocks blocks={missingSlots} />
+      <EnsureCmsBlocks slug="triathlons-du-lauragais" blocks={missingSlots} />
       <section className="relative flex min-h-[60vh] items-end bg-toac-blue-950 text-white">
         <SiteImage
           name="hero-triathlons-lauragais"
