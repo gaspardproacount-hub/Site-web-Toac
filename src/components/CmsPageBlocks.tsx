@@ -7,9 +7,9 @@ import { CmsEditableText, CmsEditableImage, CmsAddBlockSection } from "@/compone
 // dans le CMS, on affiche le contenu actuel du site tel quel (fallback) — rien
 // ne change sur le site tant que le client n'a pas commencé à éditer cette page.
 export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback: ReactNode }) {
-  const blocks = await getCmsPageBlocks(slug);
+  const rawBlocks = await getCmsPageBlocks(slug);
 
-  if (!blocks) {
+  if (!rawBlocks) {
     return (
       <>
         {fallback}
@@ -17,6 +17,11 @@ export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback
       </>
     );
   }
+
+  // Un bloc "à emplacement fixe" (slot) est rendu par du code dédié à un
+  // endroit précis de la page, pas ici en générique — sans ce filtre, il
+  // apparaîtrait une seconde fois.
+  const blocks = rawBlocks.filter((block) => !block.slot);
 
   return (
     <>

@@ -8,7 +8,8 @@ import {
 } from "@/content/planning";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 import { CmsEditableText, CmsAddTile, CmsEditPencil } from "@/components/cms-edit";
-import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
+import { getCmsCatalog, getCmsPageBlocks, getCmsHiddenBlocks } from "@/lib/cms";
+import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 
 export const metadata: Metadata = {
   title: "Planning des entraînements",
@@ -28,16 +29,27 @@ function guessCreneauColor(text: string): string {
   return DEFAULT_CRENEAU_COLOR;
 }
 
+const NOTICE_SLOT = "entrainements-notice";
 const DEFAULT_NOTICE =
   "**Casque strictement obligatoire** en sortie vélo — le coach peut refuser un adhérent si la sécurité " +
   "du groupe est en jeu. La musculation nécessite une décharge signée, téléchargeable dans l'espace adhérents.";
 
 export default async function EntrainementsPage() {
-  const [cmsCatalog, sectionBlocks] = await Promise.all([
+  const [cmsCatalog, pageBlocks, hiddenBlocks] = await Promise.all([
     getCmsCatalog(),
-    getCmsPageBlocks("entrainements-sections"),
+    getCmsPageBlocks("entrainements"),
+    getCmsHiddenBlocks("entrainements"),
   ]);
-  const noticeBlock = sectionBlocks?.[0];
+  const noticeBlock = pageBlocks?.find((b) => b.slot === NOTICE_SLOT);
+  const noticeHidden = hiddenBlocks.some((b) => b.slot === NOTICE_SLOT);
+  const missingSlots: EnsureBlockSpec[] = [
+    !noticeBlock &&
+      !noticeHidden && {
+        slot: NOTICE_SLOT,
+        heading: "",
+        body: DEFAULT_NOTICE,
+      },
+  ].filter((spec): spec is EnsureBlockSpec => Boolean(spec));
   const planningSections = cmsCatalog?.filter((s) => s.name.startsWith(PLANNING_PREFIX)) ?? [];
   const cmsJours = planningSections.filter((s) => s.name.slice(PLANNING_PREFIX.length) !== "Libre");
 
@@ -49,6 +61,7 @@ export default async function EntrainementsPage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+      <EnsureCmsBlocks slug="entrainements" blocks={missingSlots} />
       <CmsPageBlocks
         slug="entrainements"
         fallback={
@@ -136,22 +149,30 @@ export default async function EntrainementsPage() {
         </div>
       )}
 
-      <div className="mt-10 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-5 text-sm text-toac-blue-900">
-        {noticeBlock ? (
-          <CmsEditableText
-            as="div"
-            value={noticeBlock.body || DEFAULT_NOTICE}
-            target={{ kind: "block", id: noticeBlock.id, field: "body" }}
-            multiline
-          />
-        ) : (
-          <>
-            <strong>Casque strictement obligatoire</strong> en sortie vélo — le coach peut refuser un
-            adhérent si la sécurité du groupe est en jeu. La musculation nécessite une décharge signée,
-            téléchargeable dans l&apos;espace adhérents.
-          </>
-        )}
-      </div>
+      {!noticeHidden && (
+        <div className="relative mt-10 rounded-md border border-toac-pink-500/40 bg-toac-pink-300/10 p-5 pr-10 text-sm text-toac-blue-900">
+          {noticeBlock && (
+            <CmsEditPencil
+              payload={{ type: "edit-block", blockId: noticeBlock.id }}
+              className="absolute right-2 top-2"
+            />
+          )}
+          {noticeBlock ? (
+            <CmsEditableText
+              as="div"
+              value={noticeBlock.body || DEFAULT_NOTICE}
+              target={{ kind: "block", id: noticeBlock.id, field: "body" }}
+              multiline
+            />
+          ) : (
+            <>
+              <strong>Casque strictement obligatoire</strong> en sortie vélo — le coach peut refuser un
+              adhérent si la sécurité du groupe est en jeu. La musculation nécessite une décharge signée,
+              téléchargeable dans l&apos;espace adhérents.
+            </>
+          )}
+        </div>
+      )}
     </div>
     </Suspense>
   );
