@@ -14,11 +14,17 @@ export async function POST(request: NextRequest) {
   const secret = request.headers.get("x-revalidate-secret");
   const expected = process.env.REVALIDATE_SECRET;
 
-  if (!expected || secret !== expected) {
+  if (!expected) {
+    console.error("[api/revalidate] REVALIDATE_SECRET absent côté site");
+    return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  }
+  if (secret !== expected) {
+    console.error("[api/revalidate] secret reçu ne correspond pas à REVALIDATE_SECRET");
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
   revalidatePath("/", "layout");
+  console.log("[api/revalidate] revalidation déclenchée");
 
   return NextResponse.json({ revalidated: true });
 }
