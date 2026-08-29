@@ -173,7 +173,7 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   }
 }
 
-export type CmsHiddenBlock = { slot: string | null; heading: string };
+export type CmsHiddenBlock = { slot: string | null; heading: string; block_type: string };
 
 /**
  * Blocs masqués (page_blocks.hidden = true) pour une page — utilisé par les
@@ -201,7 +201,7 @@ export async function getCmsHiddenBlocks(slug: string): Promise<CmsHiddenBlock[]
     CMS_CONFIG.supabaseUrl +
     "/rest/v1/page_blocks?page_id=eq." +
     page.id +
-    "&hidden=eq.true&select=slot,heading";
+    "&hidden=eq.true&select=slot,heading,block_type";
 
   try {
     const res = await fetch(url, {

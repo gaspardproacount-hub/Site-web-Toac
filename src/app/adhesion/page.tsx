@@ -24,22 +24,20 @@ export default async function AdhesionPage() {
     getCmsHiddenBlocks("adhesion"),
   ]);
 
-  // Le bloc Tarifs a son propre emplacement fixe (comme le titre "Le club en
-  // 3 temps" sur l'accueil). Identifié UNIQUEMENT par son slot (pas de repli
-  // sur le titre "Tarifs" : contrairement au titre du club, ce bloc n'a pas
-  // d'historique pré-slot à rattraper, et matcher sur le titre ferait
-  // qu'une étape renommée "Tarifs" par erreur soit traitée comme LE bloc
-  // Tarifs). On exclut TOUS les blocs du slot (pas juste le premier) : en
-  // cas de doublon créé par une création concurrente, les doublons restent
-  // en base mais n'apparaissent plus comme fausses étapes.
+  // Le bloc Tarifs est identifié par son type explicite "accordion" (réglable
+  // dans le dashboard) — critère PRIORITAIRE — avec repli sur son slot fixe
+  // pour les blocs créés avant l'existence de block_type. Un bloc qui matche
+  // l'un OU l'autre critère est exclu des étapes, pour qu'aucun des deux
+  // mécanismes ne puisse le laisser réapparaître en double.
   // .trim() : un slot saisi à la main dans le dashboard (via le champ
   // "Identifiant technique") peut contenir un espace superflu invisible à
   // l'écran (ex. collé depuis un message) — sans ça, la comparaison stricte
   // échoue silencieusement et le bloc n'est jamais reconnu.
-  const tarifsMatches = cmsBlocks?.filter((b) => b.slot?.trim() === TARIFS_SLOT) ?? [];
-  const tarifsBlock = tarifsMatches.at(0);
-  const tarifsHidden = hiddenBlocks.some((b) => b.slot?.trim() === TARIFS_SLOT);
-  const nonTarifsBlocks = cmsBlocks?.filter((b) => !tarifsMatches.some((m) => m.id === b.id)) ?? cmsBlocks ?? [];
+  const isTarifsBlock = (b: { block_type: string; slot: string | null }) =>
+    b.block_type === "accordion" || b.slot?.trim() === TARIFS_SLOT;
+  const tarifsBlock = cmsBlocks?.find(isTarifsBlock);
+  const tarifsHidden = hiddenBlocks.some(isTarifsBlock);
+  const nonTarifsBlocks = cmsBlocks?.filter((b) => !isTarifsBlock(b)) ?? [];
 
   // Rôle explicite (block_type, réglable dans le dashboard) plutôt que
   // déduit de la position dans la liste : un bloc mal classé ou en double
