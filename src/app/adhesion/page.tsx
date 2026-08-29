@@ -25,15 +25,13 @@ export default async function AdhesionPage() {
   ]);
 
   // Le bloc Tarifs a son propre emplacement fixe (comme le titre "Le club en
-  // 3 temps" sur l'accueil) et ne doit pas compter dans l'indexation
-  // positionnelle ci-dessous (intro, étapes), qui reste par position pour ne
-  // pas casser les blocs existants. Identifié UNIQUEMENT par son slot (pas
-  // de repli sur le titre "Tarifs" : contrairement au titre du club, ce
-  // bloc n'a pas d'historique pré-slot à rattraper, et matcher sur le titre
-  // ferait qu'une étape renommée "Tarifs" par erreur soit traitée comme LE
-  // bloc Tarifs). On exclut TOUS les blocs du slot (pas juste le premier) :
-  // en cas de doublon créé par une création concurrente, les doublons
-  // restent en base mais n'apparaissent plus comme fausses étapes.
+  // 3 temps" sur l'accueil). Identifié UNIQUEMENT par son slot (pas de repli
+  // sur le titre "Tarifs" : contrairement au titre du club, ce bloc n'a pas
+  // d'historique pré-slot à rattraper, et matcher sur le titre ferait
+  // qu'une étape renommée "Tarifs" par erreur soit traitée comme LE bloc
+  // Tarifs). On exclut TOUS les blocs du slot (pas juste le premier) : en
+  // cas de doublon créé par une création concurrente, les doublons restent
+  // en base mais n'apparaissent plus comme fausses étapes.
   // .trim() : un slot saisi à la main dans le dashboard (via le champ
   // "Identifiant technique") peut contenir un espace superflu invisible à
   // l'écran (ex. collé depuis un message) — sans ça, la comparaison stricte
@@ -41,22 +39,30 @@ export default async function AdhesionPage() {
   const tarifsMatches = cmsBlocks?.filter((b) => b.slot?.trim() === TARIFS_SLOT) ?? [];
   const tarifsBlock = tarifsMatches.at(0);
   const tarifsHidden = hiddenBlocks.some((b) => b.slot?.trim() === TARIFS_SLOT);
-  const positionalBlocks = cmsBlocks?.filter((b) => !tarifsMatches.some((m) => m.id === b.id)) ?? cmsBlocks;
+  const nonTarifsBlocks = cmsBlocks?.filter((b) => !tarifsMatches.some((m) => m.id === b.id)) ?? cmsBlocks ?? [];
 
-  // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
-  const introBlock = positionalBlocks?.[0];
-  const etapeBlocks = positionalBlocks?.slice(1) ?? [];
+  // Rôle explicite (block_type, réglable dans le dashboard) plutôt que
+  // déduit de la position dans la liste : un bloc mal classé ou en double
+  // se glissait auparavant en silence à la mauvaise place (ex. un bloc
+  // Tarifs orphelin, sans slot, rendu comme étape). Repli sur le 1er bloc
+  // par position si aucun n'a encore le type "intro" (blocs créés avant
+  // l'existence de block_type), pour ne rien casser rétroactivement.
+  const introBlock = nonTarifsBlocks.find((b) => b.block_type === "intro") ?? nonTarifsBlocks[0];
+  const etapeBlocks = nonTarifsBlocks.filter((b) => b.id !== introBlock?.id);
 
   // Emplacement fixe pas encore créé dans le CMS : créé automatiquement (sans
   // clic) dès l'ouverture de l'aperçu dans le dashboard.
-  const missingSlots: EnsureBlockSpec[] = [
-    !tarifsBlock &&
-      !tarifsHidden && {
-        slot: TARIFS_SLOT,
-        heading: TARIFS_HEADING,
-        body: TARIFS_BODY,
-      },
-  ].filter((spec): spec is EnsureBlockSpec => Boolean(spec));
+  const missingSlotCandidates: (EnsureBlockSpec | null)[] = [
+    !tarifsBlock && !tarifsHidden
+      ? {
+          slot: TARIFS_SLOT,
+          heading: TARIFS_HEADING,
+          body: TARIFS_BODY,
+          block_type: "accordion",
+        }
+      : null,
+  ];
+  const missingSlots = missingSlotCandidates.filter((spec): spec is EnsureBlockSpec => spec !== null);
 
   return (
     <Suspense fallback={null}>

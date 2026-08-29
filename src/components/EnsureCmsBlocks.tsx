@@ -10,7 +10,7 @@
 import { useEffect, useRef } from "react";
 import { postToDashboard, useCmsEditMode } from "@/components/cms-edit";
 
-export type EnsureBlockSpec = { slot: string; heading: string; body: string };
+export type EnsureBlockSpec = { slot: string; heading: string; body: string; block_type?: string };
 
 /**
  * `slug` : slug réel de la page du site (celui passé à getCmsPageBlocks),

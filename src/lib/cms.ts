@@ -25,6 +25,9 @@ export type CmsPageBlock = {
   image_url: string | null;
   position: number;
   slot: string | null;
+  // Rôle explicite du bloc, réglable dans le dashboard : 'content' (défaut,
+  // ex. une étape numérotée), 'intro', 'accordion'.
+  block_type: string;
 };
 
 export type CmsSiteSettings = {
