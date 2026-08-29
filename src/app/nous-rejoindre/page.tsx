@@ -36,9 +36,13 @@ export default async function NousRejoindrePage() {
   // getCmsPageBlocks, deux aperçus ouverts avant que le premier bloc créé ne
   // soit visible), les doublons restent en base mais n'apparaissent plus
   // comme fausses étapes.
-  const tarifsMatches = cmsBlocks?.filter((b) => b.slot === TARIFS_SLOT) ?? [];
+  // .trim() : un slot saisi à la main dans le dashboard (via le champ
+  // "Identifiant technique") peut contenir un espace superflu invisible à
+  // l'écran (ex. collé depuis un message) — sans ça, la comparaison stricte
+  // échoue silencieusement et le bloc n'est jamais reconnu.
+  const tarifsMatches = cmsBlocks?.filter((b) => b.slot?.trim() === TARIFS_SLOT) ?? [];
   const tarifsBlock = tarifsMatches.at(0);
-  const tarifsHidden = hiddenBlocks.some((b) => b.slot === TARIFS_SLOT);
+  const tarifsHidden = hiddenBlocks.some((b) => b.slot?.trim() === TARIFS_SLOT);
   const positionalBlocks = cmsBlocks?.filter((b) => !tarifsMatches.some((m) => m.id === b.id)) ?? cmsBlocks;
 
   // Le 1er bloc sert de titre/intro, les suivants sont les étapes numérotées.
