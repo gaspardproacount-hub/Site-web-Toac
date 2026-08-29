@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const BUREAU_EMAIL = "contact@toac-triathlon.com";
+const CC_EMAIL = "toactri@gmail.com";
+
+// Anti-spam : un bot qui remplit tous les champs (y compris le piège invisible
+// "website") ou qui soumet en dessous de ce délai est traité comme un bot —
+// réponse de succès factice pour ne pas l'alerter, mais aucun envoi réel.
+const HONEYPOT_MIN_DELAY_MS = 3000;
 
 /**
  * Envoie les messages du formulaire de contact / préinscription via l'API
@@ -10,13 +16,21 @@ const BUREAU_EMAIL = "contact@toac-triathlon.com";
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const { name, email, subject, message } = body ?? {};
+  const { name, email, subject, message, website, startedAt } = body ?? {};
 
   if (!name || !email || !message) {
     return NextResponse.json(
       { error: "Nom, email et message sont requis." },
       { status: 400 }
     );
+  }
+
+  const submittedTooFast =
+    typeof startedAt === "number" && Date.now() - startedAt < HONEYPOT_MIN_DELAY_MS;
+
+  if (website || submittedTooFast) {
+    console.info("[contact] Soumission bloquée (anti-spam)", { website, submittedTooFast });
+    return NextResponse.json({ ok: true, mode: "blocked" });
   }
 
   const apiKey = process.env.BREVO_API_KEY;
@@ -45,6 +59,7 @@ export async function POST(request: NextRequest) {
           email: process.env.BREVO_FROM_EMAIL ?? "site@toac-triathlon.com",
         },
         to: [{ email: BUREAU_EMAIL }],
+        cc: [{ email: CC_EMAIL }],
         replyTo: { email, name },
         subject: subject ? `[Site TOAC] ${subject}` : "[Site TOAC] Nouveau message",
         textContent: `De : ${name} <${email}>\n\n${message}`,

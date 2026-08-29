@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 export default function ContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formLoadedAt] = useState(() => Date.now());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,6 +18,9 @@ export default function ContactForm() {
       email: form.get("email"),
       subject: form.get("subject"),
       message: form.get("message"),
+      // Anti-spam : champ piège invisible + délai de remplissage (voir route API).
+      website: form.get("website"),
+      startedAt: formLoadedAt,
     };
 
     let response: Response;
@@ -69,6 +73,12 @@ export default function ContactForm() {
       <div>
         <label htmlFor="message" className="mb-1 block text-sm font-medium text-toac-blue-900">Message</label>
         <textarea id="message" name="message" rows={5} required className="w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30" />
+      </div>
+
+      {/* Champ piège anti-bot : masqué visuellement et aux lecteurs d'écran, un vrai visiteur ne le remplit jamais. */}
+      <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-0 w-0 overflow-hidden">
+        <label htmlFor="website">Laissez ce champ vide</label>
+        <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
       {errorMessage && <p role="alert" className="text-sm font-medium text-red-600">{errorMessage}</p>}
