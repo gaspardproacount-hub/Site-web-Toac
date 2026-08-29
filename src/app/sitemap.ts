@@ -17,6 +17,7 @@ const ROUTES = [
   "/mentions-legales",
   "/confidentialite",
   "/reglement-interieur",
+  "/arbitrage",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
