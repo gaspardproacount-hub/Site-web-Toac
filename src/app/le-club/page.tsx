@@ -65,7 +65,7 @@ export default async function LeClubPage() {
   return (
     <Suspense fallback={null}>
     <>
-      <EnsureCmsBlocks blocks={missingSlots} />
+      <EnsureCmsBlocks slug="le-club" blocks={missingSlots} />
       <section className="relative flex h-[45vh] items-end bg-toac-blue-950 text-white">
         <SiteImage name="hero-le-club" label="Photo — groupe TOAC" priority className="absolute inset-0 h-full w-full opacity-50" />
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pb-10 sm:px-6 lg:px-8">

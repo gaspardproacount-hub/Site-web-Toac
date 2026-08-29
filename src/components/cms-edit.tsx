@@ -250,7 +250,7 @@ export function CmsEditableText({
     const label = window.prompt("Texte du lien (ce que le visiteur voit) :", selected || "cliquez ici");
     if (!label) return;
     const url = window.prompt(
-      "Adresse du lien : une page du site (ex. /nous-rejoindre) ou une adresse complète (https://...)",
+      "Adresse du lien : une page du site (ex. /adhesion) ou une adresse complète (https://...)",
       "/"
     );
     if (!url) return;
@@ -274,7 +274,7 @@ export function CmsEditableText({
     const label = window.prompt("Texte du bouton :", selected || "En savoir plus");
     if (!label) return;
     const url = window.prompt(
-      "Adresse du bouton : une page du site (ex. /nous-rejoindre) ou une adresse complète (https://...)",
+      "Adresse du bouton : une page du site (ex. /adhesion) ou une adresse complète (https://...)",
       "/"
     );
     if (!url) return;

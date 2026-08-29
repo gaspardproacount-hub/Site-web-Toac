@@ -25,6 +25,9 @@ export type CmsPageBlock = {
   image_url: string | null;
   position: number;
   slot: string | null;
+  // Rôle explicite du bloc, réglable dans le dashboard : 'content' (défaut,
+  // ex. une étape numérotée), 'intro', 'accordion'.
+  block_type: string;
 };
 
 export type CmsSiteSettings = {
@@ -85,7 +88,14 @@ async function fetchFromCms<T>(table: string, query: string): Promise<T[] | null
         apikey: CMS_CONFIG.supabaseAnonKey,
         Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
       },
-      next: { revalidate: 60 },
+      // no-store plutôt qu'un revalidate temporisé : ce cache de fetch,
+      // indépendant du cache de route que revalidatePath invalide, pouvait
+      // renvoyer une réponse Supabase périmée même juste après une
+      // revalidation à la demande réussie (revalidatePath ne force pas la
+      // réexécution d'un fetch encore dans sa propre fenêtre de fraîcheur).
+      // Lecture temps réel à chaque requête : coût négligeable pour ce
+      // volume de contenu CMS, et supprime toute ambiguïté de timing.
+      cache: "no-store",
     });
     if (!res.ok) return null;
     return (await res.json()) as T[];
@@ -154,7 +164,7 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
         apikey: CMS_CONFIG.supabaseAnonKey,
         Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
       },
-      next: { revalidate: 60 },
+      cache: "no-store", // voir fetchFromCms plus haut pour le pourquoi
     });
     if (!res.ok) return null;
     return (await res.json()) as CmsPageBlock[];
@@ -163,7 +173,7 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   }
 }
 
-export type CmsHiddenBlock = { slot: string | null; heading: string };
+export type CmsHiddenBlock = { slot: string | null; heading: string; block_type: string };
 
 /**
  * Blocs masqués (page_blocks.hidden = true) pour une page — utilisé par les
@@ -191,7 +201,7 @@ export async function getCmsHiddenBlocks(slug: string): Promise<CmsHiddenBlock[]
     CMS_CONFIG.supabaseUrl +
     "/rest/v1/page_blocks?page_id=eq." +
     page.id +
-    "&hidden=eq.true&select=slot,heading";
+    "&hidden=eq.true&select=slot,heading,block_type";
 
   try {
     const res = await fetch(url, {
@@ -199,7 +209,7 @@ export async function getCmsHiddenBlocks(slug: string): Promise<CmsHiddenBlock[]
         apikey: CMS_CONFIG.supabaseAnonKey,
         Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
       },
-      next: { revalidate: 60 },
+      cache: "no-store", // voir fetchFromCms plus haut pour le pourquoi
     });
     if (!res.ok) return [];
     return (await res.json()) as CmsHiddenBlock[];

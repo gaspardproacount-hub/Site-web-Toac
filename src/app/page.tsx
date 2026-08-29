@@ -88,7 +88,7 @@ export default async function HomePage() {
   return (
     <Suspense fallback={null}>
     <>
-      <EnsureCmsBlocks blocks={missingSlots} />
+      <EnsureCmsBlocks slug="accueil" blocks={missingSlots} />
       <section className="relative flex min-h-[85vh] items-end overflow-hidden bg-toac-blue-950 text-white">
         <SiteImage
           name="hero-accueil"
@@ -122,7 +122,7 @@ export default async function HomePage() {
           </h1>
           <div className="mt-8 flex flex-wrap gap-4">
             <Link
-              href="/nous-rejoindre"
+              href="/adhesion"
               className="rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400"
             >
               Nous rejoindre
