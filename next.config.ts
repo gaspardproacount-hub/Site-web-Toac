@@ -18,10 +18,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       // Redirections depuis l'ancien site (toac-triathlon.com, WordPress)
-      { source: "/adhesion", destination: "/nous-rejoindre", permanent: true },
-      { source: "/adhesions", destination: "/nous-rejoindre", permanent: true },
-      { source: "/inscriptions", destination: "/nous-rejoindre", permanent: true },
-      { source: "/register", destination: "/nous-rejoindre", permanent: true },
+      { source: "/adhesions", destination: "/adhesion", permanent: true },
+      { source: "/inscriptions", destination: "/adhesion", permanent: true },
+      { source: "/register", destination: "/adhesion", permanent: true },
+      // Ancienne page "Nous rejoindre", reconstruite sous "/adhesion".
+      { source: "/nous-rejoindre", destination: "/adhesion", permanent: true },
       { source: "/bureau", destination: "/le-club/bureau", permanent: true },
       { source: "/le-bureau", destination: "/le-club/bureau", permanent: true },
       { source: "/presentation", destination: "/le-club", permanent: true },
@@ -37,7 +38,7 @@ const nextConfig: NextConfig = {
       { source: "/deconnexion", destination: "/connexion", permanent: true },
       {
         source: "/2021/09/24/tout-ce-quil-faut-savoir-pour-nous-rejoindre",
-        destination: "/nous-rejoindre",
+        destination: "/adhesion",
         permanent: true,
       },
       {

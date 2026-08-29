@@ -102,7 +102,7 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
             </div>
           ) : null}
           <Link
-            href="/nous-rejoindre"
+            href="/adhesion"
             className="rounded-md bg-toac-pink-500 px-4 py-2 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400"
           >
             Nous rejoindre
@@ -166,7 +166,7 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
                 </button>
               ) : null}
               <Link
-                href="/nous-rejoindre"
+                href="/adhesion"
                 onClick={() => setMobileOpen(false)}
                 className="mt-2 block rounded-md bg-toac-pink-500 px-4 py-2.5 text-center font-display text-sm uppercase tracking-wide text-white"
               >

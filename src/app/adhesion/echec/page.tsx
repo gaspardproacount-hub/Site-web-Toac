@@ -14,7 +14,7 @@ export default function EchecPage() {
         ou contacter le bureau si le problème persiste.
       </p>
       <Link
-        href="/nous-rejoindre"
+        href="/adhesion"
         className="mt-8 inline-block rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white hover:bg-toac-pink-400"
       >
         Réessayer

@@ -41,7 +41,7 @@ export const FOOTER_SITEMAP: NavLink[] = [
   { label: "Entraînements", href: "/entrainements" },
   { label: "Triathlons du Lauragais", href: "/triathlons-du-lauragais" },
   { label: "FAQ", href: "/faq" },
-  { label: "Nous rejoindre", href: "/nous-rejoindre" },
+  { label: "Nous rejoindre", href: "/adhesion" },
   { label: "Contact", href: "/contact" },
   { label: "Règlement intérieur", href: "/reglement-interieur" },
   { label: "Mentions légales", href: "/mentions-legales" },

@@ -18,10 +18,10 @@ const ETAPES = [
   "Commander sa trifonction TOAC",
 ];
 
-export default async function NousRejoindrePage() {
+export default async function AdhesionPage() {
   const [cmsBlocks, hiddenBlocks] = await Promise.all([
-    getCmsPageBlocks("nous-rejoindre"),
-    getCmsHiddenBlocks("nous-rejoindre"),
+    getCmsPageBlocks("adhesion"),
+    getCmsHiddenBlocks("adhesion"),
   ]);
 
   // Le bloc Tarifs a son propre emplacement fixe (comme le titre "Le club en
@@ -32,10 +32,8 @@ export default async function NousRejoindrePage() {
   // bloc n'a pas d'historique pré-slot à rattraper, et matcher sur le titre
   // ferait qu'une étape renommée "Tarifs" par erreur soit traitée comme LE
   // bloc Tarifs). On exclut TOUS les blocs du slot (pas juste le premier) :
-  // en cas de doublon créé par une création concurrente (cache de 60s sur
-  // getCmsPageBlocks, deux aperçus ouverts avant que le premier bloc créé ne
-  // soit visible), les doublons restent en base mais n'apparaissent plus
-  // comme fausses étapes.
+  // en cas de doublon créé par une création concurrente, les doublons
+  // restent en base mais n'apparaissent plus comme fausses étapes.
   // .trim() : un slot saisi à la main dans le dashboard (via le champ
   // "Identifiant technique") peut contenir un espace superflu invisible à
   // l'écran (ex. collé depuis un message) — sans ça, la comparaison stricte
@@ -63,7 +61,7 @@ export default async function NousRejoindrePage() {
   return (
     <Suspense fallback={null}>
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-      <EnsureCmsBlocks slug="nous-rejoindre" blocks={missingSlots} />
+      <EnsureCmsBlocks slug="adhesion" blocks={missingSlots} />
       {introBlock ? (
         <>
           <CmsEditableText

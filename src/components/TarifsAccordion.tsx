@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CmsEditableText, CmsEditPencil, renderRichText } from "@/components/cms-edit";
 import type { CmsPageBlock } from "@/lib/cms";
 
-export const TARIFS_SLOT = "nous-rejoindre-tarifs";
+export const TARIFS_SLOT = "adhesion-tarifs";
 export const DEFAULT_HEADING = "Tarifs";
 
 export const DEFAULT_BODY = `**Cotisation club**
@@ -22,7 +22,7 @@ Au choix parmi les 2 types de licence ci-dessous :
 - Entre 4,80 € et 190 € selon la formule choisie`;
 
 /**
- * Bloc "Tarifs" à emplacement fixe (slot "nous-rejoindre-tarifs"), replié
+ * Bloc "Tarifs" à emplacement fixe (slot "adhesion-tarifs"), replié
  * par défaut, placé au-dessus des étapes de "Nous rejoindre". Le bloc est
  * créé automatiquement en base dès l'ouverture de l'aperçu dans le
  * dashboard (voir EnsureCmsBlocks dans la page) — éditable immédiatement,

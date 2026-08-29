@@ -12,7 +12,7 @@ const ROUTES = [
   "/entrainements/points-de-rdv",
   "/triathlons-du-lauragais",
   "/faq",
-  "/nous-rejoindre",
+  "/adhesion",
   "/contact",
   "/mentions-legales",
   "/confidentialite",

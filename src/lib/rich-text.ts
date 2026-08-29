@@ -1,5 +1,5 @@
 // Mise en forme légère façon Markdown dans les textes CMS, sans éditeur
-// riche : [texte du lien](/nous-rejoindre) pour un lien, [[texte du bouton]](/url)
+// riche : [texte du lien](/adhesion) pour un lien, [[texte du bouton]](/url)
 // pour un bouton CTA, **texte** pour du gras, une ligne commençant par "- "
 // pour une puce de liste, et un tableau façon Markdown (une ligne d'en-tête
 // "| Colonne 1 | Colonne 2 |" suivie d'une ligne de séparation

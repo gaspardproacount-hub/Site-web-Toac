@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 const LIENS_UTILES = [
   { href: "/", label: "Accueil" },
-  { href: "/nous-rejoindre", label: "Nous rejoindre" },
+  { href: "/adhesion", label: "Nous rejoindre" },
   { href: "/entrainements", label: "Entraînements" },
   { href: "/triathlons-du-lauragais", label: "Triathlons du Lauragais" },
   { href: "/le-club", label: "Le club" },

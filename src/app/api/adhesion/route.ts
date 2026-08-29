@@ -21,7 +21,7 @@ import type { LicenceType } from "@/content/tarifs";
 export const maxDuration = 30;
 
 function htmlError(message: string) {
-  return new NextResponse(buildErrorHtml(message, "/nous-rejoindre"), {
+  return new NextResponse(buildErrorHtml(message, "/adhesion"), {
     status: 400,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
