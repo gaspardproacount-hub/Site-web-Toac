@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import InstagramFeed from "@/components/InstagramFeed";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
+import { INSTAGRAM } from "@/content/instagram";
 import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsPartnerName } from "@/components/cms-edit";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
@@ -229,7 +230,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <InstagramFeed block={instagramBlock} />
+      {INSTAGRAM.enabled && <InstagramFeed block={instagramBlock} />}
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="section-title text-center font-display text-2xl uppercase text-toac-blue-950 sm:text-3xl">

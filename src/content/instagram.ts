@@ -28,6 +28,11 @@
  * « Suivez-nous » + 3 vignettes de secours (voir plus bas).
  */
 export const INSTAGRAM = {
+  // Passez à false pour masquer entièrement le bloc Instagram de la page
+  // d'accueil (ex. le temps de trouver une nouvelle solution gratuite).
+  // Repassez à true pour le republier.
+  enabled: false,
+
   // Compte affiché (sans @).
   handle: "toactriathlon",
 
