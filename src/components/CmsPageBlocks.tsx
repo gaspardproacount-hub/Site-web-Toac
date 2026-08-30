@@ -26,7 +26,11 @@ export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback
   return (
     <>
       {blocks.map((block) => (
-        <section key={block.id} className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        <section
+          key={block.id}
+          id={block.anchor ?? undefined}
+          className="mx-auto max-w-4xl scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8"
+        >
           <div className="relative rounded-lg">
             {block.image_url && (
               <CmsEditableImage

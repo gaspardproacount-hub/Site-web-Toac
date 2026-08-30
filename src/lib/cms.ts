@@ -28,6 +28,9 @@ export type CmsPageBlock = {
   // Rôle explicite du bloc, réglable dans le dashboard : 'content' (défaut,
   // ex. une étape numérotée), 'intro', 'accordion'.
   block_type: string;
+  // Ancre choisie par le client dans le dashboard (ex. "tarifs"), utilisée
+  // comme id HTML pour permettre un lien "#tarifs" pointant sur ce bloc.
+  anchor: string | null;
 };
 
 export type CmsSiteSettings = {
