@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const BUREAU_EMAIL = "contact@toac-triathlon.com";
-const CC_EMAIL = "toactri@gmail.com";
 
 // Anti-spam : un bot qui remplit tous les champs (y compris le piège invisible
 // "website") ou qui soumet en dessous de ce délai est traité comme un bot —
@@ -59,7 +58,6 @@ export async function POST(request: NextRequest) {
           email: process.env.BREVO_FROM_EMAIL ?? "site@toac-triathlon.com",
         },
         to: [{ email: BUREAU_EMAIL }],
-        cc: [{ email: CC_EMAIL }],
         replyTo: { email, name },
         subject: subject ? `[Site TOAC] ${subject}` : "[Site TOAC] Nouveau message",
         textContent: `De : ${name} <${email}>\n\n${message}`,
