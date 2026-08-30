@@ -14,7 +14,7 @@ export default function EtapeAccordionItem({ index, block }: { index: number; bl
   const panelId = `etape-panel-${block.id}`;
 
   return (
-    <li className="border-b border-toac-gray-100 pb-3 last:border-0">
+    <li id={block.anchor ?? undefined} className="scroll-mt-24 border-b border-toac-gray-100 pb-3 last:border-0">
       <div className="flex items-start gap-4">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-toac-blue-950 font-display text-sm text-toac-pink-400">
           {index + 1}

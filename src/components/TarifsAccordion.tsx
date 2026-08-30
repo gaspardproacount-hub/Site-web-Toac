@@ -37,7 +37,10 @@ export default function TarifsAccordion({ block }: { block: CmsPageBlock | undef
   const panelId = "tarifs-panel";
 
   return (
-    <div className="relative mb-8 rounded-lg border border-toac-gray-200 bg-white p-5 pr-10 shadow-sm">
+    <div
+      id={block?.anchor ?? undefined}
+      className="relative mb-8 scroll-mt-24 rounded-lg border border-toac-gray-200 bg-white p-5 pr-10 shadow-sm"
+    >
       {block && (
         <CmsEditPencil
           payload={{ type: "edit-block", blockId: block.id }}

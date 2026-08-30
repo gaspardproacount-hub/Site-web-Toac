@@ -148,7 +148,8 @@ export default async function PartenairesPage() {
           ? pageBlocks.map((block) => (
               <div
                 key={block.id}
-                className="rounded-md border border-toac-pink-500/30 bg-toac-pink-300/20 p-5 text-sm text-toac-blue-900"
+                id={block.anchor ?? undefined}
+                className="scroll-mt-24 rounded-md border border-toac-pink-500/30 bg-toac-pink-300/20 p-5 text-sm text-toac-blue-900"
               >
                 {block.heading && (
                   <CmsEditableText

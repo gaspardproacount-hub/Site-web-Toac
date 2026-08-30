@@ -117,7 +117,7 @@ export default async function ReglementInterieurPage() {
         {extraBlocks.map((block) => (
           <section
             key={block.id}
-            id={slugify(block.heading) || block.id}
+            id={block.anchor || slugify(block.heading) || block.id}
             className="scroll-mt-24 border-t border-toac-gray-200 pt-8"
           >
             <CmsEditableText

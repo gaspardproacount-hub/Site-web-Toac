@@ -65,7 +65,11 @@ export default async function PointsDeRdvPage() {
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         {cmsBlocks
           ? cmsBlocks.map((block) => (
-              <div key={block.id} className="relative rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
+              <div
+                key={block.id}
+                id={block.anchor ?? undefined}
+                className="relative scroll-mt-24 rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm"
+              >
                 <CmsEditableImage
                   src={block.image_url}
                   alt={block.heading}

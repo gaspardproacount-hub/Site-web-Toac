@@ -326,7 +326,11 @@ export default async function TriathlonsDuLauragaisPage() {
         <section className="py-16">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             {extraBlocks.map((block, index) => (
-              <div key={block.id} className={`relative pr-9 ${index > 0 ? "mt-12" : ""}`}>
+              <div
+                key={block.id}
+                id={block.anchor ?? undefined}
+                className={`relative scroll-mt-24 pr-9 ${index > 0 ? "mt-12" : ""}`}
+              >
                 <CmsEditPencil
                   payload={{ type: "edit-block", blockId: block.id }}
                   className="absolute right-0 top-0"

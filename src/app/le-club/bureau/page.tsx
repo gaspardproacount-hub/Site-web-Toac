@@ -42,7 +42,7 @@ export default async function BureauPage() {
           membres. D'autres blocs peuvent être ajoutés ici depuis l'aperçu. */}
       <div className="mt-8 space-y-4">
         {pageBlocks?.map((block) => (
-          <div key={block.id} className="relative rounded-lg">
+          <div key={block.id} id={block.anchor ?? undefined} className="relative scroll-mt-24 rounded-lg">
             {block.image_url && (
               <CmsEditableImage
                 src={block.image_url}
