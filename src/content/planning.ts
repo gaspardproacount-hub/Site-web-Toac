@@ -22,6 +22,22 @@ export const DISCIPLINE_COLORS: Record<Discipline, string> = {
   muscu: "bg-purple-100 text-purple-800 border-purple-300",
 };
 
+// Étiquette courte affichée dans les blocs compacts de la grille horaire
+// (façon tableau d'occupation de salle) — le libellé complet reste utilisé
+// partout ailleurs (légende, cases à cocher, blocs détaillés).
+export const DISCIPLINE_SHORT_LABELS: Record<Discipline, string> = {
+  natation: "Natation",
+  velo: "Vélo",
+  course: "CAP",
+  muscu: "Muscu",
+};
+
+// Info-bulle affichée à côté de l'étiquette courte quand elle est une
+// abréviation qui mérite d'être explicitée (ex. "CAP" → "Course à pied").
+export const DISCIPLINE_TOOLTIPS: Partial<Record<Discipline, string>> = {
+  course: "Course à pied",
+};
+
 export const PLANNING: Creneau[] = [
   { jour: "Lundi", heure: "7h00", discipline: "natation", lieu: "Piscine Jean Boiteux", detail: "Coach Damien" },
   { jour: "Lundi", heure: "12h20", discipline: "course", lieu: "Piste Capitany (Colomiers)" },

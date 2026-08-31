@@ -221,6 +221,31 @@ export async function getCmsHiddenBlocks(slug: string): Promise<CmsHiddenBlock[]
   }
 }
 
+export type CmsTrainingSession = {
+  id: string;
+  day: string;
+  start_time: string;
+  end_time: string | null;
+  sport: string;
+  location: string;
+  coach: string;
+  notes: string;
+  position: number;
+};
+
+/**
+ * Planning d'entraînement structuré (dashboard → Planning). Renvoie null
+ * quand le CMS n'a aucun créneau enregistré, pour que la page garde son
+ * contenu par défaut codé en dur (src/content/planning.ts).
+ */
+export async function getCmsTrainingSessions(): Promise<CmsTrainingSession[] | null> {
+  const rows = await fetchFromCms<CmsTrainingSession>(
+    "training_sessions",
+    "&select=*&order=start_time.asc"
+  );
+  return rows && rows.length ? rows : null;
+}
+
 // Menu de navigation et pied de page gérés depuis le CMS (dashboard →
 // Navigation). Renvoie null pour chaque liste quand le CMS n'a aucun lien
 // configuré, pour que l'appelant garde le menu par défaut codé en dur.
