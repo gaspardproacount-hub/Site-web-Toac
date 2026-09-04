@@ -36,7 +36,7 @@ export default async function ValiderMusculationDechargePage({
         </h1>
         <p className="mt-4 text-toac-blue-900/80">
           Ce lien de relecture n&apos;est pas valide. Remplissez à nouveau le{" "}
-          <a href="/entrainements/musculation" className="text-toac-blue-600 underline">
+          <a href="/musculation" className="text-toac-blue-600 underline">
             formulaire de décharge musculation
           </a>{" "}
           pour en générer un nouveau.
@@ -86,7 +86,7 @@ export default async function ValiderMusculationDechargePage({
 
         <p className="text-xs text-toac-blue-900/60">
           Une erreur ? Remplissez à nouveau le{" "}
-          <a href="/entrainements/musculation" className="text-toac-blue-600 underline">
+          <a href="/musculation" className="text-toac-blue-600 underline">
             formulaire
           </a>{" "}
           — un nouveau document remplacera celui-ci une fois validé.

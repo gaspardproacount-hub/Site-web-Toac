@@ -200,7 +200,7 @@ démo, visible dans les logs Vercel). Pour un envoi réel par email :
 
 ## 6bis. Décharge musculation
 
-La page **Entraînements → Musculation** (`/entrainements/musculation`) propose un formulaire qui reprend
+La page **Entraînements → Musculation** (`/musculation`) propose un formulaire qui reprend
 les champs de la décharge papier du TOAC Omnisports (nom, prénom, adresse, autorisation parentale si
 mineur…), avec upload du certificat médical et d'une image de signature.
 

@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import MusculationDechargeForm from "@/components/MusculationDechargeForm";
 
+// Page pas encore reliée au menu (voir src/lib/nav.ts) — accessible uniquement
+// par son URL directe le temps de la tester ; robots: noindex pour éviter
+// qu'elle ne soit indexée avant l'ouverture officielle.
 export const metadata: Metadata = {
   title: "Musculation",
   description:
     "Salle de musculation du TOAC : créneaux, encadrants, règles d'accès et formulaire de décharge en ligne.",
+  robots: { index: false, follow: false },
 };
 
 const CRENEAUX = [
