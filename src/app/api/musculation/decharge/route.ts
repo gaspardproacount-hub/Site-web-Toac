@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
-import { put, BlobError } from "@vercel/blob";
+import { putBlob, BlobNotConfiguredError } from "@/lib/blob";
 import { generateDechargePdf } from "@/lib/musculationDecharge";
 import { insertMusculationDecharge, DatabaseNotConfiguredError } from "@/lib/db";
 import { slugify } from "@/lib/slug";
@@ -121,14 +121,18 @@ export async function POST(request: NextRequest) {
   let certificatUrl: string;
   try {
     const [dechargeBlob, certificatBlob] = await Promise.all([
-      put(dechargeFilename, dechargePdf, { access: "public", contentType: "application/pdf" }),
-      put(certificatFilename, certificatBytes, { access: "public", contentType: certificatFile.type }),
+      putBlob(dechargeFilename, dechargePdf, { contentType: "application/pdf" }),
+      putBlob(certificatFilename, certificatBytes, { contentType: certificatFile.type }),
     ]);
     dechargeUrl = dechargeBlob.url;
     certificatUrl = certificatBlob.url;
   } catch (error) {
-    if (error instanceof BlobError) {
-      console.error("Vercel Blob n'est pas configuré (voir .env.example / README).");
+    // Seul le jeton manquant est un défaut de configuration : toute autre
+    // erreur Blob (jeton invalide, store suspendu, réseau…) est une panne
+    // d'upload, et on la journalise telle quelle pour pouvoir la diagnostiquer
+    // depuis les logs Vercel (voir /espace-adherents/bureau/diagnostic).
+    if (error instanceof BlobNotConfiguredError) {
+      console.error(error.message);
       return NextResponse.json(
         {
           error:

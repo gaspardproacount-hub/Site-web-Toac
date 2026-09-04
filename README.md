@@ -222,6 +222,28 @@ Parcours :
 Aucune variable d'environnement supplémentaire : cette fonctionnalité réutilise `DATABASE_URL` (§ 5bis) et
 `BLOB_READ_WRITE_TOKEN` (§ 5) déjà configurées pour le reste du site.
 
+### Si l'upload échoue (« stockage des documents pas encore configuré »)
+
+Ce message signifie qu'**aucun jeton Blob n'est présent dans la fonction au moment de l'exécution** —
+indépendamment de ce qu'affiche le dashboard de l'hébergeur. Pour trancher en 30 secondes, ouvrez
+**Espace Adhérents → Bureau → Diagnostic serveur** (`/espace-adherents/bureau/diagnostic`, comptes
+`admin` uniquement) : la page liste les variables réellement injectées, la plateforme détectée, la
+branche et le commit servis, et propose un bouton « Lancer le test d'écriture » qui affiche l'erreur
+brute renvoyée par Vercel Blob.
+
+Lecture des résultats :
+
+- **Plateforme détectée ≠ Vercel** → le domaine ne pointe pas vers le projet Vercel (ce dépôt contient
+  encore un `netlify.toml` hérité) : les variables Vercel ne seront jamais injectées.
+- **Branche / commit inattendus** → le déploiement servi n'est pas celui que vous croyez ; redéployez et
+  re-vérifiez.
+- **`BLOB_READ_WRITE_TOKEN` absente alors qu'elle existe dans le dashboard** → la variable n'est pas
+  attachée à cet environnement, ou elle est masquée par l'intégration Storage de Vercel qui « possède »
+  ce nom. Contournement : créez une variable **`TOAC_BLOB_TOKEN`** (nom que Vercel ne gère pas) avec la
+  même valeur, redéployez — le code l'utilise automatiquement en repli.
+- **Jeton présent mais test en échec** → l'erreur affichée est la vraie cause (jeton invalide, store
+  supprimé/suspendu…) ; le store Blob est probablement à recréer et à reconnecter au projet.
+
 ## 7. Sécurité de l'espace adhérents
 
 - Authentification par identifiant/mot de passe (bcrypt), session signée (HMAC) dans un cookie **httpOnly**
