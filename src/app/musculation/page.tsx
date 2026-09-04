@@ -31,9 +31,8 @@ const ENCADRANTS = [
 
 const CONDITIONS = [
   "Être au minimum 2 lors de la séance et maximum 12.",
-  "Avoir un certificat médical spécifiant son aptitude, sans contre-indication, à la pratique de la musculation (validité 3 ans).",
-  "Remplir une décharge envers le TOAC chaque année.",
   "Présence obligatoire d'un encadrant pour gérer la séance et récupérer la clé à la sécurité au poste de garde, en échange d'une carte d'identité ou du badge Airbus.",
+  "Fournir un certificat médical et une décharge de responsabilité via le formulaire ci-dessous.",
 ];
 
 export default function MusculationPage() {
