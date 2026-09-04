@@ -13,8 +13,10 @@
   "dependencies": {
     "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
+    "googleapis": "^178.0.0",
     "leaflet": "^1.9.4",
     "next": "16.2.10",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",

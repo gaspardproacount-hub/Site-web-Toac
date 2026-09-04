@@ -198,6 +198,27 @@ démo, visible dans les logs Vercel). Pour un envoi réel par email :
    `BREVO_FROM_EMAIL` doit être un expéditeur validé, sinon Brevo refuse l'envoi.
 3. Renseignez `BREVO_API_KEY` et `BREVO_FROM_EMAIL` dans les variables d'environnement Vercel.
 
+## 6bis. Décharge musculation (Google Drive)
+
+La page **Entraînements → Musculation** (`/entrainements/musculation`) propose un formulaire qui reprend
+les champs de la décharge papier du TOAC Omnisports. À l'envoi, le serveur génère un PDF équivalent
+(texte + signature uploadée) et le dépose, avec le certificat médical, dans un dossier Google Drive —
+chaque fichier est nommé `nom-prenom-decharge.pdf` / `nom-prenom-certif.<ext>`.
+
+Configuration (voir aussi les commentaires dans `.env.example`) :
+
+1. Dans [Google Cloud Console](https://console.cloud.google.com), créez (ou réutilisez) un projet, activez
+   l'**API Google Drive**, puis créez un **compte de service** (IAM & Admin → Comptes de service) et
+   téléchargez sa clé au format JSON.
+2. Renseignez `GOOGLE_SERVICE_ACCOUNT_EMAIL` (champ `client_email` du JSON) et
+   `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (champ `private_key`, avec ses `\n` littéraux) dans les variables
+   d'environnement Vercel.
+3. Créez le dossier Drive destiné à recevoir les documents, partagez-le avec l'adresse du compte de
+   service (rôle **Éditeur**), puis renseignez son identifiant dans `GOOGLE_DRIVE_MUSCULATION_FOLDER_ID`
+   (visible dans l'URL du dossier : `.../folders/<ID>`).
+
+Sans ces variables, le formulaire affiche un message d'erreur explicite au lieu d'échouer silencieusement.
+
 ## 7. Sécurité de l'espace adhérents
 
 - Authentification par identifiant/mot de passe (bcrypt), session signée (HMAC) dans un cookie **httpOnly**
