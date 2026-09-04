@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getMusculationDechargeByToken, DatabaseNotConfiguredError } from "@/lib/db";
 import ValiderMusculationDecharge from "@/components/ValiderMusculationDecharge";
+import { documentHref } from "@/lib/documentUrl";
 import DbSetupNotice from "@/components/DbSetupNotice";
 
 export const metadata: Metadata = {
@@ -67,7 +68,7 @@ export default async function ValiderMusculationDechargePage({
 
         <div className="flex flex-wrap gap-3">
           <a
-            href={decharge.decharge_url}
+            href={documentHref(decharge.decharge_url, decharge.token)}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
@@ -75,7 +76,7 @@ export default async function ValiderMusculationDechargePage({
             Voir la décharge générée (PDF) →
           </a>
           <a
-            href={decharge.certificat_url}
+            href={documentHref(decharge.certificat_url, decharge.token)}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"

@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
         `justificatifs/${Date.now()}-${justificatifFile.name}`,
         justificatifFile
       );
-      justificatifUrl = blob.url;
+      // Store privé : on garde le chemin dans le store, pas une URL publique.
+      // Le bureau relit le fichier via /api/documents (voir AdminInscriptionsTable).
+      justificatifUrl = blob.pathname;
     } catch (error) {
       if (error instanceof BlobNotConfiguredError) {
         console.warn(`Justificatif non stocké : ${error.message}`);

@@ -222,12 +222,32 @@ Parcours :
 Aucune variable d'environnement supplémentaire : cette fonctionnalité réutilise `DATABASE_URL` (§ 5bis) et
 `BLOB_READ_WRITE_TOKEN` (§ 5) déjà configurées pour le reste du site.
 
-### Si l'upload échoue (« stockage des documents pas encore configuré »)
+### Accès aux documents : le store Blob est privé
 
-Ce message signifie qu'**aucun jeton Blob n'est présent dans la fonction au moment de l'exécution** —
-indépendamment de ce qu'affiche le dashboard de l'hébergeur. Deux façons de trancher en 30 secondes,
-qui affichent la même chose : les variables réellement injectées, la plateforme détectée, la branche et
-le commit servis, et un test d'écriture qui renvoie l'erreur brute de Vercel Blob.
+Le store Blob du club est en **accès privé**. Les fichiers y sont déposés avec `access: "private"` et
+n'ont **aucune URL publique** : c'est voulu, un certificat médical est une donnée de santé et une URL
+publique Vercel Blob reste lisible par quiconque met la main dessus, sans possibilité de révocation.
+
+Conséquences pour le code :
+
+- Les colonnes `decharge_url`, `certificat_url` et `justificatif_url` contiennent désormais un **chemin
+  dans le store** (ex. `musculation/dupont-jean-decharge-1234.pdf`), pas une URL. Les noms de colonnes
+  datent d'avant et n'ont pas été renommés.
+- Les fichiers ne sortent que par **`GET /api/documents?path=<chemin>`**, qui relit le blob côté serveur
+  et le renvoie en streaming après contrôle d'accès : compte `admin` connecté, ou `&token=<jeton du
+  dossier>` — le jeton de la page de relecture, qui n'ouvre que les deux fichiers de son propre dossier.
+- L'accès public/privé est fixé **à la création du store** côté Vercel et n'est pas modifiable ensuite.
+  Un `put(..., { access: "public" })` sur ce store échoue avec « Cannot use public access on a private
+  store » — c'était la cause de l'échec des premières décharges musculation.
+
+### Si l'upload échoue
+
+Le message « stockage des documents pas encore configuré » ne s'affiche plus que lorsqu'**aucun jeton
+Blob n'atteint la fonction** ; toute autre erreur Blob (store privé, jeton invalide, store suspendu…)
+est journalisée telle quelle dans les logs Vercel et renvoie « Échec de l'envoi des documents ». Deux
+façons de voir l'état réel du serveur, identiques dans leur contenu : les variables réellement
+injectées, la plateforme détectée, la branche et le commit servis, et un test d'écriture qui renvoie
+l'erreur brute de Vercel Blob.
 
 - **Page** : Espace Adhérents → Bureau → Diagnostic serveur
   (`/espace-adherents/bureau/diagnostic`, comptes `admin` uniquement).
@@ -252,8 +272,9 @@ Lecture des résultats :
   attachée à cet environnement, ou elle est masquée par l'intégration Storage de Vercel qui « possède »
   ce nom. Contournement : créez une variable **`TOAC_BLOB_TOKEN`** (nom que Vercel ne gère pas) avec la
   même valeur, redéployez — le code l'utilise automatiquement en repli.
-- **Jeton présent mais test en échec** → l'erreur affichée est la vraie cause (jeton invalide, store
-  supprimé/suspendu…) ; le store Blob est probablement à recréer et à reconnecter au projet.
+- **Jeton présent mais test en échec** → l'erreur affichée est la vraie cause. « Cannot use public
+  access on a private store » signifie qu'un `put()` demande `access: "public"` sur le store privé du
+  club : c'est le code qu'il faut corriger, pas la configuration Vercel.
 
 ## 7. Sécurité de l'espace adhérents
 

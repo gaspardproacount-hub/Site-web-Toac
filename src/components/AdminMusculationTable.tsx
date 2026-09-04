@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { MusculationDechargeRow } from "@/lib/db";
+import { documentHref } from "@/lib/documentUrl";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -110,7 +111,7 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <a
-                    href={d.decharge_url}
+                    href={documentHref(d.decharge_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-md border border-toac-blue-800 px-3 py-1.5 text-xs font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
@@ -118,7 +119,7 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                     Voir/télécharger la décharge →
                   </a>
                   <a
-                    href={d.certificat_url}
+                    href={documentHref(d.certificat_url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-md border border-toac-blue-800 px-3 py-1.5 text-xs font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"

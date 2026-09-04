@@ -117,15 +117,19 @@ export async function POST(request: NextRequest) {
   const dechargeFilename = `musculation/${baseName}-decharge-${Date.now()}.pdf`;
   const certificatFilename = `musculation/${baseName}-certif-${Date.now()}.${extensionForMime(certificatFile.type)}`;
 
-  let dechargeUrl: string;
-  let certificatUrl: string;
+  // Le store Blob est privé : ces fichiers n'ont pas d'URL publique. On
+  // conserve leur chemin dans le store (colonnes `decharge_url` /
+  // `certificat_url`, nommées ainsi avant le passage au privé), et ils ne sont
+  // relus qu'à travers /api/documents, après contrôle d'accès.
+  let dechargePath: string;
+  let certificatPath: string;
   try {
     const [dechargeBlob, certificatBlob] = await Promise.all([
       putBlob(dechargeFilename, dechargePdf, { contentType: "application/pdf" }),
       putBlob(certificatFilename, certificatBytes, { contentType: certificatFile.type }),
     ]);
-    dechargeUrl = dechargeBlob.url;
-    certificatUrl = certificatBlob.url;
+    dechargePath = dechargeBlob.pathname;
+    certificatPath = certificatBlob.pathname;
   } catch (error) {
     // Seul le jeton manquant est un défaut de configuration : toute autre
     // erreur Blob (jeton invalide, store suspendu, réseau…) est une panne
@@ -160,8 +164,8 @@ export async function POST(request: NextRequest) {
       estMineur,
       representantNom: estMineur ? representantNom : null,
       dateSignatureRepresentant: estMineur ? dateSignatureRepresentant : null,
-      dechargeUrl,
-      certificatUrl,
+      dechargeUrl: dechargePath,
+      certificatUrl: certificatPath,
     });
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) {

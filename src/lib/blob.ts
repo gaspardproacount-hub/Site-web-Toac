@@ -1,24 +1,25 @@
 import "server-only";
-import { put, type PutBlobResult } from "@vercel/blob";
+import { put, get, type PutBlobResult, type GetBlobResult } from "@vercel/blob";
 
 /**
- * Accès à Vercel Blob (stockage des justificatifs d'adhésion et des décharges
- * musculation).
+ * Accès à Vercel Blob (justificatifs d'adhésion, décharges musculation et
+ * certificats médicaux).
  *
- * Pourquoi ce module plutôt qu'un appel direct à `put()` :
+ * Le store du club est configuré en **accès privé** : les fichiers y sont
+ * déposés avec `access: "private"` et ne sont JAMAIS joignables par une URL
+ * publique — il faut les relire côté serveur avec le jeton du store, après
+ * contrôle d'accès (voir src/app/api/documents/route.ts). C'est ce qu'on veut
+ * ici : un certificat médical est une donnée de santé, une URL publique reste
+ * lisible par quiconque met la main dessus et ne peut pas être révoquée.
  *
- *  1. `@vercel/blob` lit `process.env.BLOB_READ_WRITE_TOKEN` tout seul, mais ce
- *     nom de variable est « réservé » par l'intégration Storage de Vercel :
- *     quand la liaison entre le projet et le store Blob est cassée (store
- *     recréé, projet dupliqué, variable ajoutée à la main par-dessus une
- *     variable système…), la variable peut apparaître dans le dashboard sans
- *     jamais être injectée dans la fonction au runtime. On accepte donc aussi
- *     un nom de repli, `TOAC_BLOB_TOKEN`, que Vercel ne gère pas : le
- *     renseigner avec la même valeur débloque la situation.
- *  2. On distingue « pas de jeton du tout » (erreur de configuration, message
- *     d'installation) d'une vraie erreur d'upload (jeton invalide, store
- *     suspendu, réseau…), que `@vercel/blob` regroupe toutes sous la classe
- *     `BlobError`.
+ * L'accès (public/privé) est fixé à la création du store côté Vercel et n'est
+ * pas modifiable ensuite : `put(..., { access: "public" })` sur ce store échoue
+ * avec « Cannot use public access on a private store ».
+ *
+ * Le jeton est passé explicitement plutôt que laissé à la détection automatique
+ * de @vercel/blob, et on accepte un nom de repli `TOAC_BLOB_TOKEN` au cas où
+ * `BLOB_READ_WRITE_TOKEN` — nom géré par l'intégration Storage de Vercel — ne
+ * serait pas injecté dans la fonction.
  */
 
 /** Noms de variables d'environnement acceptés, dans l'ordre de priorité. */
@@ -46,21 +47,46 @@ export function resolveBlobToken(): { token: string; source: string } | null {
   return null;
 }
 
+function requireToken(): string {
+  const resolved = resolveBlobToken();
+  if (!resolved) throw new BlobNotConfiguredError();
+  return resolved.token;
+}
+
 /**
- * `put()` de @vercel/blob, mais avec le jeton passé explicitement (jamais via
- * la détection automatique) et une erreur claire s'il manque.
+ * Dépose un fichier dans le store privé. Ce qu'il faut conserver en base est le
+ * `pathname` du résultat (et non l'`url`) : c'est lui qui permet de relire le
+ * fichier plus tard via {@link getBlobStream}.
  */
 export async function putBlob(
   pathname: string,
   body: Parameters<typeof put>[1],
   options: { contentType?: string } = {}
 ): Promise<PutBlobResult> {
-  const resolved = resolveBlobToken();
-  if (!resolved) throw new BlobNotConfiguredError();
-
   return put(pathname, body, {
-    access: "public",
-    token: resolved.token,
+    access: "private",
+    token: requireToken(),
     ...(options.contentType ? { contentType: options.contentType } : {}),
   });
+}
+
+/** Relit un fichier du store privé. Renvoie null si le fichier n'existe pas. */
+export async function getBlobStream(
+  pathname: string,
+  options: { ifNoneMatch?: string } = {}
+): Promise<GetBlobResult | null> {
+  return get(pathname, {
+    access: "private",
+    token: requireToken(),
+    ...(options.ifNoneMatch ? { ifNoneMatch: options.ifNoneMatch } : {}),
+  });
+}
+
+/**
+ * Les enregistrements créés avant le passage au store privé contiennent une URL
+ * publique complète au lieu d'un pathname. On les reconnaît pour continuer à les
+ * servir tels quels plutôt que de les chercher — en vain — dans le store privé.
+ */
+export function isLegacyPublicUrl(stored: string): boolean {
+  return /^https?:\/\//i.test(stored);
 }

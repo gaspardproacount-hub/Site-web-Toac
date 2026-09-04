@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { InscriptionRow } from "@/lib/db";
+import { documentHref } from "@/lib/documentUrl";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
@@ -85,7 +86,7 @@ export default function AdminInscriptionsTable({ inscriptions }: { inscriptions:
                   <div className="sm:col-span-2">
                     <dt className="text-toac-blue-900/60">Justificatif tarif réduit</dt>
                     <dd>
-                      <a href={i.justificatif_url} target="_blank" rel="noopener noreferrer" className="text-toac-blue-700 underline">
+                      <a href={documentHref(i.justificatif_url)} target="_blank" rel="noopener noreferrer" className="text-toac-blue-700 underline">
                         Voir le fichier
                       </a>
                     </dd>
