@@ -100,35 +100,21 @@ export default function MusculationDechargeForm() {
         </div>
       </div>
 
-      <div>
-        <label htmlFor="dateSignature" className={labelClass}>Date (Toulouse, le…)</label>
-        <input id="dateSignature" name="dateSignature" type="date" required className={inputClass} />
-      </div>
+      {/* Pas de champ date : la décharge est datée du jour de l'envoi et signée
+          dans la ville renseignée ci-dessus. */}
 
       {estMineur && (
-        <div className="grid gap-4 rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4 sm:grid-cols-2">
-          <p className="text-sm font-medium text-toac-blue-900 sm:col-span-2">
+        <div className="rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4">
+          <p className="text-sm font-medium text-toac-blue-900">
             Adhérent(e) mineur(e) : une autorisation parentale est requise.
           </p>
-          <div>
+          <div className="mt-3">
             <label htmlFor="representantNom" className={labelClass}>
               Nom du père / mère / répondant légal
             </label>
             <input
               id="representantNom"
               name="representantNom"
-              required={estMineur}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="dateSignatureRepresentant" className={labelClass}>
-              Date de signature du représentant légal
-            </label>
-            <input
-              id="dateSignatureRepresentant"
-              name="dateSignatureRepresentant"
-              type="date"
               required={estMineur}
               className={inputClass}
             />
@@ -186,7 +172,7 @@ export default function MusculationDechargeForm() {
         disabled={status === "sending"}
         className="rounded-md bg-toac-pink-500 px-6 py-2.5 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 disabled:opacity-60"
       >
-        {status === "sending" ? "Génération du document…" : "Continuer vers la relecture"}
+        {status === "sending" ? "Génération du document…" : "Continuer"}
       </button>
     </form>
   );

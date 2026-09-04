@@ -15,6 +15,14 @@ const SIGNATURE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
 const CERTIFICAT_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "application/pdf"]);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 Mo
 
+/** Date en toutes lettres pour le document, ex. « 4 septembre 2026 ». */
+function formatDateFr(date: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "long",
+    timeZone: "Europe/Paris",
+  }).format(date);
+}
+
 function extensionForMime(mimeType: string): string {
   if (mimeType === "application/pdf") return "pdf";
   if (mimeType === "image/png") return "png";
@@ -31,13 +39,17 @@ export async function POST(request: NextRequest) {
   const adresse = String(form.get("adresse") ?? "").trim();
   const codePostal = String(form.get("codePostal") ?? "").trim();
   const ville = String(form.get("ville") ?? "").trim();
-  const dateSignature = String(form.get("dateSignature") ?? "").trim();
   const rgpdConsent = form.get("rgpdConsent") === "on";
   // La minorité est déduite de la date de naissance, jamais de ce que déclare
   // le navigateur : c'est elle qui décide si l'autorisation parentale est exigée.
   const estMineur = isMineur(dateNaissance);
   const representantNom = String(form.get("representantNom") ?? "").trim();
-  const dateSignatureRepresentant = String(form.get("dateSignatureRepresentant") ?? "").trim();
+
+  // La décharge n'est plus datée à la main : elle porte la date du jour, prise
+  // à Paris (les fonctions Vercel tournent en UTC, sans quoi une soumission en
+  // soirée serait datée de la veille ou du lendemain).
+  const dateSignature = formatDateFr(new Date());
+  const dateSignatureRepresentant = dateSignature;
 
   const certificatFile = form.get("certificatMedical");
   const signatureFile = form.get("signature");
@@ -49,8 +61,7 @@ export async function POST(request: NextRequest) {
     !dateNaissance ||
     !adresse ||
     !codePostal ||
-    !ville ||
-    !dateSignature
+    !ville
   ) {
     return NextResponse.json({ error: "Merci de renseigner tous les champs de la décharge." }, { status: 400 });
   }
@@ -62,9 +73,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (estMineur && (!representantNom || !dateSignatureRepresentant)) {
+  if (estMineur && !representantNom) {
     return NextResponse.json(
-      { error: "Pour un(e) adhérent(e) mineur(e), le nom du représentant légal et la date de signature sont requis." },
+      { error: "Pour un(e) adhérent(e) mineur(e), le nom du représentant légal est requis." },
       { status: 400 }
     );
   }

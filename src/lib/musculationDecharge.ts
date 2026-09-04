@@ -186,7 +186,9 @@ export async function generateDechargePdf(
   );
 
   y -= lineHeight * 0.5;
-  drawField("Toulouse, le", data.dateSignature);
+  // Lieu et date de signature : la ville renseignée dans le formulaire, et la
+  // date du jour de l'envoi (calculée par l'API, plus saisie à la main).
+  drawField(`${data.ville}, le`, data.dateSignature);
 
   if (data.mineur) {
     y -= lineHeight;
