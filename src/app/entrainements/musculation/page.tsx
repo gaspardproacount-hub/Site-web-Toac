@@ -101,9 +101,9 @@ export default function MusculationPage() {
                 Décharge et certificat médical
               </h2>
               <p className="mt-2 text-sm text-toac-blue-900/80">
-                Complétez ce formulaire pour transmettre votre décharge signée et votre certificat
-                médical au bureau du club — les deux documents sont générés et déposés automatiquement
-                dans le dossier du club.
+                Complétez ce formulaire pour générer votre décharge à partir de vos informations et de
+                votre signature. Vous pourrez relire le document avant de le valider et de le transmettre,
+                avec votre certificat médical, au bureau du club.
               </p>
               <div className="mt-6">
                 <MusculationDechargeForm />

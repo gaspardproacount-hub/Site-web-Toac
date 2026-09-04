@@ -198,26 +198,29 @@ démo, visible dans les logs Vercel). Pour un envoi réel par email :
    `BREVO_FROM_EMAIL` doit être un expéditeur validé, sinon Brevo refuse l'envoi.
 3. Renseignez `BREVO_API_KEY` et `BREVO_FROM_EMAIL` dans les variables d'environnement Vercel.
 
-## 6bis. Décharge musculation (Google Drive)
+## 6bis. Décharge musculation
 
 La page **Entraînements → Musculation** (`/entrainements/musculation`) propose un formulaire qui reprend
-les champs de la décharge papier du TOAC Omnisports. À l'envoi, le serveur génère un PDF équivalent
-(texte + signature uploadée) et le dépose, avec le certificat médical, dans un dossier Google Drive —
-chaque fichier est nommé `nom-prenom-decharge.pdf` / `nom-prenom-certif.<ext>`.
+les champs de la décharge papier du TOAC Omnisports (nom, prénom, adresse, autorisation parentale si
+mineur…), avec upload du certificat médical et d'une image de signature.
 
-Configuration (voir aussi les commentaires dans `.env.example`) :
+Parcours :
 
-1. Dans [Google Cloud Console](https://console.cloud.google.com), créez (ou réutilisez) un projet, activez
-   l'**API Google Drive**, puis créez un **compte de service** (IAM & Admin → Comptes de service) et
-   téléchargez sa clé au format JSON.
-2. Renseignez `GOOGLE_SERVICE_ACCOUNT_EMAIL` (champ `client_email` du JSON) et
-   `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (champ `private_key`, avec ses `\n` littéraux) dans les variables
-   d'environnement Vercel.
-3. Créez le dossier Drive destiné à recevoir les documents, partagez-le avec l'adresse du compte de
-   service (rôle **Éditeur**), puis renseignez son identifiant dans `GOOGLE_DRIVE_MUSCULATION_FOLDER_ID`
-   (visible dans l'URL du dossier : `.../folders/<ID>`).
+1. À l'envoi, le serveur génère un PDF équivalent à la décharge papier (texte + signature uploadée
+   incrustée), le dépose sur **Vercel Blob** avec le certificat médical (même stockage que les
+   justificatifs tarif réduit, § 5 ci-dessus — nommage homogène `nom-prenom-decharge.pdf` /
+   `nom-prenom-certif.<ext>`), et enregistre un dossier en base (table `musculation_decharges`, statut
+   `en_attente`).
+2. L'adhérent est redirigé vers une page de relecture (`/musculation/valider/<token>`) où il peut ouvrir
+   le PDF généré et le certificat, puis confirmer — le dossier passe alors au statut `valide`. Rien n'est
+   considéré comme officiellement transmis avant cette confirmation.
+3. Le bureau retrouve tous les dossiers (validés ou non) dans **Espace Adhérents → Bureau → Décharges
+   musculation** (`/espace-adherents/bureau/musculation`, réservé aux comptes `admin`) : liens pour
+   voir/télécharger chaque document, et un bouton pour copier le lien de relecture (utile pour le
+   renvoyer à un adhérent, ou le partager avec le responsable du pôle sport).
 
-Sans ces variables, le formulaire affiche un message d'erreur explicite au lieu d'échouer silencieusement.
+Aucune variable d'environnement supplémentaire : cette fonctionnalité réutilise `DATABASE_URL` (§ 5bis) et
+`BLOB_READ_WRITE_TOKEN` (§ 5) déjà configurées pour le reste du site.
 
 ## 7. Sécurité de l'espace adhérents
 

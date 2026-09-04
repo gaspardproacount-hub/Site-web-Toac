@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
@@ -15,7 +16,8 @@ const fileInputClass =
  * Google Drive du club — voir /api/musculation/decharge.
  */
 export default function MusculationDechargeForm() {
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [estMineur, setEstMineur] = useState(false);
 
@@ -44,17 +46,7 @@ export default function MusculationDechargeForm() {
       setStatus("error");
       return;
     }
-    setStatus("sent");
-    event.currentTarget.reset();
-    setEstMineur(false);
-  }
-
-  if (status === "sent") {
-    return (
-      <p className="rounded-md border border-green-300 bg-green-50 p-4 text-green-800">
-        Merci, votre décharge et votre certificat médical ont bien été transmis au bureau du club.
-      </p>
-    );
+    router.push(data.reviewUrl);
   }
 
   return (
@@ -188,7 +180,7 @@ export default function MusculationDechargeForm() {
         disabled={status === "sending"}
         className="rounded-md bg-toac-pink-500 px-6 py-2.5 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 disabled:opacity-60"
       >
-        {status === "sending" ? "Envoi…" : "Envoyer ma décharge"}
+        {status === "sending" ? "Génération du document…" : "Continuer vers la relecture"}
       </button>
     </form>
   );

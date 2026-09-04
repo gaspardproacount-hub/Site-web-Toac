@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import crypto from "node:crypto";
+import { put, BlobError } from "@vercel/blob";
 import { generateDechargePdf } from "@/lib/musculationDecharge";
-import { uploadFileToMusculationFolder, GoogleDriveNotConfiguredError } from "@/lib/googleDrive";
+import { insertMusculationDecharge, DatabaseNotConfiguredError } from "@/lib/db";
 import { slugify } from "@/lib/slug";
 
-// Laisse le temps à l'upload des documents + à l'appel Google Drive de se
+// Laisse le temps à l'upload des fichiers + à la génération du PDF de se
 // terminer (au-delà du timeout par défaut de 10s sur le plan Hobby Vercel).
 export const maxDuration = 30;
 
@@ -112,30 +114,65 @@ export async function POST(request: NextRequest) {
   }
 
   const baseName = `${slugify(nom)}-${slugify(prenom)}`;
-  const dechargeFilename = `${baseName}-decharge.pdf`;
-  const certificatFilename = `${baseName}-certif.${extensionForMime(certificatFile.type)}`;
+  const dechargeFilename = `musculation/${baseName}-decharge-${Date.now()}.pdf`;
+  const certificatFilename = `musculation/${baseName}-certif-${Date.now()}.${extensionForMime(certificatFile.type)}`;
 
+  let dechargeUrl: string;
+  let certificatUrl: string;
   try {
-    const [dechargeLink, certificatLink] = await Promise.all([
-      uploadFileToMusculationFolder(dechargeFilename, "application/pdf", dechargePdf),
-      uploadFileToMusculationFolder(certificatFilename, certificatFile.type, certificatBytes),
+    const [dechargeBlob, certificatBlob] = await Promise.all([
+      put(dechargeFilename, dechargePdf, { access: "public", contentType: "application/pdf" }),
+      put(certificatFilename, certificatBytes, { access: "public", contentType: certificatFile.type }),
     ]);
-    return NextResponse.json({ ok: true, dechargeLink, certificatLink });
+    dechargeUrl = dechargeBlob.url;
+    certificatUrl = certificatBlob.url;
   } catch (error) {
-    if (error instanceof GoogleDriveNotConfiguredError) {
-      console.warn(error.message);
+    if (error instanceof BlobError) {
+      console.error("Vercel Blob n'est pas configuré (voir .env.example / README).");
       return NextResponse.json(
         {
           error:
-            "Le dépôt automatique sur Google Drive n'est pas encore configuré côté serveur. Contactez le bureau pour transmettre vos documents en attendant.",
+            "Le stockage des documents n'est pas encore configuré côté serveur. Contactez le bureau pour transmettre vos documents en attendant.",
         },
         { status: 503 }
       );
     }
-    console.error("Échec du dépôt des documents musculation sur Google Drive :", error);
-    return NextResponse.json(
-      { error: "Échec de l'envoi des documents. Réessayez plus tard." },
-      { status: 502 }
-    );
+    console.error("Échec de l'upload des documents musculation :", error);
+    return NextResponse.json({ error: "Échec de l'envoi des documents. Réessayez plus tard." }, { status: 502 });
   }
+
+  const token = crypto.randomUUID();
+  try {
+    await insertMusculationDecharge({
+      token,
+      nom,
+      prenom,
+      nationalite,
+      dateNaissance,
+      adresse,
+      codePostal,
+      ville,
+      dateSignature,
+      estMineur,
+      representantNom: estMineur ? representantNom : null,
+      dateSignatureRepresentant: estMineur ? dateSignatureRepresentant : null,
+      dechargeUrl,
+      certificatUrl,
+    });
+  } catch (error) {
+    if (error instanceof DatabaseNotConfiguredError) {
+      console.error(error.message);
+      return NextResponse.json(
+        {
+          error:
+            "Le formulaire n'est pas encore relié à une base de données côté serveur. Contactez le bureau directement en attendant.",
+        },
+        { status: 503 }
+      );
+    }
+    console.error("Échec de l'enregistrement de la décharge musculation :", error);
+    return NextResponse.json({ error: "Une erreur est survenue. Réessayez plus tard." }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, reviewUrl: `/musculation/valider/${token}` });
 }
