@@ -87,9 +87,13 @@ export async function sendMusculationNotification(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      // L'expéditeur réel vient de BREVO_FROM_EMAIL quand elle est définie ;
+      // l'adresse ci-dessous n'est que le repli. Dans les deux cas, Brevo exige
+      // que l'adresse soit un expéditeur vérifié du compte (Senders, Domains &
+      // Dedicated IPs → Senders), sinon l'envoi est refusé.
       sender: {
-        name: "Site TOAC Triathlon",
-        email: process.env.BREVO_FROM_EMAIL ?? "site@toac-triathlon.com",
+        name: "TOAC Triathlon",
+        email: process.env.BREVO_FROM_EMAIL ?? "contact@toac-triathlon.com",
       },
       to: recipients.map((email) => ({ email })),
       subject: "[TOAC] Décharge salle de musculation transmise",
