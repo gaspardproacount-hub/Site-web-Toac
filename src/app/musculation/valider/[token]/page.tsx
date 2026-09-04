@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import { getMusculationDechargeByToken, DatabaseNotConfiguredError } from "@/lib/db";
 import ValiderMusculationDecharge from "@/components/ValiderMusculationDecharge";
-import { documentHref } from "@/lib/documentUrl";
 import DbSetupNotice from "@/components/DbSetupNotice";
+import { documentHref } from "@/lib/documentUrl";
 
 export const metadata: Metadata = {
   title: "Relecture de votre décharge musculation",
   robots: { index: false, follow: false },
 };
+
+// L'état du dossier change juste après le clic sur « Valider ce document » :
+// la page est rejouée à chaque affichage plutôt que servie depuis un cache.
+export const dynamic = "force-dynamic";
+
+const titleClass = "section-title font-display text-3xl uppercase text-toac-blue-950";
 
 export default async function ValiderMusculationDechargePage({
   params,
@@ -32,9 +38,7 @@ export default async function ValiderMusculationDechargePage({
   if (!decharge) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
-        <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-          Lien introuvable
-        </h1>
+        <h1 className={titleClass}>Lien introuvable</h1>
         <p className="mt-4 text-toac-blue-900/80">
           Ce lien de relecture n&apos;est pas valide. Remplissez à nouveau le{" "}
           <a href="/musculation" className="text-toac-blue-600 underline">
@@ -46,56 +50,54 @@ export default async function ValiderMusculationDechargePage({
     );
   }
 
+  // Une fois le document validé, la page ne propose plus rien : elle confirme
+  // simplement que le dossier est parti au club.
+  if (decharge.statut === "valide") {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+        <h1 className={titleClass}>Documents envoyés au TOAC</h1>
+        <p className="mt-4 text-lg text-toac-blue-900/80">
+          Votre certificat médical et votre décharge ont été envoyés au TOAC Triathlon, vous pouvez
+          désormais utiliser la salle de musculation.
+        </p>
+      </div>
+    );
+  }
+
+  const pdfHref = documentHref(decharge.decharge_url, decharge.token);
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-        Relisez votre décharge avant envoi
-      </h1>
-      <p className="mt-4 text-toac-blue-900/80">
-        Vérifiez le document généré à partir de vos informations et votre certificat médical avant de
-        les transmettre au bureau du club.
+    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
+      <h1 className={titleClass}>Votre décharge salle de musculation</h1>
+      <p className="mt-4 text-lg text-toac-blue-900/80">
+        Vérifiez le document ci-dessous généré à partir de vos informations
       </p>
 
-      <div className="mt-8 space-y-4">
-        <div className="rounded-md border border-toac-gray-200 bg-white p-4">
-          <p className="font-medium text-toac-blue-950">
-            {decharge.prenom} {decharge.nom}
-          </p>
-          <p className="mt-1 text-sm text-toac-blue-900/80">
-            {decharge.adresse}, {decharge.code_postal} {decharge.ville}
-          </p>
-        </div>
+      <div className="mt-8 overflow-hidden rounded-md border border-toac-gray-200 bg-toac-gray-50">
+        <iframe
+          src={pdfHref}
+          title="Décharge salle de musculation et certificat médical"
+          className="block h-[75vh] min-h-[420px] w-full"
+        />
+      </div>
+      <p className="mt-2 text-xs text-toac-blue-900/60">
+        Le document ne s&apos;affiche pas ?{" "}
+        <a href={pdfHref} target="_blank" rel="noopener noreferrer" className="text-toac-blue-600 underline">
+          Ouvrez-le dans un nouvel onglet
+        </a>
+        .
+      </p>
 
-        <div className="flex flex-wrap gap-3">
-          <a
-            href={documentHref(decharge.decharge_url, decharge.token)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
-          >
-            Voir la décharge générée (PDF) →
-          </a>
-          <a
-            href={documentHref(decharge.certificat_url, decharge.token)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
-          >
-            Voir le certificat médical →
-          </a>
-        </div>
+      <p className="mt-8 text-sm text-toac-blue-900/70">
+        Une erreur ? Remplissez à nouveau le{" "}
+        <a href="/musculation" className="text-toac-blue-600 underline">
+          formulaire
+        </a>{" "}
+        — un nouveau document remplacera celui-ci une fois validé.
+      </p>
 
-        <p className="text-xs text-toac-blue-900/60">
-          Une erreur ? Remplissez à nouveau le{" "}
-          <a href="/musculation" className="text-toac-blue-600 underline">
-            formulaire
-          </a>{" "}
-          — un nouveau document remplacera celui-ci une fois validé.
-        </p>
-
-        <div className="pt-2">
-          <ValiderMusculationDecharge token={decharge.token} dejaValidee={decharge.statut === "valide"} />
-        </div>
+      <div className="mt-4">
+        <ValiderMusculationDecharge token={decharge.token} />
       </div>
     </div>
   );

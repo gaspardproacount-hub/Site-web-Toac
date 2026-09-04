@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
 import { putBlob, BlobNotConfiguredError } from "@/lib/blob";
 import { generateDechargePdf } from "@/lib/musculationDecharge";
+import { isMineur } from "@/lib/age";
 import { insertMusculationDecharge, DatabaseNotConfiguredError } from "@/lib/db";
 import { slugify } from "@/lib/slug";
 
@@ -32,7 +33,9 @@ export async function POST(request: NextRequest) {
   const ville = String(form.get("ville") ?? "").trim();
   const dateSignature = String(form.get("dateSignature") ?? "").trim();
   const rgpdConsent = form.get("rgpdConsent") === "on";
-  const estMineur = form.get("estMineur") === "on";
+  // La minorité est déduite de la date de naissance, jamais de ce que déclare
+  // le navigateur : c'est elle qui décide si l'autorisation parentale est exigée.
+  const estMineur = isMineur(dateNaissance);
   const representantNom = String(form.get("representantNom") ?? "").trim();
   const dateSignatureRepresentant = String(form.get("dateSignatureRepresentant") ?? "").trim();
 
@@ -103,7 +106,10 @@ export async function POST(request: NextRequest) {
         mineur: estMineur ? { representantNom, dateSignature: dateSignatureRepresentant } : undefined,
       },
       signatureBytes,
-      signatureFile.type
+      signatureFile.type,
+      // Le certificat est repris dans le même PDF : l'adhérent relit, le bureau
+      // reçoit et archive un document unique (décharge puis certificat).
+      { bytes: certificatBytes, mimeType: certificatFile.type }
     );
   } catch (error) {
     console.error("Échec de la génération du PDF de décharge :", error);

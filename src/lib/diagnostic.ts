@@ -17,7 +17,8 @@ export const WATCHED_VARS: { name: string; role: string }[] = [
   { name: "TOAC_BLOB_TOKEN", role: "Repli du jeton Vercel Blob (nom non géré par Vercel)" },
   { name: "DATABASE_URL", role: "Base Postgres (dossiers, commandes, décharges)" },
   { name: "SESSION_SECRET", role: "Signature des cookies de l'espace adhérents" },
-  { name: "BREVO_API_KEY", role: "Envoi des emails du formulaire de contact" },
+  { name: "BREVO_API_KEY", role: "Envoi des emails (contact, notification musculation)" },
+  { name: "MUSCULATION_NOTIFICATION_EMAILS", role: "Destinataires de la notification musculation" },
   { name: "MONETICO_CLE_HMAC", role: "Paiement en ligne Monetico" },
 ];
 

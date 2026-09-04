@@ -7,8 +7,13 @@
  * @param token Jeton du dossier de décharge musculation, pour l'adhérent qui
  *              relit ses propres documents sans compte. Inutile pour le bureau.
  */
-export function documentHref(path: string, token?: string): string {
+export function documentHref(
+  path: string,
+  token?: string,
+  options: { download?: boolean } = {}
+): string {
   const params = new URLSearchParams({ path });
   if (token) params.set("token", token);
+  if (options.download) params.set("dl", "1");
   return `/api/documents?${params.toString()}`;
 }

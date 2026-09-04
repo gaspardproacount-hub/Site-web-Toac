@@ -206,21 +206,30 @@ mineur…), avec upload du certificat médical et d'une image de signature.
 
 Parcours :
 
-1. À l'envoi, le serveur génère un PDF équivalent à la décharge papier (texte + signature uploadée
-   incrustée), le dépose sur **Vercel Blob** avec le certificat médical (même stockage que les
-   justificatifs tarif réduit, § 5 ci-dessus — nommage homogène `nom-prenom-decharge.pdf` /
-   `nom-prenom-certif.<ext>`), et enregistre un dossier en base (table `musculation_decharges`, statut
-   `en_attente`).
-2. L'adhérent est redirigé vers une page de relecture (`/musculation/valider/<token>`) où il peut ouvrir
-   le PDF généré et le certificat, puis confirmer — le dossier passe alors au statut `valide`. Rien n'est
+1. À l'envoi, le serveur génère **un seul PDF** : la décharge papier reconstituée (en-tête logos, champs
+   du formulaire, signature uploadée incrustée) en page 1, puis le certificat médical transmis en pages
+   suivantes — un certificat en image devient une page, un certificat déjà en PDF voit ses pages
+   reprises. Le bloc « autorisation parentale » n'apparaît, dans le formulaire comme dans le PDF, que si
+   la date de naissance saisie correspond à une personne de moins de 18 ans (calcul refait côté serveur,
+   `src/lib/age.ts`). Ce PDF et le certificat brut sont déposés sur **Vercel Blob** (§ 5 ci-dessus —
+   nommage `nom-prenom-decharge.pdf` / `nom-prenom-certif.<ext>`), et un dossier est enregistré en base
+   (table `musculation_decharges`, statut `en_attente`).
+   L'en-tête vient de `public/images/decharge-entete.png` (voir `public/images/README.txt`) ; si ce
+   fichier manque, le PDF sort sans logos plutôt que d'échouer.
+2. L'adhérent est redirigé vers une page de relecture (`/musculation/valider/<token>`) qui affiche le PDF
+   dans une iframe, puis « Valider ce document ». À la validation le dossier passe au statut `valide`, la
+   page confirme l'envoi, et **un email part automatiquement** vers les adresses de
+   `MUSCULATION_NOTIFICATION_EMAILS` (séparées par des virgules, via Brevo) avec deux boutons — voir et
+   télécharger le document. Un échec d'envoi est journalisé sans faire échouer la validation. Rien n'est
    considéré comme officiellement transmis avant cette confirmation.
 3. Le bureau retrouve tous les dossiers (validés ou non) dans **Espace Adhérents → Bureau → Décharges
    musculation** (`/espace-adherents/bureau/musculation`, réservé aux comptes `admin`) : liens pour
    voir/télécharger chaque document, et un bouton pour copier le lien de relecture (utile pour le
    renvoyer à un adhérent, ou le partager avec le responsable du pôle sport).
 
-Aucune variable d'environnement supplémentaire : cette fonctionnalité réutilise `DATABASE_URL` (§ 5bis) et
-`BLOB_READ_WRITE_TOKEN` (§ 5) déjà configurées pour le reste du site.
+Variables utilisées : `DATABASE_URL` (§ 5bis) et `BLOB_READ_WRITE_TOKEN` (§ 5), déjà configurées pour le
+reste du site, plus `MUSCULATION_NOTIFICATION_EMAILS` et `BREVO_API_KEY` pour la notification par email.
+Sans destinataire ou sans clé Brevo, la validation fonctionne et l'envoi est simplement journalisé.
 
 ### Accès aux documents : le store Blob est privé
 

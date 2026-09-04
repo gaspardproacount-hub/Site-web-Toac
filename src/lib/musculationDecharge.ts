@@ -1,10 +1,14 @@
 import "server-only";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFImage } from "pdf-lib";
 
 /**
- * Génère un PDF reprenant le contenu de la décharge "salle de musculation"
- * du TOAC Omnisports (voir le document Google Docs de référence), avec les
- * champs du formulaire et l'image de signature uploadée.
+ * Génère le dossier "salle de musculation" en un seul PDF : la décharge du
+ * TOAC Omnisports remplie avec les champs du formulaire et la signature
+ * uploadée (page 1), suivie du certificat médical transmis (pages suivantes).
+ * C'est ce document unique qui est relu par l'adhérent, envoyé au bureau et
+ * archivé.
  */
 export interface DechargeData {
   nom: string;
@@ -21,14 +25,84 @@ export interface DechargeData {
   };
 }
 
+export interface CertificatFile {
+  bytes: Buffer;
+  mimeType: string;
+}
+
 const MARGIN = 56;
 const PAGE_WIDTH = 595.28; // A4
 const PAGE_HEIGHT = 841.89;
 
+/**
+ * Bandeau logos (TOAC Omnisports + CSE Airbus Operations Toulouse) placé en
+ * en-tête de la décharge. Le fichier doit être listé dans
+ * `outputFileTracingIncludes` (next.config.ts) pour être embarqué dans la
+ * fonction déployée. S'il manque, le PDF est produit sans en-tête plutôt que
+ * de faire échouer l'envoi du dossier.
+ */
+const HEADER_IMAGE_PATH = path.join(process.cwd(), "public", "images", "decharge-entete.png");
+const HEADER_MAX_HEIGHT = 64;
+
+/**
+ * pdf-lib lit `.buffer` de la donnée qu'on lui passe sans tenir compte du
+ * `byteOffset`. Or un `Buffer` Node issu du pool mémoire (ce que renvoie
+ * `readFile` pour les petits fichiers) est une vue décalée dans un tampon
+ * partagé : pdf-lib lirait alors des octets qui ne sont pas les nôtres et
+ * rejetterait l'image (« SOI not found in JPEG »). On recopie donc dans un
+ * tampon qui nous appartient, avec un offset nul.
+ */
+function ownBytes(input: Buffer | Uint8Array): Uint8Array {
+  return new Uint8Array(input);
+}
+
+async function embedHeader(pdfDoc: PDFDocument): Promise<PDFImage | null> {
+  try {
+    const bytes = await readFile(HEADER_IMAGE_PATH);
+    return await pdfDoc.embedPng(ownBytes(bytes));
+  } catch (error) {
+    console.warn(
+      `En-tête de décharge introuvable ou illisible (${HEADER_IMAGE_PATH}) — PDF généré sans logos.`,
+      error
+    );
+    return null;
+  }
+}
+
+/** Ajoute le certificat médical au PDF : ses pages s'il est en PDF, une page dédiée si c'est une image. */
+async function appendCertificat(pdfDoc: PDFDocument, certificat: CertificatFile): Promise<void> {
+  if (certificat.mimeType === "application/pdf") {
+    const source = await PDFDocument.load(ownBytes(certificat.bytes));
+    const pages = await pdfDoc.copyPages(source, source.getPageIndices());
+    for (const page of pages) pdfDoc.addPage(page);
+    return;
+  }
+
+  const image =
+    certificat.mimeType === "image/png"
+      ? await pdfDoc.embedPng(ownBytes(certificat.bytes))
+      : await pdfDoc.embedJpg(ownBytes(certificat.bytes));
+
+  const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  const maxWidth = PAGE_WIDTH - MARGIN * 2;
+  const maxHeight = PAGE_HEIGHT - MARGIN * 2;
+  const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+  const width = image.width * scale;
+  const height = image.height * scale;
+
+  page.drawImage(image, {
+    x: (PAGE_WIDTH - width) / 2,
+    y: (PAGE_HEIGHT - height) / 2,
+    width,
+    height,
+  });
+}
+
 export async function generateDechargePdf(
   data: DechargeData,
   signatureImageBytes: Buffer,
-  signatureMimeType: string
+  signatureMimeType: string,
+  certificat?: CertificatFile
 ): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
@@ -38,6 +112,16 @@ export async function generateDechargePdf(
   let y = PAGE_HEIGHT - MARGIN;
   const lineHeight = 16;
   const bodySize = 10.5;
+
+  const header = await embedHeader(pdfDoc);
+  if (header) {
+    const maxWidth = PAGE_WIDTH - MARGIN * 2;
+    const scale = Math.min(maxWidth / header.width, HEADER_MAX_HEIGHT / header.height);
+    const width = header.width * scale;
+    const height = header.height * scale;
+    page.drawImage(header, { x: (PAGE_WIDTH - width) / 2, y: y - height, width, height });
+    y -= height + lineHeight * 1.5;
+  }
 
   function drawTitle(text: string) {
     page.drawText(text, { x: MARGIN, y, size: 15, font: boldFont, color: rgb(0.05, 0.1, 0.25) });
@@ -123,9 +207,9 @@ export async function generateDechargePdf(
 
   let embeddedImage: PDFImage;
   if (signatureMimeType === "image/png") {
-    embeddedImage = await pdfDoc.embedPng(signatureImageBytes);
+    embeddedImage = await pdfDoc.embedPng(ownBytes(signatureImageBytes));
   } else {
-    embeddedImage = await pdfDoc.embedJpg(signatureImageBytes);
+    embeddedImage = await pdfDoc.embedJpg(ownBytes(signatureImageBytes));
   }
 
   const scale = Math.min(
@@ -142,6 +226,10 @@ export async function generateDechargePdf(
     width: drawWidth,
     height: drawHeight,
   });
+
+  if (certificat) {
+    await appendCertificat(pdfDoc, certificat);
+  }
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);

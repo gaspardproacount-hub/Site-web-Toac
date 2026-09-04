@@ -95,7 +95,10 @@ export async function GET(request: NextRequest) {
   }
 
   const contentType = result.blob.contentType;
-  const inline = INLINE_CONTENT_TYPES.has(contentType);
+  // `?dl=1` force le téléchargement plutôt que l'affichage — utilisé par le
+  // bouton « Télécharger le document » des emails envoyés au bureau.
+  const forceDownload = request.nextUrl.searchParams.get("dl") === "1";
+  const inline = !forceDownload && INLINE_CONTENT_TYPES.has(contentType);
   const filename = path.split("/").pop() || "document";
 
   return new NextResponse(result.stream, {

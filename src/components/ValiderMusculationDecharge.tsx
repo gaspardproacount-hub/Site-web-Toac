@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function ValiderMusculationDecharge({
-  token,
-  dejaValidee,
-}: {
-  token: string;
-  dejaValidee: boolean;
-}) {
-  const [status, setStatus] = useState<"idle" | "sending" | "valide" | "error">(
-    dejaValidee ? "valide" : "idle"
-  );
+/**
+ * Bouton de validation du dossier « salle de musculation ». En cas de succès,
+ * la page est rejouée côté serveur : c'est elle qui affiche alors l'écran de
+ * confirmation, à partir du statut réellement enregistré en base.
+ */
+export default function ValiderMusculationDecharge({ token }: { token: string }) {
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleConfirm() {
@@ -37,15 +36,8 @@ export default function ValiderMusculationDecharge({
       setStatus("error");
       return;
     }
-    setStatus("valide");
-  }
 
-  if (status === "valide") {
-    return (
-      <p className="rounded-md border border-green-300 bg-green-50 p-4 text-green-800">
-        Merci, votre décharge est validée et transmise au bureau du club.
-      </p>
-    );
+    router.refresh();
   }
 
   return (
@@ -54,9 +46,9 @@ export default function ValiderMusculationDecharge({
         type="button"
         onClick={handleConfirm}
         disabled={status === "sending"}
-        className="rounded-md bg-toac-pink-500 px-6 py-2.5 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 disabled:opacity-60"
+        className="rounded-md bg-toac-pink-500 px-6 py-3 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400 disabled:opacity-60"
       >
-        {status === "sending" ? "Validation…" : "Confirmer et transmettre au club"}
+        {status === "sending" ? "Validation…" : "Valider ce document"}
       </button>
       {errorMessage && (
         <p role="alert" className="mt-3 text-sm font-medium text-red-600">

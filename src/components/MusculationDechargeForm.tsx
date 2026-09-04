@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { isMineur } from "@/lib/age";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
@@ -19,7 +20,12 @@ export default function MusculationDechargeForm() {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [estMineur, setEstMineur] = useState(false);
+  // Le bloc « autorisation parentale » se déplie tout seul dès que la date de
+  // naissance saisie correspond à une personne de moins de 18 ans. Le serveur
+  // refait ce calcul de son côté : ce qui est envoyé ici n'est qu'un confort
+  // d'affichage.
+  const [dateNaissance, setDateNaissance] = useState("");
+  const estMineur = isMineur(dateNaissance);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,7 +72,15 @@ export default function MusculationDechargeForm() {
         </div>
         <div>
           <label htmlFor="dateNaissance" className={labelClass}>Date de naissance</label>
-          <input id="dateNaissance" name="dateNaissance" type="date" required className={inputClass} />
+          <input
+            id="dateNaissance"
+            name="dateNaissance"
+            type="date"
+            required
+            value={dateNaissance}
+            onChange={(e) => setDateNaissance(e.target.value)}
+            className={inputClass}
+          />
         </div>
       </div>
 
@@ -91,19 +105,11 @@ export default function MusculationDechargeForm() {
         <input id="dateSignature" name="dateSignature" type="date" required className={inputClass} />
       </div>
 
-      <label className="flex items-start gap-2 text-sm text-toac-blue-900">
-        <input
-          type="checkbox"
-          name="estMineur"
-          className="mt-1"
-          checked={estMineur}
-          onChange={(e) => setEstMineur(e.target.checked)}
-        />
-        Je suis mineur(e) (15 à 18 ans) — autorisation parentale requise
-      </label>
-
       {estMineur && (
         <div className="grid gap-4 rounded-md border border-toac-gray-200 bg-toac-gray-50 p-4 sm:grid-cols-2">
+          <p className="text-sm font-medium text-toac-blue-900 sm:col-span-2">
+            Adhérent(e) mineur(e) : une autorisation parentale est requise.
+          </p>
           <div>
             <label htmlFor="representantNom" className={labelClass}>
               Nom du père / mère / répondant légal
