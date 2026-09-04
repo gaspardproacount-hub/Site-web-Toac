@@ -225,16 +225,27 @@ Aucune variable d'environnement supplémentaire : cette fonctionnalité réutili
 ### Si l'upload échoue (« stockage des documents pas encore configuré »)
 
 Ce message signifie qu'**aucun jeton Blob n'est présent dans la fonction au moment de l'exécution** —
-indépendamment de ce qu'affiche le dashboard de l'hébergeur. Pour trancher en 30 secondes, ouvrez
-**Espace Adhérents → Bureau → Diagnostic serveur** (`/espace-adherents/bureau/diagnostic`, comptes
-`admin` uniquement) : la page liste les variables réellement injectées, la plateforme détectée, la
-branche et le commit servis, et propose un bouton « Lancer le test d'écriture » qui affiche l'erreur
-brute renvoyée par Vercel Blob.
+indépendamment de ce qu'affiche le dashboard de l'hébergeur. Deux façons de trancher en 30 secondes,
+qui affichent la même chose : les variables réellement injectées, la plateforme détectée, la branche et
+le commit servis, et un test d'écriture qui renvoie l'erreur brute de Vercel Blob.
+
+- **Page** : Espace Adhérents → Bureau → Diagnostic serveur
+  (`/espace-adherents/bureau/diagnostic`, comptes `admin` uniquement).
+- **JSON, sans compte** : `GET /api/diagnostic?key=<valeur de DIAGNOSTIC_KEY>` (ajoutez `&test=blob`
+  pour lancer le test d'écriture). Définissez au préalable `DIAGNOSTIC_KEY` (chaîne aléatoire) dans les
+  variables d'environnement du projet, puis redéployez — aucune clé n'est inscrite dans le code, le
+  dépôt étant public. **Ce réglage est déjà le premier test** : sans clé valide la route répond `403`
+  avec `diagnosticKeyPresent`, qui dit si la variable est arrivée jusqu'à la fonction. Route de
+  dépannage temporaire, à supprimer une fois le problème réglé ; elle ne renvoie jamais aucune valeur
+  de variable.
 
 Lecture des résultats :
 
-- **Plateforme détectée ≠ Vercel** → le domaine ne pointe pas vers le projet Vercel (ce dépôt contient
-  encore un `netlify.toml` hérité) : les variables Vercel ne seront jamais injectées.
+- **Plateforme détectée ≠ Vercel** → le domaine ne pointe pas vers le projet Vercel : les variables
+  Vercel ne seront jamais injectées.
+- **Toutes les variables absentes** (`DATABASE_URL`, `MONETICO_*`… autant que `BLOB_READ_WRITE_TOKEN`)
+  → le problème n'est pas propre au stockage : c'est l'injection des variables du projet qui ne se fait
+  pas du tout.
 - **Branche / commit inattendus** → le déploiement servi n'est pas celui que vous croyez ; redéployez et
   re-vérifiez.
 - **`BLOB_READ_WRITE_TOKEN` absente alors qu'elle existe dans le dashboard** → la variable n'est pas
