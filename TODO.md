@@ -21,6 +21,9 @@ faudra traiter. Rien ici n'est urgent ; l'ordre est indicatif.
       GitHub, pas sur Vercel : dépôt → Settings → tout en bas, Danger Zone →
       Change repository visibility. Ce n'est pas ce qui protège les données
       (voir ci-dessous), mais cela réduit la surface exposée.
+      **À faire par le propriétaire du compte `gaspardproacount-hub`** : le
+      compte `toactri` y est collaborateur avec les droits d'écriture mais pas
+      d'administration, et GitHub réserve la visibilité aux administrateurs.
 
 ## RGPD — avant d'ouvrir l'espace adhérents à de vraies données
 
@@ -63,6 +66,12 @@ Le consentement recueilli dans le formulaire est nécessaire mais pas suffisant.
       aujourd'hui sur un compte tiers, ce qui oblige à demander un code d'accès
       temporaire à chaque intervention. Transférer `site-web-toac` (et à terme
       `devanture-cms`) vers un compte propre au club.
+      Le même sujet existe côté GitHub : les dépôts appartiennent au compte
+      `gaspardproacount-hub`, où `toactri` n'est que collaborateur — d'où
+      l'impossibilité de changer la visibilité ou les réglages du dépôt.
+      Transférer les dépôts vers `toactri` réglerait les deux d'un coup, mais
+      le transfert doit lui aussi être lancé par le propriétaire actuel, et il
+      faudra ensuite reconnecter l'intégration GitHub dans Vercel.
 - [ ] **Vérifier l'adéquation du plan.** Le plan Hobby n'autorise pas
       d'inviter des collaborateurs et réserve l'usage à un cadre non
       commercial. À confirmer auprès de Vercel pour un usage associatif, sinon
