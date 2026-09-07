@@ -228,6 +228,7 @@ export type CmsTrainingSession = {
   end_time: string | null;
   sport: string;
   location: string;
+  location_anchor: string | null;
   coach: string;
   notes: string;
   position: number;

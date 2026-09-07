@@ -93,6 +93,7 @@ export default async function EntrainementsPage() {
           hasEndTime: Boolean(s.end_time),
           sport: s.sport,
           lieu: s.location,
+          lieuHref: s.location_anchor ? `/entrainements/points-de-rdv#${s.location_anchor}` : null,
           coach: s.coach,
           notes: s.notes,
         };
@@ -108,6 +109,7 @@ export default async function EntrainementsPage() {
             hasEndTime: false,
             sport: c.discipline,
             lieu: c.lieu,
+            lieuHref: null,
             coach: "",
             notes: c.detail ?? "",
           };

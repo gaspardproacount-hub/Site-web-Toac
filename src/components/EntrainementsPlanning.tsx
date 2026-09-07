@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   DISCIPLINE_LABELS,
@@ -18,6 +19,7 @@ export type PlanningSession = {
   hasEndTime: boolean;
   sport: string;
   lieu: string;
+  lieuHref: string | null;
   coach: string;
   notes: string;
 };
@@ -227,7 +229,14 @@ export default function EntrainementsPlanning({ sessions }: { sessions: Planning
                         {sportLabel(s.sport)}
                       </span>
                     </div>
-                    {s.lieu && <span className="text-sm text-toac-blue-900/80">{s.lieu}</span>}
+                    {s.lieu &&
+                      (s.lieuHref ? (
+                        <Link href={s.lieuHref} className="text-sm text-toac-blue-900/80 underline hover:text-toac-blue-950">
+                          {s.lieu}
+                        </Link>
+                      ) : (
+                        <span className="text-sm text-toac-blue-900/80">{s.lieu}</span>
+                      ))}
                     {s.coach && <span className="text-xs text-toac-blue-900/60">Coach : {s.coach}</span>}
                     {s.notes && <span className="text-xs text-toac-blue-900/60">{s.notes}</span>}
                   </li>
