@@ -72,8 +72,15 @@ function parseLinksAndBold(text: string, keyPrefix: string): ReactNode[] {
   return parts;
 }
 
-/** Applique boutons CTA + liens + gras sur une seule ligne de texte (pas de saut de ligne). */
-export function linkifyText(text: string): ReactNode[] {
+/**
+ * Applique boutons CTA + liens + gras sur une seule ligne de texte (pas de
+ * saut de ligne). `keyPrefix` distingue les éléments d'un appel à l'autre
+ * (ex. un numéro de ligne) — sans lui, deux lignes indépendantes contenant
+ * chacune du gras génèrent la même clé ("b0-l0-b-0"), ce qui produit des
+ * clés React dupliquées dès que leurs sorties sont concaténées dans un même
+ * tableau (voir renderRichText).
+ */
+export function linkifyText(text: string, keyPrefix: string = "b"): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let key = 0;
@@ -81,7 +88,7 @@ export function linkifyText(text: string): ReactNode[] {
   let match: RegExpExecArray | null;
   while ((match = BUTTON_PATTERN.exec(text))) {
     if (match.index > lastIndex) {
-      parts.push(...parseLinksAndBold(text.slice(lastIndex, match.index), `b${key}`));
+      parts.push(...parseLinksAndBold(text.slice(lastIndex, match.index), `${keyPrefix}-${key}`));
     }
     const [, label, href] = match;
     const external = href.startsWith("http");
@@ -89,7 +96,7 @@ export function linkifyText(text: string): ReactNode[] {
       createElement(
         "a",
         {
-          key: `button-${key++}`,
+          key: `${keyPrefix}-button-${key++}`,
           href,
           className: ctaButtonClassName,
           ...(external ? { target: "_blank", rel: "noopener noreferrer" } : {}),
@@ -100,7 +107,7 @@ export function linkifyText(text: string): ReactNode[] {
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) {
-    parts.push(...parseLinksAndBold(text.slice(lastIndex), `b${key}`));
+    parts.push(...parseLinksAndBold(text.slice(lastIndex), `${keyPrefix}-${key}`));
   }
   return parts;
 }
@@ -211,7 +218,7 @@ export function renderRichText(text: string): ReactNode[] {
     if (needsBreakBeforeNextLine) {
       blocks.push(createElement("br", { key: `br-${key++}` }));
     }
-    blocks.push(...linkifyText(line));
+    blocks.push(...linkifyText(line, `line${i}`));
     needsBreakBeforeNextLine = true;
     i++;
   }

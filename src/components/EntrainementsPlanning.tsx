@@ -109,9 +109,31 @@ export default function EntrainementsPlanning({
     return { rangeStart: min, rangeEnd: Math.max(max, min + 60) };
   }, [sessions]);
 
-  const totalMinutes = rangeEnd - rangeStart;
   const hourTicks: number[] = [];
   for (let m = rangeStart; m <= rangeEnd; m += 60) hourTicks.push(m);
+
+  // Les heures sans aucun créneau (sur aucun jour) sont compressées plutôt
+  // que masquées : elles restent visibles (repère horaire continu) mais
+  // n'occupent qu'une fraction de la largeur d'une heure normale.
+  const COMPRESSED_HOUR_WEIGHT = 0.25;
+  const hourWeights = hourTicks.slice(0, -1).map((start, i) => {
+    const end = hourTicks[i + 1];
+    const occupied = sessions.some((s) => s.startMinutes < end && s.endMinutes > start);
+    return occupied ? 1 : COMPRESSED_HOUR_WEIGHT;
+  });
+  const hourOffsets = [0];
+  hourWeights.forEach((w) => hourOffsets.push(hourOffsets[hourOffsets.length - 1] + w));
+  const totalWeight = hourOffsets[hourOffsets.length - 1] || 1;
+
+  function toPercent(minutes: number): number {
+    const idx = Math.min(hourWeights.length - 1, Math.max(0, Math.floor((minutes - rangeStart) / 60)));
+    const bucketStart = rangeStart + idx * 60;
+    const frac = Math.min(1, Math.max(0, (minutes - bucketStart) / 60));
+    return ((hourOffsets[idx] + frac * hourWeights[idx]) / totalWeight) * 100;
+  }
+
+  const PX_PER_HOUR = 64;
+  const timelineHeight = Math.max(totalWeight * PX_PER_HOUR, 280);
 
   const joursParJour = jours.map((jour) => ({
     jour,
@@ -129,7 +151,6 @@ export default function EntrainementsPlanning({
           return (
             <label
               key={sport}
-              title={tooltip}
               className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 font-medium transition ${
                 active ? sportColor(sport) : "border-toac-gray-200 bg-white text-toac-blue-900/40"
               }`}
@@ -140,15 +161,9 @@ export default function EntrainementsPlanning({
                 onChange={() => toggle(sport)}
                 className="h-3 w-3 accent-toac-blue-900"
               />
-              {sportLabel(sport)}
-              {tooltip && (
-                <span
-                  aria-hidden="true"
-                  className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[9px] leading-none"
-                >
-                  i
-                </span>
-              )}
+              <span title={tooltip} className={tooltip ? "cursor-help underline decoration-dotted" : undefined}>
+                {sportLabel(sport)}
+              </span>
             </label>
           );
         })}
@@ -156,54 +171,58 @@ export default function EntrainementsPlanning({
 
       {jours.length > 0 && (
         <div className="mt-8 overflow-x-auto rounded-lg border border-toac-gray-200 bg-white p-4 shadow-sm">
-          <div style={{ minWidth: `${Math.max(hourTicks.length * 64, 480)}px` }}>
-            <div className="relative ml-20 mb-2 h-4 text-[11px] text-toac-blue-900/60">
-              {hourTicks.map((m) => (
-                <span
-                  key={m}
-                  className="absolute -translate-x-1/2"
-                  style={{ left: `${((m - rangeStart) / totalMinutes) * 100}%` }}
-                >
-                  {formatHour(m)}
-                </span>
+          <div style={{ minWidth: `${Math.max(jours.length * 110 + 56, 480)}px` }}>
+            <div className="flex">
+              <div className="w-14 shrink-0" />
+              {jours.map((jour) => (
+                <div key={jour} className="flex-1 px-1 text-center text-xs font-medium text-toac-blue-950">
+                  {jour}
+                </div>
               ))}
             </div>
-            {joursParJour.map(({ jour, sessions: daySessions }) => {
-              const lanes = assignLanes(daySessions);
-              const laneCount = Math.max(1, ...Array.from(lanes.values(), (v) => v + 1));
-              const laneHeight = 30;
-              return (
-                <div key={jour} className="mb-2 flex items-stretch">
-                  <div className="w-20 shrink-0 pr-2 text-xs font-medium text-toac-blue-950">{jour}</div>
-                  <div
-                    className="relative flex-1 rounded border border-toac-gray-100 bg-toac-gray-50/50"
-                    style={{ height: `${laneCount * laneHeight + 4}px` }}
+            <div className="relative mt-2 flex" style={{ height: `${timelineHeight}px` }}>
+              <div className="relative w-14 shrink-0">
+                {hourTicks.map((m) => (
+                  <span
+                    key={m}
+                    className="absolute -translate-y-1/2 text-[11px] text-toac-blue-900/60"
+                    style={{ top: `${toPercent(m)}%` }}
                   >
+                    {formatHour(m)}
+                  </span>
+                ))}
+              </div>
+              {joursParJour.map(({ jour, sessions: daySessions }) => {
+                const lanes = assignLanes(daySessions);
+                const laneCount = Math.max(1, ...Array.from(lanes.values(), (v) => v + 1));
+                const laneWidth = 100 / laneCount;
+                return (
+                  <div key={jour} className="relative flex-1 border-l border-toac-gray-100 px-0.5">
                     {hourTicks.map((m) => (
                       <div
                         key={m}
-                        className="absolute top-0 h-full border-l border-toac-gray-100"
-                        style={{ left: `${((m - rangeStart) / totalMinutes) * 100}%` }}
+                        className="absolute left-0 right-0 border-t border-toac-gray-100"
+                        style={{ top: `${toPercent(m)}%` }}
                       />
                     ))}
                     {daySessions.map((s) => {
                       const lane = lanes.get(s.id) ?? 0;
-                      const left = ((s.startMinutes - rangeStart) / totalMinutes) * 100;
-                      const width = ((s.endMinutes - s.startMinutes) / totalMinutes) * 100;
+                      const top = toPercent(s.startMinutes);
+                      const height = toPercent(s.endMinutes) - top;
                       return (
                         <div
                           key={s.id}
                           title={`${sportLabel(s.sport)} · ${formatHour(s.startMinutes)}${
                             s.hasEndTime ? `–${formatHour(s.endMinutes)}` : ""
                           }${s.lieu ? ` · ${s.lieu}` : ""}`}
-                          className={`absolute overflow-hidden rounded border px-1.5 text-[10px] font-medium leading-tight ${sportColor(
+                          className={`absolute overflow-hidden rounded border px-1 text-[10px] font-medium leading-tight ${sportColor(
                             s.sport
                           )}`}
                           style={{
-                            left: `${left}%`,
-                            width: `calc(${width}% - 2px)`,
-                            top: `${lane * laneHeight + 2}px`,
-                            height: `${laneHeight - 4}px`,
+                            top: `${top}%`,
+                            height: `calc(${height}% - 2px)`,
+                            left: `${lane * laneWidth}%`,
+                            width: `calc(${laneWidth}% - 2px)`,
                           }}
                         >
                           <span className="block truncate">
@@ -213,9 +232,9 @@ export default function EntrainementsPlanning({
                       );
                     })}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -260,26 +279,45 @@ export default function EntrainementsPlanning({
                           </div>
                         )}
                       </div>
-                      {s.lieu &&
-                        (s.lieuHref ? (
-                          <Link href={s.lieuHref} className="text-sm text-toac-blue-900/80 underline hover:text-toac-blue-950">
-                            {s.lieu}
-                          </Link>
-                        ) : (
-                          <span className="text-sm text-toac-blue-900/80">{s.lieu}</span>
-                        ))}
-                      {s.coach && <span className="text-xs text-toac-blue-900/60">Coach : {s.coach}</span>}
-                      {hasPrerequisites && (
-                        <div className="mt-1 rounded-md bg-toac-gray-50 p-2 text-xs text-toac-blue-900/70">
-                          <p className="font-medium text-toac-blue-900">Prérequis</p>
-                          {req?.requirements && <p className="mt-1 whitespace-pre-line">{req.requirements}</p>}
-                          {s.notes && <p className="mt-1 whitespace-pre-line">{s.notes}</p>}
-                          {req?.imageUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={req.imageUrl} alt="" className="mt-2 max-h-32 rounded-md object-contain" />
+                      {s.lieu && (
+                        <div className="text-sm text-toac-blue-900/80">
+                          <span className="font-medium text-toac-blue-950">Lieu :</span>{" "}
+                          {s.lieuHref ? (
+                            <Link href={s.lieuHref} className="underline hover:text-toac-blue-950">
+                              {s.lieu}
+                            </Link>
+                          ) : (
+                            s.lieu
                           )}
                         </div>
                       )}
+                      {s.coach && <span className="text-xs text-toac-blue-900/60">Coach : {s.coach}</span>}
+                      {hasPrerequisites &&
+                        (s.sport === "velo" ? (
+                          <details className="mt-1 rounded-md bg-toac-gray-50 text-xs text-toac-blue-900/70">
+                            <summary className="cursor-pointer select-none p-2 font-medium text-toac-blue-900">
+                              Prérequis
+                            </summary>
+                            <div className="px-2 pb-2">
+                              {req?.requirements && <p className="mt-1 whitespace-pre-line">{req.requirements}</p>}
+                              {s.notes && <p className="mt-1 whitespace-pre-line">{s.notes}</p>}
+                              {req?.imageUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={req.imageUrl} alt="" className="mt-2 max-h-32 rounded-md object-contain" />
+                              )}
+                            </div>
+                          </details>
+                        ) : (
+                          <div className="mt-1 rounded-md bg-toac-gray-50 p-2 text-xs text-toac-blue-900/70">
+                            <p className="font-medium text-toac-blue-900">Prérequis</p>
+                            {req?.requirements && <p className="mt-1 whitespace-pre-line">{req.requirements}</p>}
+                            {s.notes && <p className="mt-1 whitespace-pre-line">{s.notes}</p>}
+                            {req?.imageUrl && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={req.imageUrl} alt="" className="mt-2 max-h-32 rounded-md object-contain" />
+                            )}
+                          </div>
+                        ))}
                     </li>
                   );
                 })}

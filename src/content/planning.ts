@@ -11,7 +11,7 @@ export interface Creneau {
 export const DISCIPLINE_LABELS: Record<Discipline, string> = {
   natation: "Natation",
   velo: "Vélo",
-  course: "Course à pied",
+  course: "CAP",
   muscu: "Musculation",
 };
 
