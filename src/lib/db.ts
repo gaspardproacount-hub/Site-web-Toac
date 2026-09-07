@@ -487,6 +487,38 @@ export async function insertMusculationDecharge(d: NouvelleMusculationDecharge):
   );
 }
 
+/**
+ * Supprime les dossiers encore `en_attente` du même adhérent, hors celui qu'on
+ * vient de créer. Un adhérent qui reprend le formulaire — parce qu'il s'est
+ * trompé, ou qu'il a quitté la page de relecture sans valider — laissait
+ * jusqu'ici un dossier orphelin de plus à chaque essai, et c'est bien le
+ * remplacement que lui promet la page de relecture.
+ *
+ * Les dossiers `valide` ne sont jamais touchés : ce sont des documents transmis
+ * au club. La comparaison ignore la casse et les espaces de bord.
+ *
+ * Renvoie les lignes supprimées, pour que l'appelant efface aussi leurs fichiers.
+ */
+export async function deleteSupersededMusculationDecharges(
+  currentToken: string,
+  adherent: { nom: string; prenom: string; dateNaissance: string }
+): Promise<MusculationDechargeRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    `
+    DELETE FROM musculation_decharges
+    WHERE statut = 'en_attente'
+      AND token <> $1
+      AND lower(btrim(nom)) = lower(btrim($2))
+      AND lower(btrim(prenom)) = lower(btrim($3))
+      AND date_naissance = $4
+    RETURNING *
+    `,
+    [currentToken, adherent.nom, adherent.prenom, adherent.dateNaissance]
+  );
+  return rows;
+}
+
 export async function getMusculationDechargeByToken(token: string): Promise<MusculationDechargeRow | null> {
   await ensureSchema();
   const { rows } = await getPool().query<MusculationDechargeRow>(

@@ -27,12 +27,25 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Un dossier est créé dès l'envoi du formulaire, avant que l'adhérent ait relu
+  // et validé son document. Ces dossiers en attente ne sont pas des documents
+  // transmis au club : ils encombrent la liste, mais restent affichables pour
+  // pouvoir relancer l'adhérent ou supprimer un essai abandonné.
+  const [showPending, setShowPending] = useState(false);
+
+  const pendingCount = useMemo(
+    () => decharges.filter((d) => d.statut !== "valide").length,
+    [decharges]
+  );
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return decharges;
-    return decharges.filter((d) => `${d.prenom} ${d.nom}`.toLowerCase().includes(query));
-  }, [decharges, search]);
+    return decharges.filter((d) => {
+      if (!showPending && d.statut !== "valide") return false;
+      if (!query) return true;
+      return `${d.prenom} ${d.nom}`.toLowerCase().includes(query);
+    });
+  }, [decharges, search, showPending]);
 
   async function copyReviewLink(d: MusculationDechargeRow) {
     const url = `${window.location.origin}/musculation/valider/${d.token}`;
@@ -102,8 +115,18 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Rechercher un nom…"
-        className="mb-4 w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
+        className="mb-3 w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
       />
+
+      <label className="mb-4 flex items-center gap-2 text-sm text-toac-blue-900/80">
+        <input
+          type="checkbox"
+          checked={showPending}
+          onChange={(e) => setShowPending(e.target.checked)}
+        />
+        Afficher aussi les dossiers en attente de validation
+        {pendingCount > 0 && ` (${pendingCount})`}
+      </label>
 
       <div className="space-y-3">
         {filtered.map((d) => (
@@ -194,7 +217,9 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
         ))}
         {filtered.length === 0 && (
           <p className="rounded-lg border border-toac-gray-200 bg-white p-6 text-center text-toac-blue-900/60 shadow-sm">
-            Aucune décharge musculation pour le moment.
+            {!showPending && pendingCount > 0
+              ? "Aucune décharge validée pour le moment — cochez la case ci-dessus pour voir les dossiers en attente."
+              : "Aucune décharge musculation pour le moment."}
           </p>
         )}
       </div>
