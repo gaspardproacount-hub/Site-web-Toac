@@ -296,6 +296,23 @@ Lecture des résultats :
   client : elles sont lues côté serveur (Server Components / Route Handlers) et seul le rendu HTML final
   (ou les champs strictement nécessaires) atteint le navigateur.
 
+### Se connecter au bureau en production
+
+`src/data/accounts.json` porte les comptes locaux mais n'est **pas versionné** (données sensibles) : il
+n'existe donc pas sur le serveur déployé. En production, le compte bureau vient des variables
+d'environnement :
+
+```
+ADMIN_USERNAME=bureau
+ADMIN_PASSWORD=<mot de passe long>
+ADMIN_NAME=Bureau TOAC        # facultatif
+```
+
+Sans elles, personne ne peut ouvrir `/espace-adherents/*` en ligne. Le mot de passe est comparé en temps
+constant et doit faire au moins 8 caractères. En développement, à défaut de `accounts.json`, les comptes
+de démonstration de `accounts.sample.json` restent utilisables ; ce repli est **refusé en production**,
+car les hachages de ce fichier sont dans le dépôt et l'un d'eux ouvre un compte `admin`.
+
 ### Rendre tout le site privé (avant mise en ligne publique)
 
 Sans passer par un plan payant Vercel : renseignez `SITE_PASSWORD` dans les variables d'environnement.
