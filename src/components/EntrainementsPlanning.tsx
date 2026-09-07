@@ -17,12 +17,18 @@ export type PlanningSession = {
   startMinutes: number;
   endMinutes: number;
   hasEndTime: boolean;
+  rdvMinutes: number;
   sport: string;
   lieu: string;
   lieuHref: string | null;
   coach: string;
   notes: string;
 };
+
+export type SportRequirement = { requirements: string; imageUrl: string | null };
+
+const END_TIME_TOOLTIP =
+  "Vous pouvez quitter la séance à l'heure de votre choix après avoir prévenu l'encadrant.";
 
 const DEFAULT_COLOR = "bg-toac-gray-100 text-toac-blue-900 border-toac-gray-200";
 
@@ -65,7 +71,13 @@ function assignLanes(sessions: PlanningSession[]): Map<string, number> {
   return lanes;
 }
 
-export default function EntrainementsPlanning({ sessions }: { sessions: PlanningSession[] }) {
+export default function EntrainementsPlanning({
+  sessions,
+  sportRequirements = {},
+}: {
+  sessions: PlanningSession[];
+  sportRequirements?: Record<string, SportRequirement>;
+}) {
   const sportsPresent = useMemo(() => {
     const order: Discipline[] = ["natation", "course", "velo", "muscu"];
     const known = order.filter((d) => sessions.some((s) => s.sport === d));
@@ -215,32 +227,62 @@ export default function EntrainementsPlanning({ sessions }: { sessions: Planning
             <div key={g.jour} className="rounded-lg border border-toac-gray-200 bg-white p-5 shadow-sm">
               <h2 className="font-display text-lg uppercase text-toac-blue-950">{g.jour}</h2>
               <ul className="mt-3 space-y-3">
-                {g.sessions.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex flex-col gap-1 border-b border-toac-gray-100 pb-3 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-toac-blue-950">
-                        {formatHour(s.startMinutes)}
-                        {s.hasEndTime ? `–${formatHour(s.endMinutes)}` : ""}
-                      </span>
-                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${sportColor(s.sport)}`}>
+                {g.sessions.map((s) => {
+                  const req = sportRequirements[s.sport];
+                  const hasPrerequisites = Boolean(req?.requirements || s.notes || req?.imageUrl);
+                  return (
+                    <li
+                      key={s.id}
+                      className="flex flex-col gap-1 border-b border-toac-gray-100 pb-3 last:border-0 last:pb-0"
+                    >
+                      <span
+                        className={`inline-block w-fit rounded-full border px-2 py-0.5 text-xs font-medium ${sportColor(s.sport)}`}
+                      >
                         {sportLabel(s.sport)}
                       </span>
-                    </div>
-                    {s.lieu &&
-                      (s.lieuHref ? (
-                        <Link href={s.lieuHref} className="text-sm text-toac-blue-900/80 underline hover:text-toac-blue-950">
-                          {s.lieu}
-                        </Link>
-                      ) : (
-                        <span className="text-sm text-toac-blue-900/80">{s.lieu}</span>
-                      ))}
-                    {s.coach && <span className="text-xs text-toac-blue-900/60">Coach : {s.coach}</span>}
-                    {s.notes && <span className="text-xs text-toac-blue-900/60">{s.notes}</span>}
-                  </li>
-                ))}
+                      <div className="mt-1 space-y-0.5 text-sm text-toac-blue-950">
+                        <div>
+                          <span className="font-medium">Rdv :</span> {formatHour(s.rdvMinutes)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Début de la séance :</span> {formatHour(s.startMinutes)}
+                        </div>
+                        {s.hasEndTime && (
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Fin de la séance :</span> {formatHour(s.endMinutes)}
+                            <span
+                              title={END_TIME_TOOLTIP}
+                              aria-label={END_TIME_TOOLTIP}
+                              className="inline-flex h-3.5 w-3.5 shrink-0 cursor-help items-center justify-center rounded-full border border-toac-blue-900/40 text-[9px] leading-none text-toac-blue-900/60"
+                            >
+                              i
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {s.lieu &&
+                        (s.lieuHref ? (
+                          <Link href={s.lieuHref} className="text-sm text-toac-blue-900/80 underline hover:text-toac-blue-950">
+                            {s.lieu}
+                          </Link>
+                        ) : (
+                          <span className="text-sm text-toac-blue-900/80">{s.lieu}</span>
+                        ))}
+                      {s.coach && <span className="text-xs text-toac-blue-900/60">Coach : {s.coach}</span>}
+                      {hasPrerequisites && (
+                        <div className="mt-1 rounded-md bg-toac-gray-50 p-2 text-xs text-toac-blue-900/70">
+                          <p className="font-medium text-toac-blue-900">Prérequis</p>
+                          {req?.requirements && <p className="mt-1 whitespace-pre-line">{req.requirements}</p>}
+                          {s.notes && <p className="mt-1 whitespace-pre-line">{s.notes}</p>}
+                          {req?.imageUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={req.imageUrl} alt="" className="mt-2 max-h-32 rounded-md object-contain" />
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

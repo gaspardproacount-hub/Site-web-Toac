@@ -3,9 +3,20 @@ import { Suspense } from "react";
 import { PLANNING, DISCIPLINE_LABELS, DISCIPLINE_COLORS } from "@/content/planning";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 import { CmsEditableText, CmsAddTile, CmsEditPencil } from "@/components/cms-edit";
-import { getCmsCatalog, getCmsPageBlocks, getCmsHiddenBlocks, getCmsTrainingSessions } from "@/lib/cms";
+import {
+  getCmsCatalog,
+  getCmsPageBlocks,
+  getCmsHiddenBlocks,
+  getCmsTrainingSessions,
+  getCmsSportRequirements,
+} from "@/lib/cms";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
-import EntrainementsPlanning, { type PlanningSession } from "@/components/EntrainementsPlanning";
+import EntrainementsPlanning, {
+  type PlanningSession,
+  type SportRequirement,
+} from "@/components/EntrainementsPlanning";
+
+const DEFAULT_RDV_OFFSET = 10;
 
 const JOUR_LABEL_BY_CMS_DAY: Record<string, string> = {
   lundi: "Lundi",
@@ -57,12 +68,18 @@ const DEFAULT_NOTICE =
   "du groupe est en jeu. La musculation nécessite une décharge signée, téléchargeable dans l'espace adhérents.";
 
 export default async function EntrainementsPage() {
-  const [cmsCatalog, pageBlocks, hiddenBlocks, cmsTrainingSessions] = await Promise.all([
+  const [cmsCatalog, pageBlocks, hiddenBlocks, cmsTrainingSessions, cmsSportRequirements] = await Promise.all([
     getCmsCatalog(),
     getCmsPageBlocks("entrainements"),
     getCmsHiddenBlocks("entrainements"),
     getCmsTrainingSessions(),
+    getCmsSportRequirements(),
   ]);
+  const sportRequirements: Record<string, SportRequirement> = Object.fromEntries(
+    cmsSportRequirements
+      .filter((r) => r.requirements || r.image_url)
+      .map((r) => [r.sport, { requirements: r.requirements, imageUrl: r.image_url }])
+  );
   const noticeBlock = pageBlocks?.find((b) => b.slot === NOTICE_SLOT);
   const noticeHidden = hiddenBlocks.some((b) => b.slot === NOTICE_SLOT);
   const missingSlots: EnsureBlockSpec[] = [
@@ -85,12 +102,14 @@ export default async function EntrainementsPage() {
     ? cmsTrainingSessions.map((s) => {
         const start = timeToMinutes(s.start_time);
         const end = s.end_time ? timeToMinutes(s.end_time) : start + DEFAULT_SESSION_DURATION;
+        const rdv = s.rdv_time ? timeToMinutes(s.rdv_time) : (start - DEFAULT_RDV_OFFSET + 24 * 60) % (24 * 60);
         return {
           id: s.id,
           jour: JOUR_LABEL_BY_CMS_DAY[s.day] ?? s.day,
           startMinutes: start,
           endMinutes: end,
           hasEndTime: Boolean(s.end_time),
+          rdvMinutes: rdv,
           sport: s.sport,
           lieu: s.location,
           lieuHref: s.location_anchor ? `/entrainements/points-de-rdv#${s.location_anchor}` : null,
@@ -107,6 +126,7 @@ export default async function EntrainementsPage() {
             startMinutes: start,
             endMinutes: start + DEFAULT_SESSION_DURATION,
             hasEndTime: false,
+            rdvMinutes: (start - DEFAULT_RDV_OFFSET + 24 * 60) % (24 * 60),
             sport: c.discipline,
             lieu: c.lieu,
             lieuHref: null,
@@ -136,7 +156,7 @@ export default async function EntrainementsPage() {
       />
 
       {planningSessions.length ? (
-        <EntrainementsPlanning sessions={planningSessions} />
+        <EntrainementsPlanning sessions={planningSessions} sportRequirements={sportRequirements} />
       ) : (
         <>
           <div className="mt-8 flex flex-wrap gap-3 text-xs">

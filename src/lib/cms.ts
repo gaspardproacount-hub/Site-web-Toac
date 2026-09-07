@@ -226,6 +226,7 @@ export type CmsTrainingSession = {
   day: string;
   start_time: string;
   end_time: string | null;
+  rdv_time: string | null;
   sport: string;
   location: string;
   location_anchor: string | null;
@@ -245,6 +246,22 @@ export async function getCmsTrainingSessions(): Promise<CmsTrainingSession[] | n
     "&select=*&order=start_time.asc"
   );
   return rows && rows.length ? rows : null;
+}
+
+export type CmsSportRequirement = {
+  sport: string;
+  requirements: string;
+  image_url: string | null;
+};
+
+/**
+ * Prérequis par défaut de chaque sport (dashboard → Planning → « Prérequis
+ * par sport »), affichés sur /entrainements en plus des prérequis propres
+ * à chaque créneau.
+ */
+export async function getCmsSportRequirements(): Promise<CmsSportRequirement[]> {
+  const rows = await fetchFromCms<CmsSportRequirement>("training_sport_requirements", "&select=*");
+  return rows ?? [];
 }
 
 // Menu de navigation et pied de page gérés depuis le CMS (dashboard →
