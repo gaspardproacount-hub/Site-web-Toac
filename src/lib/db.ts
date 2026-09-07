@@ -511,6 +511,20 @@ export async function validateMusculationDecharge(token: string): Promise<Muscul
   return rows[0] ?? null;
 }
 
+/**
+ * Supprime définitivement un dossier de décharge. Renvoie la ligne supprimée
+ * pour que l'appelant puisse effacer aussi les fichiers correspondants dans le
+ * store Blob, ou null si l'identifiant n'existe pas.
+ */
+export async function deleteMusculationDecharge(id: number): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "DELETE FROM musculation_decharges WHERE id = $1 RETURNING *",
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
 export async function getMusculationDecharges(): Promise<MusculationDechargeRow[]> {
   await ensureSchema();
   const { rows } = await getPool().query<MusculationDechargeRow>(

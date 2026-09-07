@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { MusculationDechargeRow } from "@/lib/db";
 import { documentHref } from "@/lib/documentUrl";
 
@@ -20,9 +21,12 @@ const STATUT_CLASSES: Record<string, string> = {
 };
 
 export default function AdminMusculationTable({ decharges }: { decharges: MusculationDechargeRow[] }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -39,6 +43,43 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
     } catch {
       window.prompt("Copiez ce lien :", url);
     }
+  }
+
+  /**
+   * Suppression définitive : le dossier et ses deux fichiers disparaissent. Sert
+   * au ménage des essais comme aux demandes d'effacement (RGPD), d'où la
+   * confirmation explicite avant l'appel.
+   */
+  async function handleDelete(d: MusculationDechargeRow) {
+    const confirmed = window.confirm(
+      `Supprimer définitivement le dossier de ${d.prenom} ${d.nom} ?\n\n` +
+        "La décharge et le certificat médical seront effacés. Cette action est irréversible."
+    );
+    if (!confirmed) return;
+
+    setDeletingId(d.id);
+    setDeleteError(null);
+
+    let response: Response;
+    try {
+      response = await fetch("/api/musculation/decharge/supprimer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: d.id }),
+      });
+    } catch {
+      setDeleteError("Erreur réseau. Réessayez plus tard.");
+      setDeletingId(null);
+      return;
+    }
+
+    const data = await response.json().catch(() => null);
+    setDeletingId(null);
+    if (!response.ok) {
+      setDeleteError(data?.error ?? "La suppression a échoué. Réessayez plus tard.");
+      return;
+    }
+    router.refresh();
   }
 
   return (
@@ -133,7 +174,20 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                   >
                     {copiedId === d.id ? "Lien copié ✓" : "Copier le lien de partage/relecture"}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(d)}
+                    disabled={deletingId === d.id}
+                    className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {deletingId === d.id ? "Suppression…" : "Supprimer le dossier"}
+                  </button>
                 </div>
+                {deleteError && deletingId === null && (
+                  <p role="alert" className="mt-3 text-xs font-medium text-red-600">
+                    {deleteError}
+                  </p>
+                )}
               </div>
             )}
           </div>
