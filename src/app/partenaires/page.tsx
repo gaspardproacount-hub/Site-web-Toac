@@ -55,7 +55,7 @@ export default async function PartenairesPage() {
   const institutionnelsSection = cmsCatalog?.find((s) => s.name === "Partenaires institutionnels");
   const pageSlugs = new Set(cmsPages?.map((p) => p.slug) ?? []);
   const detailHrefFor = (name: string) =>
-    pageSlugs.has(slugify(name)) ? `/le-club/partenaires/${slugify(name)}` : undefined;
+    pageSlugs.has(slugify(name)) ? `/partenaires/${slugify(name)}` : undefined;
 
   return (
     <Suspense fallback={null}>

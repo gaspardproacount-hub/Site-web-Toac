@@ -7,7 +7,7 @@ const ROUTES = [
   "/le-club",
   "/le-club/bureau",
   "/le-club/vie-du-club",
-  "/le-club/partenaires",
+  "/partenaires",
   "/entrainements",
   "/entrainements/points-de-rdv",
   "/triathlons-du-lauragais",

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   const prenom = String(form.get("prenom") ?? "").trim();
   const email = String(form.get("email") ?? "").trim();
   const consentement = form.get("consentement") === "on";
-  const backHref = partenaire ? `/le-club/partenaires/${partenaire}` : "/le-club/partenaires";
+  const backHref = partenaire ? `/partenaires/${partenaire}` : "/partenaires";
 
   function htmlError(message: string) {
     return new NextResponse(buildErrorHtml(message, backHref), {
