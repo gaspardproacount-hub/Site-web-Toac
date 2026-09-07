@@ -36,9 +36,11 @@ export default async function PartenairePage({
     notFound();
   }
 
-  const partner = cmsCatalog
-    ?.flatMap((section) => section.products)
-    .find((p) => slugify(p.name) === slug);
+  // Plusieurs produits peuvent correspondre au même nom (ex. une ancienne
+  // fiche créée avant la section dédiée "Partenaires", sans logo) — on
+  // privilégie toujours celle qui a un logo, peu importe l'ordre.
+  const matchingPartners = cmsCatalog?.flatMap((section) => section.products).filter((p) => slugify(p.name) === slug) ?? [];
+  const partner = matchingPartners.find((p) => p.image_url) ?? matchingPartners[0];
 
   return (
     <div className="pb-16">
