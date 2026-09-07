@@ -38,8 +38,8 @@ export default function ContactPage() {
                   <p className="font-medium text-toac-blue-950">Adresse du club</p>
                   <p className="text-toac-blue-900/80">20 chemin de Garric, 31200 Toulouse</p>
                   <p className="mt-3 font-medium text-toac-blue-950">Email du bureau</p>
-                  <a href="mailto:toac-triathlon-bureau@googlegroups.com" className="text-toac-blue-600 underline">
-                    toac-triathlon-bureau@googlegroups.com
+                  <a href="mailto:contact@toac-triathlon.com" className="text-toac-blue-600 underline">
+                    contact@toac-triathlon.com
                   </a>
                   <p className="mt-3 font-medium text-toac-blue-950">Réseaux sociaux</p>
                   <ul className="space-y-1">

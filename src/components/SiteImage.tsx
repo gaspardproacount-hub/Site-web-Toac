@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
 
 /**
  * Affiche une image du site en acceptant automatiquement plusieurs formats.
@@ -16,14 +17,18 @@ export default function SiteImage({
   label,
   className = "",
   priority = false,
+  zoomable = false,
 }: {
   name: string;
   label: string;
   className?: string;
   priority?: boolean;
+  /** Ouvre la photo en grand au clic (sans effet sur le cadre "placeholder"). */
+  zoomable?: boolean;
 }) {
   const [extIndex, setExtIndex] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   function handleError() {
@@ -58,15 +63,32 @@ export default function SiteImage({
     );
   }
 
-  return (
+  const src = `/images/${name}.${EXTENSIONS[extIndex]}`;
+  const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       ref={imgRef}
-      src={`/images/${name}.${EXTENSIONS[extIndex]}`}
+      src={src}
       alt={label}
       loading={priority ? "eager" : "lazy"}
       className={`object-cover ${className}`}
       onError={handleError}
     />
+  );
+
+  if (!zoomable) return img;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setLightboxOpen(true)}
+        aria-label={`Agrandir la photo — ${label}`}
+        className="block cursor-zoom-in p-0"
+      >
+        {img}
+      </button>
+      {lightboxOpen && <PhotoLightbox src={src} alt={label} onClose={() => setLightboxOpen(false)} />}
+    </>
   );
 }

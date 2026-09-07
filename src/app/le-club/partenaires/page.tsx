@@ -76,6 +76,7 @@ export default async function PartenairesPage() {
                     target={{ kind: "product", id: p.id }}
                     className="flex h-32 w-full items-center justify-center bg-toac-gray-100 p-3"
                     imgClassName="max-h-full max-w-full object-contain"
+                    zoomable
                   />
                 }
                 name={
@@ -102,7 +103,7 @@ export default async function PartenairesPage() {
               <PartnerCard
                 key={p.name}
                 logo={
-                  <SiteImage name={`partenaire-${slugify(p.name)}`} label={`Logo ${p.name}`} className="h-32 w-full" />
+                  <SiteImage name={`partenaire-${slugify(p.name)}`} label={`Logo ${p.name}`} className="h-32 w-full" zoomable />
                 }
                 name={<div className="font-display uppercase text-toac-blue-950">{p.name}</div>}
                 description={
@@ -131,6 +132,7 @@ export default async function PartenairesPage() {
                     target={{ kind: "product", id: p.id }}
                     className="flex h-32 w-full items-center justify-center bg-toac-gray-100 p-3"
                     imgClassName="max-h-full max-w-full object-contain"
+                    zoomable
                   />
                 }
                 name={
@@ -156,7 +158,7 @@ export default async function PartenairesPage() {
           : PARTENAIRES_INSTITUTIONNELS.map((name) => (
               <PartnerCard
                 key={name}
-                logo={<SiteImage name={`partenaire-${slugify(name)}`} label={`Logo ${name}`} className="h-32 w-full" />}
+                logo={<SiteImage name={`partenaire-${slugify(name)}`} label={`Logo ${name}`} className="h-32 w-full" zoomable />}
                 name={<div className="font-display uppercase text-toac-blue-950">{name}</div>}
               />
             ))}
@@ -171,7 +173,8 @@ export default async function PartenairesPage() {
           ? pageBlocks.map((block) => (
               <div
                 key={block.id}
-                className="rounded-md border border-toac-pink-500/30 bg-toac-pink-300/20 p-5 text-sm text-toac-blue-900"
+                id={block.anchor ?? undefined}
+                className="scroll-mt-24 rounded-md border border-toac-pink-500/30 bg-toac-pink-300/20 p-5 text-sm text-toac-blue-900"
               >
                 {block.heading && (
                   <CmsEditableText

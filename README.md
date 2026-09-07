@@ -37,7 +37,7 @@ Tant que vous n'avez pas importé vos propres comptes (voir § 4), deux comptes 
 2. Sur [vercel.com](https://vercel.com), importez le dépôt (le framework Next.js est détecté automatiquement).
 3. Dans **Settings → Environment Variables**, renseignez toutes les variables listées dans `.env.example`
    (`SESSION_SECRET`, `MONETICO_TPE`, `MONETICO_CODE_SOCIETE`, `MONETICO_CLE_HMAC`, `MONETICO_URL_RETOUR`,
-   `MONETICO_TEST_MODE`, et éventuellement `RESEND_API_KEY` / `RESEND_FROM_EMAIL`).
+   `MONETICO_TEST_MODE`, et éventuellement `BREVO_API_KEY` / `BREVO_FROM_EMAIL`).
 4. Déployez. Le plan gratuit ("Hobby") de Vercel suffit pour ce site.
 
 Important : `src/data/members.json` et `src/data/accounts.json` (les vraies données adhérents) sont
@@ -64,7 +64,7 @@ ignorés par git — ils ne seront donc **pas** présents sur Vercel après un d
 | Coordonnées des lieux | `src/content/lieux.ts` | Les latitudes/longitudes sont des approximations ; à vérifier/ajuster précisément si besoin. |
 | Variables Monetico | `.env` (Vercel ou local) | Voir § 5. |
 | `DATABASE_URL` | `.env` (Vercel ou local) | Voir § 5bis. |
-| `RESEND_API_KEY` | `.env` | Voir § 6. |
+| `BREVO_API_KEY` | `.env` | Voir § 6. |
 | Champs du formulaire d'adhésion | `src/components/AdhesionForm.tsx` | Les champs proposés (état civil, contact d'urgence, certificat médical…) sont ceux d'un bulletin d'adhésion classique de club de triathlon. Le Google Form externe n'étant pas accessible publiquement pour être recopié à l'identique, ajustez les champs ici si le bureau utilise des intitulés différents. |
 
 ## 4. Importer les adhérents (CSV) et gérer les comptes
@@ -193,8 +193,97 @@ conservé.
 Sans configuration, les messages du formulaire de contact sont simplement journalisés côté serveur (mode
 démo, visible dans les logs Vercel). Pour un envoi réel par email :
 
-1. Créez un compte sur [resend.com](https://resend.com) et une clé API.
-2. Renseignez `RESEND_API_KEY` (et `RESEND_FROM_EMAIL`, une adresse vérifiée sur votre domaine Resend).
+1. Dans votre compte [Brevo](https://www.brevo.com), créez une clé API (**SMTP & API → API Keys**).
+2. Vérifiez un expéditeur (**Senders, Domains & Dedicated IPs → Senders**) — l'adresse utilisée dans
+   `BREVO_FROM_EMAIL` doit être un expéditeur validé, sinon Brevo refuse l'envoi.
+3. Renseignez `BREVO_API_KEY` et `BREVO_FROM_EMAIL` dans les variables d'environnement Vercel.
+
+## 6bis. Décharge musculation
+
+La page **Entraînements → Musculation** (`/musculation`) propose un formulaire qui reprend
+les champs de la décharge papier du TOAC Omnisports (nom, prénom, adresse, autorisation parentale si
+mineur…), avec upload du certificat médical et d'une image de signature.
+
+Parcours :
+
+1. À l'envoi, le serveur génère **un seul PDF** : la décharge papier reconstituée (en-tête logos, champs
+   du formulaire, signature uploadée incrustée) en page 1, puis le certificat médical transmis en pages
+   suivantes — un certificat en image devient une page, un certificat déjà en PDF voit ses pages
+   reprises. Le bloc « autorisation parentale » n'apparaît, dans le formulaire comme dans le PDF, que si
+   la date de naissance saisie correspond à une personne de moins de 18 ans (calcul refait côté serveur,
+   `src/lib/age.ts`). Ce PDF et le certificat brut sont déposés sur **Vercel Blob** (§ 5 ci-dessus —
+   nommage `nom-prenom-decharge.pdf` / `nom-prenom-certif.<ext>`), et un dossier est enregistré en base
+   (table `musculation_decharges`, statut `en_attente`).
+   L'en-tête vient de `public/images/decharge-entete.png` (voir `public/images/README.txt`) ; si ce
+   fichier manque, le PDF sort sans logos plutôt que d'échouer.
+2. L'adhérent est redirigé vers une page de relecture (`/musculation/valider/<token>`) qui affiche le PDF
+   dans une iframe, puis « Valider ce document ». À la validation le dossier passe au statut `valide`, la
+   page confirme l'envoi, et **un email part automatiquement** vers les adresses de
+   `MUSCULATION_NOTIFICATION_EMAILS` (séparées par des virgules, via Brevo) avec deux boutons — voir et
+   télécharger le document. Un échec d'envoi est journalisé sans faire échouer la validation. Rien n'est
+   considéré comme officiellement transmis avant cette confirmation.
+3. Le bureau retrouve tous les dossiers (validés ou non) dans **Espace Adhérents → Bureau → Décharges
+   musculation** (`/espace-adherents/bureau/musculation`, réservé aux comptes `admin`) : liens pour
+   voir/télécharger chaque document, et un bouton pour copier le lien de relecture (utile pour le
+   renvoyer à un adhérent, ou le partager avec le responsable du pôle sport).
+
+Variables utilisées : `DATABASE_URL` (§ 5bis) et `BLOB_READ_WRITE_TOKEN` (§ 5), déjà configurées pour le
+reste du site, plus `MUSCULATION_NOTIFICATION_EMAILS` et `BREVO_API_KEY` pour la notification par email.
+Sans destinataire ou sans clé Brevo, la validation fonctionne et l'envoi est simplement journalisé.
+
+### Accès aux documents : le store Blob est privé
+
+Le store Blob du club est en **accès privé**. Les fichiers y sont déposés avec `access: "private"` et
+n'ont **aucune URL publique** : c'est voulu, un certificat médical est une donnée de santé et une URL
+publique Vercel Blob reste lisible par quiconque met la main dessus, sans possibilité de révocation.
+
+Conséquences pour le code :
+
+- Les colonnes `decharge_url`, `certificat_url` et `justificatif_url` contiennent désormais un **chemin
+  dans le store** (ex. `musculation/dupont-jean-decharge-1234.pdf`), pas une URL. Les noms de colonnes
+  datent d'avant et n'ont pas été renommés.
+- Les fichiers ne sortent que par **`GET /api/documents?path=<chemin>`**, qui relit le blob côté serveur
+  et le renvoie en streaming après contrôle d'accès : compte `admin` connecté, ou `&token=<jeton du
+  dossier>` — le jeton de la page de relecture, qui n'ouvre que les deux fichiers de son propre dossier.
+- L'accès public/privé est fixé **à la création du store** côté Vercel et n'est pas modifiable ensuite.
+  Un `put(..., { access: "public" })` sur ce store échoue avec « Cannot use public access on a private
+  store » — c'était la cause de l'échec des premières décharges musculation.
+
+### Si l'upload échoue
+
+Le message « stockage des documents pas encore configuré » ne s'affiche plus que lorsqu'**aucun jeton
+Blob n'atteint la fonction** ; toute autre erreur Blob (store privé, jeton invalide, store suspendu…)
+est journalisée telle quelle dans les logs Vercel et renvoie « Échec de l'envoi des documents ». Deux
+façons de voir l'état réel du serveur, identiques dans leur contenu : les variables réellement
+injectées, la plateforme détectée, la branche et le commit servis, et un test d'écriture qui renvoie
+l'erreur brute de Vercel Blob.
+
+- **Page** : Espace Adhérents → Bureau → Diagnostic serveur
+  (`/espace-adherents/bureau/diagnostic`, comptes `admin` uniquement).
+- **JSON, sans compte** : `GET /api/diagnostic?key=<valeur de DIAGNOSTIC_KEY>` (ajoutez `&test=blob`
+  pour lancer le test d'écriture). Définissez au préalable `DIAGNOSTIC_KEY` (chaîne aléatoire) dans les
+  variables d'environnement du projet, puis redéployez — aucune clé n'est inscrite dans le code, le
+  dépôt étant public. **Ce réglage est déjà le premier test** : sans clé valide la route répond `403`
+  avec `diagnosticKeyPresent`, qui dit si la variable est arrivée jusqu'à la fonction. Route de
+  dépannage temporaire, à supprimer une fois le problème réglé ; elle ne renvoie jamais aucune valeur
+  de variable.
+
+Lecture des résultats :
+
+- **Plateforme détectée ≠ Vercel** → le domaine ne pointe pas vers le projet Vercel : les variables
+  Vercel ne seront jamais injectées.
+- **Toutes les variables absentes** (`DATABASE_URL`, `MONETICO_*`… autant que `BLOB_READ_WRITE_TOKEN`)
+  → le problème n'est pas propre au stockage : c'est l'injection des variables du projet qui ne se fait
+  pas du tout.
+- **Branche / commit inattendus** → le déploiement servi n'est pas celui que vous croyez ; redéployez et
+  re-vérifiez.
+- **`BLOB_READ_WRITE_TOKEN` absente alors qu'elle existe dans le dashboard** → la variable n'est pas
+  attachée à cet environnement, ou elle est masquée par l'intégration Storage de Vercel qui « possède »
+  ce nom. Contournement : créez une variable **`TOAC_BLOB_TOKEN`** (nom que Vercel ne gère pas) avec la
+  même valeur, redéployez — le code l'utilise automatiquement en repli.
+- **Jeton présent mais test en échec** → l'erreur affichée est la vraie cause. « Cannot use public
+  access on a private store » signifie qu'un `put()` demande `access: "public"` sur le store privé du
+  club : c'est le code qu'il faut corriger, pas la configuration Vercel.
 
 ## 7. Sécurité de l'espace adhérents
 
@@ -207,6 +296,23 @@ démo, visible dans les logs Vercel). Pour un envoi réel par email :
   client : elles sont lues côté serveur (Server Components / Route Handlers) et seul le rendu HTML final
   (ou les champs strictement nécessaires) atteint le navigateur.
 
+### Se connecter au bureau en production
+
+`src/data/accounts.json` porte les comptes locaux mais n'est **pas versionné** (données sensibles) : il
+n'existe donc pas sur le serveur déployé. En production, le compte bureau vient des variables
+d'environnement :
+
+```
+ADMIN_USERNAME=bureau
+ADMIN_PASSWORD=<mot de passe long>
+ADMIN_NAME=Bureau TOAC        # facultatif
+```
+
+Sans elles, personne ne peut ouvrir `/espace-adherents/*` en ligne. Le mot de passe est comparé en temps
+constant et doit faire au moins 8 caractères. En développement, à défaut de `accounts.json`, les comptes
+de démonstration de `accounts.sample.json` restent utilisables ; ce repli est **refusé en production**,
+car les hachages de ce fichier sont dans le dépôt et l'un d'eux ouvre un compte `admin`.
+
 ### Rendre tout le site privé (avant mise en ligne publique)
 
 Sans passer par un plan payant Vercel : renseignez `SITE_PASSWORD` dans les variables d'environnement.
@@ -215,6 +321,18 @@ d'afficher quoi que ce soit sur le site. Laissez la variable vide (ou supprimez-
 en public. La notification de paiement Monetico (`/api/monetico/retour`) reste volontairement accessible
 sans mot de passe, sinon les paiements en cours échoueraient.
 
+### Fermer l'URL Vercel (*.vercel.app) une fois le vrai domaine en ligne
+
+Une fois `toac-triathlon.com` branché (voir domaine personnalisé ci-dessus), l'URL générée par Vercel
+(`site-web-toac.vercel.app`) reste accessible en parallèle — pratique pour les devs, mais pas destinée au
+public. Pour la fermer sans toucher au domaine de production :
+
+- Renseignez `PREVIEW_SITE_PASSWORD` dans les variables d'environnement Vercel : seule cette URL demandera
+  un identifiant/mot de passe (même mécanisme que `SITE_PASSWORD` ci-dessus), `toac-triathlon.com` reste
+  public. Laissez vide pour ne pas la verrouiller.
+- Elle est aussi exclue des moteurs de recherche par défaut (en-tête `X-Robots-Tag: noindex`, voir
+  `next.config.ts`), qu'un mot de passe soit renseigné ou non.
+
 ## 8. Placeholders restants — récapitulatif
 
 - Toutes les photos (`ImagePlaceholder`)
@@ -222,7 +340,7 @@ sans mot de passe, sinon les paiements en cours échoueraient.
 - `URL_INSCRIPTION_TDL` (lien d'inscription aux Triathlons du Lauragais)
 - `LIEN_COMMANDE_TENUES`
 - Documents PDF de l'espace adhérents
-- Variables d'environnement Monetico et Resend
+- Variables d'environnement Monetico et Brevo
 - Coordonnées GPS précises des lieux d'entraînement (approximations à vérifier)
 - `favicon.ico` (retiré du dépôt initial — vous pouvez en générer un à partir de `public/logo-toac.png`)
 - `package-lock.json` (non inclus dans ce commit — régénérez-le avec `npm install`)

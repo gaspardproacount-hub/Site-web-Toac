@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { put, BlobError } from "@vercel/blob";
+import { putBlob, BlobNotConfiguredError } from "@/lib/blob";
 import { insertInscription, DatabaseNotConfiguredError } from "@/lib/db";
 import { buildPaymentForm, buildAutoSubmitHtml, buildErrorHtml } from "@/lib/monetico";
 import { resolveTarifs } from "@/lib/tarifs-cms";
@@ -21,7 +21,7 @@ import type { LicenceType } from "@/content/tarifs";
 export const maxDuration = 30;
 
 function htmlError(message: string) {
-  return new NextResponse(buildErrorHtml(message, "/nous-rejoindre"), {
+  return new NextResponse(buildErrorHtml(message, "/adhesion"), {
     status: 400,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
@@ -68,15 +68,16 @@ export async function POST(request: NextRequest) {
   let justificatifUrl: string | null = null;
   if (justificatifFile instanceof File && justificatifFile.size > 0) {
     try {
-      const blob = await put(`justificatifs/${Date.now()}-${justificatifFile.name}`, justificatifFile, {
-        access: "public",
-      });
-      justificatifUrl = blob.url;
+      const blob = await putBlob(
+        `justificatifs/${Date.now()}-${justificatifFile.name}`,
+        justificatifFile
+      );
+      // Store privé : on garde le chemin dans le store, pas une URL publique.
+      // Le bureau relit le fichier via /api/documents (voir AdminInscriptionsTable).
+      justificatifUrl = blob.pathname;
     } catch (error) {
-      if (error instanceof BlobError) {
-        console.warn(
-          "Justificatif non stocké : Vercel Blob n'est pas configuré (voir .env.example / README)."
-        );
+      if (error instanceof BlobNotConfiguredError) {
+        console.warn(`Justificatif non stocké : ${error.message}`);
       } else {
         console.error("Échec de l'upload du justificatif :", error);
       }

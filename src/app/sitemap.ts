@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://toac-triathlon.example.com";
+const SITE_URL = "https://www.toac-triathlon.com";
 
 const ROUTES = [
   "",
@@ -12,10 +12,12 @@ const ROUTES = [
   "/entrainements/points-de-rdv",
   "/triathlons-du-lauragais",
   "/faq",
-  "/nous-rejoindre",
+  "/adhesion",
   "/contact",
   "/mentions-legales",
   "/confidentialite",
+  "/reglement-interieur",
+  "/arbitrage",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

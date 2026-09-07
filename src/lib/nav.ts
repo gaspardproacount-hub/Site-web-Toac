@@ -28,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { label: "Planning de la semaine", href: "/entrainements" },
       { label: "Lieux - Points de rdv", href: "/entrainements/points-de-rdv" },
+      { label: "Natation", href: "/natation" },
     ],
   },
   { label: "Triathlons du Lauragais", href: "/triathlons-du-lauragais" },
@@ -41,8 +42,9 @@ export const FOOTER_SITEMAP: NavLink[] = [
   { label: "Entraînements", href: "/entrainements" },
   { label: "Triathlons du Lauragais", href: "/triathlons-du-lauragais" },
   { label: "FAQ", href: "/faq" },
-  { label: "Nous rejoindre", href: "/nous-rejoindre" },
+  { label: "Nous rejoindre", href: "/adhesion" },
   { label: "Contact", href: "/contact" },
+  { label: "Règlement intérieur", href: "/reglement-interieur" },
   { label: "Mentions légales", href: "/mentions-legales" },
   { label: "Politique de confidentialité", href: "/confidentialite" },
 ];

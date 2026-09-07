@@ -1,29 +1,36 @@
 import type { ReactNode } from "react";
 import { getCmsPageBlocks } from "@/lib/cms";
-import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsAddBlockSection } from "@/components/cms-edit";
 
 // Rend le contenu géré par le dashboard client pour une page donnée (identifiée
 // par son "slug", ex: "le-club"). Si aucun bloc n'a été créé pour cette page
 // dans le CMS, on affiche le contenu actuel du site tel quel (fallback) — rien
 // ne change sur le site tant que le client n'a pas commencé à éditer cette page.
 export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback: ReactNode }) {
-  const blocks = await getCmsPageBlocks(slug);
+  const rawBlocks = await getCmsPageBlocks(slug);
 
-  if (!blocks) {
+  if (!rawBlocks) {
     return (
       <>
         {fallback}
-        <div className="mx-auto max-w-4xl px-4 pb-16 sm:px-6 lg:px-8">
-          <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc de contenu sur cette page" />
-        </div>
+        <CmsAddBlockSection payload={{ type: "add-block" }} label="+ Ajouter un bloc de contenu sur cette page" />
       </>
     );
   }
 
+  // Un bloc "à emplacement fixe" (slot) est rendu par du code dédié à un
+  // endroit précis de la page, pas ici en générique — sans ce filtre, il
+  // apparaîtrait une seconde fois.
+  const blocks = rawBlocks.filter((block) => !block.slot);
+
   return (
     <>
       {blocks.map((block) => (
-        <section key={block.id} className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        <section
+          key={block.id}
+          id={block.anchor ?? undefined}
+          className="mx-auto max-w-4xl scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8"
+        >
           <div className="relative rounded-lg">
             {block.image_url && (
               <CmsEditableImage
@@ -54,9 +61,7 @@ export async function CmsPageBlocks({ slug, fallback }: { slug: string; fallback
           </div>
         </section>
       ))}
-      <div className="mx-auto max-w-4xl px-4 pb-16 sm:px-6 lg:px-8">
-        <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc de contenu sur cette page" />
-      </div>
+      <CmsAddBlockSection payload={{ type: "add-block" }} label="+ Ajouter un bloc de contenu sur cette page" />
     </>
   );
 }

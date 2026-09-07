@@ -24,6 +24,13 @@ export type CmsPageBlock = {
   body: string;
   image_url: string | null;
   position: number;
+  slot: string | null;
+  // Rôle explicite du bloc, réglable dans le dashboard : 'content' (défaut,
+  // ex. une étape numérotée), 'intro', 'accordion'.
+  block_type: string;
+  // Ancre choisie par le client dans le dashboard (ex. "tarifs"), utilisée
+  // comme id HTML pour permettre un lien "#tarifs" pointant sur ce bloc.
+  anchor: string | null;
 };
 
 export type CmsSiteSettings = {
@@ -33,7 +40,14 @@ export type CmsSiteSettings = {
   phone: string;
   email: string;
   opening_hours: { jour: string; horaires: string }[];
-  social_links: { facebook?: string; instagram?: string; site_web?: string; reservation_url?: string };
+  social_links: {
+    facebook?: string;
+    instagram?: string;
+    site_web?: string;
+    reservation_url?: string;
+    facebook_label?: string;
+    instagram_label?: string;
+  };
   theme?: { pink?: string; blue?: string };
 };
 
@@ -77,7 +91,14 @@ async function fetchFromCms<T>(table: string, query: string): Promise<T[] | null
         apikey: CMS_CONFIG.supabaseAnonKey,
         Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
       },
-      next: { revalidate: 60 },
+      // no-store plutôt qu'un revalidate temporisé : ce cache de fetch,
+      // indépendant du cache de route que revalidatePath invalide, pouvait
+      // renvoyer une réponse Supabase périmée même juste après une
+      // revalidation à la demande réussie (revalidatePath ne force pas la
+      // réexécution d'un fetch encore dans sa propre fenêtre de fraîcheur).
+      // Lecture temps réel à chaque requête : coût négligeable pour ce
+      // volume de contenu CMS, et supprime toute ambiguïté de timing.
+      cache: "no-store",
     });
     if (!res.ok) return null;
     return (await res.json()) as T[];
@@ -135,7 +156,10 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   if (!page) return null;
 
   const blocksUrl =
-    CMS_CONFIG.supabaseUrl + "/rest/v1/page_blocks?page_id=eq." + page.id + "&select=*&order=position.asc";
+    CMS_CONFIG.supabaseUrl +
+    "/rest/v1/page_blocks?page_id=eq." +
+    page.id +
+    "&hidden=eq.false&select=*&order=position.asc";
 
   try {
     const res = await fetch(blocksUrl, {
@@ -143,7 +167,7 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
         apikey: CMS_CONFIG.supabaseAnonKey,
         Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
       },
-      next: { revalidate: 60 },
+      cache: "no-store", // voir fetchFromCms plus haut pour le pourquoi
     });
     if (!res.ok) return null;
     return (await res.json()) as CmsPageBlock[];
@@ -161,6 +185,94 @@ export type CmsPage = {
 export async function getCmsPages(): Promise<CmsPage[] | null> {
   const rows = await fetchFromCms<CmsPage>("pages", "&select=slug,title");
   return rows && rows.length ? rows : null;
+}
+
+export type CmsHiddenBlock = { slot: string | null; heading: string; block_type: string };
+
+/**
+ * Blocs masqués (page_blocks.hidden = true) pour une page — utilisé par les
+ * blocs "à emplacement fixe" qui ont un texte par défaut codé en dur : sans
+ * ça, masquer un tel bloc dans le CMS le fait juste disparaître de
+ * getCmsPageBlocks, et la page réaffiche le texte par défaut à la place (qui
+ * a souvent le même contenu), donnant l'impression que "masquer" ne marche
+ * pas. Ne concerne pas les blocs libres, qui n'ont pas de texte par défaut :
+ * ils disparaissent déjà correctement quand ils sont masqués.
+ * Renvoie slot ET heading (pas que le slot) car un bloc masqué créé avant
+ * l'existence des slots n'en a pas encore — il ne serait alors identifiable
+ * que par son ancien titre exact, comme pour findSlot côté page.
+ */
+export async function getCmsHiddenBlocks(slug: string): Promise<CmsHiddenBlock[]> {
+  if (!isConfigured) return [];
+
+  const pages = await fetchFromCms<{ id: string }>(
+    "pages",
+    "&slug=eq." + encodeURIComponent(slug) + "&select=id"
+  );
+  const page = pages && pages[0];
+  if (!page) return [];
+
+  const url =
+    CMS_CONFIG.supabaseUrl +
+    "/rest/v1/page_blocks?page_id=eq." +
+    page.id +
+    "&hidden=eq.true&select=slot,heading,block_type";
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: CMS_CONFIG.supabaseAnonKey,
+        Authorization: "Bearer " + CMS_CONFIG.supabaseAnonKey,
+      },
+      cache: "no-store", // voir fetchFromCms plus haut pour le pourquoi
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as CmsHiddenBlock[];
+  } catch {
+    return [];
+  }
+}
+
+export type CmsTrainingSession = {
+  id: string;
+  day: string;
+  start_time: string;
+  end_time: string | null;
+  rdv_time: string | null;
+  sport: string;
+  location: string;
+  location_anchor: string | null;
+  coach: string;
+  notes: string;
+  position: number;
+};
+
+/**
+ * Planning d'entraînement structuré (dashboard → Planning). Renvoie null
+ * quand le CMS n'a aucun créneau enregistré, pour que la page garde son
+ * contenu par défaut codé en dur (src/content/planning.ts).
+ */
+export async function getCmsTrainingSessions(): Promise<CmsTrainingSession[] | null> {
+  const rows = await fetchFromCms<CmsTrainingSession>(
+    "training_sessions",
+    "&select=*&order=start_time.asc"
+  );
+  return rows && rows.length ? rows : null;
+}
+
+export type CmsSportRequirement = {
+  sport: string;
+  requirements: string;
+  image_url: string | null;
+};
+
+/**
+ * Prérequis par défaut de chaque sport (dashboard → Planning → « Prérequis
+ * par sport »), affichés sur /entrainements en plus des prérequis propres
+ * à chaque créneau.
+ */
+export async function getCmsSportRequirements(): Promise<CmsSportRequirement[]> {
+  const rows = await fetchFromCms<CmsSportRequirement>("training_sport_requirements", "&select=*");
+  return rows ?? [];
 }
 
 // Menu de navigation et pied de page gérés depuis le CMS (dashboard →

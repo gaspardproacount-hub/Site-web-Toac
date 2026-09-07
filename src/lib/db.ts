@@ -143,6 +143,27 @@ function ensureSchema(): Promise<void> {
           statut TEXT NOT NULL DEFAULT 'nouveau'
         );
 
+        CREATE TABLE IF NOT EXISTS musculation_decharges (
+          id SERIAL PRIMARY KEY,
+          recue_le TIMESTAMPTZ NOT NULL DEFAULT now(),
+          token TEXT UNIQUE NOT NULL,
+          statut TEXT NOT NULL DEFAULT 'en_attente',
+          valide_le TIMESTAMPTZ,
+          nom TEXT NOT NULL,
+          prenom TEXT NOT NULL,
+          nationalite TEXT NOT NULL,
+          date_naissance TEXT NOT NULL,
+          adresse TEXT NOT NULL,
+          code_postal TEXT NOT NULL,
+          ville TEXT NOT NULL,
+          date_signature TEXT NOT NULL,
+          est_mineur BOOLEAN NOT NULL DEFAULT false,
+          representant_nom TEXT,
+          date_signature_representant TEXT,
+          decharge_url TEXT NOT NULL,
+          certificat_url TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS members (
           id SERIAL PRIMARY KEY,
           first_name TEXT NOT NULL,
@@ -447,6 +468,157 @@ export async function getCommandes(): Promise<CommandeRow[]> {
   await ensureSchema();
   const { rows } = await getPool().query<CommandeRow>(
     "SELECT * FROM commandes ORDER BY recu_le DESC"
+  );
+  return rows;
+}
+
+export interface MusculationDechargeRow {
+  id: number;
+  recue_le: string;
+  token: string;
+  statut: "en_attente" | "valide";
+  valide_le: string | null;
+  nom: string;
+  prenom: string;
+  nationalite: string;
+  date_naissance: string;
+  adresse: string;
+  code_postal: string;
+  ville: string;
+  date_signature: string;
+  est_mineur: boolean;
+  representant_nom: string | null;
+  date_signature_representant: string | null;
+  decharge_url: string;
+  certificat_url: string;
+}
+
+export interface NouvelleMusculationDecharge {
+  token: string;
+  nom: string;
+  prenom: string;
+  nationalite: string;
+  dateNaissance: string;
+  adresse: string;
+  codePostal: string;
+  ville: string;
+  dateSignature: string;
+  estMineur: boolean;
+  representantNom: string | null;
+  dateSignatureRepresentant: string | null;
+  dechargeUrl: string;
+  certificatUrl: string;
+}
+
+/**
+ * Enregistre un brouillon de décharge musculation (statut 'en_attente') :
+ * le document et le certificat sont déjà générés/uploadés à ce stade, mais
+ * l'adhérent doit encore les valider via le lien /musculation/valider/[token]
+ * avant qu'ils ne soient considérés comme officiellement transmis au club.
+ */
+export async function insertMusculationDecharge(d: NouvelleMusculationDecharge): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    INSERT INTO musculation_decharges (
+      token, nom, prenom, nationalite, date_naissance, adresse, code_postal, ville,
+      date_signature, est_mineur, representant_nom, date_signature_representant,
+      decharge_url, certificat_url
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    `,
+    [
+      d.token,
+      d.nom,
+      d.prenom,
+      d.nationalite,
+      d.dateNaissance,
+      d.adresse,
+      d.codePostal,
+      d.ville,
+      d.dateSignature,
+      d.estMineur,
+      d.representantNom,
+      d.dateSignatureRepresentant,
+      d.dechargeUrl,
+      d.certificatUrl,
+    ]
+  );
+}
+
+/**
+ * Supprime les dossiers encore `en_attente` du même adhérent, hors celui qu'on
+ * vient de créer. Un adhérent qui reprend le formulaire — parce qu'il s'est
+ * trompé, ou qu'il a quitté la page de relecture sans valider — laissait
+ * jusqu'ici un dossier orphelin de plus à chaque essai, et c'est bien le
+ * remplacement que lui promet la page de relecture.
+ *
+ * Les dossiers `valide` ne sont jamais touchés : ce sont des documents transmis
+ * au club. La comparaison ignore la casse et les espaces de bord.
+ *
+ * Renvoie les lignes supprimées, pour que l'appelant efface aussi leurs fichiers.
+ */
+export async function deleteSupersededMusculationDecharges(
+  currentToken: string,
+  adherent: { nom: string; prenom: string; dateNaissance: string }
+): Promise<MusculationDechargeRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    `
+    DELETE FROM musculation_decharges
+    WHERE statut = 'en_attente'
+      AND token <> $1
+      AND lower(btrim(nom)) = lower(btrim($2))
+      AND lower(btrim(prenom)) = lower(btrim($3))
+      AND date_naissance = $4
+    RETURNING *
+    `,
+    [currentToken, adherent.nom, adherent.prenom, adherent.dateNaissance]
+  );
+  return rows;
+}
+
+export async function getMusculationDechargeByToken(token: string): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "SELECT * FROM musculation_decharges WHERE token = $1",
+    [token]
+  );
+  return rows[0] ?? null;
+}
+
+/** Marque la décharge comme validée par l'adhérent (relecture du document généré). */
+export async function validateMusculationDecharge(token: string): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    `
+    UPDATE musculation_decharges
+    SET statut = 'valide', valide_le = now()
+    WHERE token = $1
+    RETURNING *
+    `,
+    [token]
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Supprime définitivement un dossier de décharge. Renvoie la ligne supprimée
+ * pour que l'appelant puisse effacer aussi les fichiers correspondants dans le
+ * store Blob, ou null si l'identifiant n'existe pas.
+ */
+export async function deleteMusculationDecharge(id: number): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "DELETE FROM musculation_decharges WHERE id = $1 RETURNING *",
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getMusculationDecharges(): Promise<MusculationDechargeRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "SELECT * FROM musculation_decharges ORDER BY recue_le DESC"
   );
   return rows;
 }

@@ -19,7 +19,7 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://toac-triathlon.example.com";
+const SITE_URL = "https://www.toac-triathlon.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
