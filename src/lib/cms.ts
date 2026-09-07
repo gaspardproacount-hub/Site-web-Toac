@@ -152,6 +152,17 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   }
 }
 
+export type CmsPage = {
+  slug: string;
+  title: string;
+};
+
+/** Liste des pages CMS (slug + titre) — sert à savoir quelles pages existent, sans leurs blocs. */
+export async function getCmsPages(): Promise<CmsPage[] | null> {
+  const rows = await fetchFromCms<CmsPage>("pages", "&select=slug,title");
+  return rows && rows.length ? rows : null;
+}
+
 // Menu de navigation et pied de page gérés depuis le CMS (dashboard →
 // Navigation). Renvoie null pour chaque liste quand le CMS n'a aucun lien
 // configuré, pour que l'appelant garde le menu par défaut codé en dur.

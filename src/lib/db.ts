@@ -132,6 +132,17 @@ function ensureSchema(): Promise<void> {
           statut TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS partner_signups (
+          id SERIAL PRIMARY KEY,
+          recue_le TIMESTAMPTZ NOT NULL DEFAULT now(),
+          partenaire TEXT NOT NULL,
+          nom TEXT NOT NULL,
+          prenom TEXT NOT NULL,
+          email TEXT NOT NULL,
+          consentement BOOLEAN NOT NULL DEFAULT false,
+          statut TEXT NOT NULL DEFAULT 'nouveau'
+        );
+
         CREATE TABLE IF NOT EXISTS members (
           id SERIAL PRIMARY KEY,
           first_name TEXT NOT NULL,
@@ -316,6 +327,53 @@ export async function getPreinscriptions(): Promise<PreinscriptionRow[]> {
     "SELECT * FROM preinscriptions ORDER BY recue_le DESC"
   );
   return rows;
+}
+
+export interface PartnerSignupRow {
+  id: number;
+  recue_le: string;
+  partenaire: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  consentement: boolean;
+  statut: string;
+}
+
+export interface NouveauPartnerSignup {
+  partenaire: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  consentement: boolean;
+}
+
+/** Enregistre une demande d'activation des avantages d'un partenaire (ex. Alltricks). */
+export async function insertPartnerSignup(p: NouveauPartnerSignup): Promise<number> {
+  await ensureSchema();
+  const { rows } = await getPool().query<{ id: number }>(
+    `
+    INSERT INTO partner_signups (partenaire, nom, prenom, email, consentement, statut)
+    VALUES ($1,$2,$3,$4,$5,'nouveau')
+    RETURNING id
+    `,
+    [p.partenaire, p.nom, p.prenom, p.email, p.consentement]
+  );
+  return rows[0].id;
+}
+
+export async function getPartnerSignups(): Promise<PartnerSignupRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<PartnerSignupRow>(
+    "SELECT * FROM partner_signups ORDER BY recue_le DESC"
+  );
+  return rows;
+}
+
+/** Marque une demande comme traitée (email renseigné côté partenaire) ou la rouvre. */
+export async function setPartnerSignupStatut(id: number, statut: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("UPDATE partner_signups SET statut = $2 WHERE id = $1", [id, statut]);
 }
 
 export interface CommandeRow {
