@@ -43,6 +43,25 @@ Page "Nos partenaires" (logos, de préférence en .png) :
 Page "Triathlons du Lauragais" :
   hero-triathlons-lauragais
 
+DÉCHARGE SALLE DE MUSCULATION (cas particulier)
+-----------------------------------------------
+  decharge-entete.png
+
+Bandeau logos (TOAC Omnisports + CSE Airbus Operations Toulouse) placé en
+en-tête du PDF de décharge généré par le site. Contrairement aux photos
+ci-dessus, ce fichier doit être un .png EXACTEMENT nommé "decharge-entete.png" :
+il est lu tel quel lors de la génération du PDF, sans essai d'autres
+extensions.
+
+Aucune dimension particulière n'est exigée : le bandeau est redimensionné en
+respectant ses proportions (jamais déformé) puis centré en haut de la page.
+Inutile donc d'ajouter des marges blanches pour atteindre un format précis —
+déposez l'image telle quelle. Un bandeau horizontal (plus large que haut)
+donne simplement le meilleur rendu, le fond pouvant être blanc ou transparent.
+
+Tant qu'il n'est pas déposé, le PDF est généré sans en-tête (le reste du
+document et l'envoi au club fonctionnent normalement).
+
 INSTAGRAM
 ---------
 Pour afficher vos vrais posts (au lieu des vignettes insta-1/2/3), ouvrez

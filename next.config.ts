@@ -5,6 +5,12 @@ import type { NextConfig } from "next";
 const VERCEL_APP_HOST = "site-web-toac.vercel.app";
 
 const nextConfig: NextConfig = {
+  // Le bandeau logos de la décharge musculation est lu au runtime avec `fs`
+  // (src/lib/musculationDecharge.ts). Sans cette déclaration, Next ne l'embarque
+  // pas dans la fonction déployée et le PDF sortirait sans en-tête.
+  outputFileTracingIncludes: {
+    "/api/musculation/decharge": ["./public/images/decharge-entete.png"],
+  },
   async redirects() {
     return [
       {
