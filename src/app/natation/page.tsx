@@ -39,6 +39,11 @@ const DEFAULT_SECTIONS: Record<string, { heading: string; body: string }> = {
 
 function TextSection({ slot, block }: { slot: string; block?: CmsPageBlock }) {
   const fallback = DEFAULT_SECTIONS[slot];
+
+  if (block?.block_type === "accordion") {
+    return <AccordionBlock block={block} className="scroll-mt-24" />;
+  }
+
   return (
     <section id={slot} className="scroll-mt-24 border-t border-toac-gray-200 pt-8 first:border-0 first:pt-0">
       {block ? (

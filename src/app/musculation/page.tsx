@@ -98,6 +98,11 @@ function TextSection({
   bodyClassName?: string;
 }) {
   const fallback = DEFAULT_SECTIONS[slot];
+
+  if (block?.block_type === "accordion") {
+    return <AccordionBlock block={block} className="scroll-mt-24" />;
+  }
+
   return (
     <section id={slot} className="scroll-mt-24">
       {block ? (

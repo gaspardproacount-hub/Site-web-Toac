@@ -21,6 +21,10 @@ export const metadata: Metadata = pageMetadata({
 // défaut de src/content/reglement-interieur.ts en attendant qu'EnsureCmsBlocks
 // le crée automatiquement à la première ouverture de l'aperçu dashboard.
 function ArticleSection({ id, heading, body, block }: { id: string; heading: string; body: string; block?: CmsPageBlock }) {
+  if (block?.block_type === "accordion") {
+    return <AccordionBlock block={block} className="scroll-mt-24" />;
+  }
+
   return (
     <section id={id} className="scroll-mt-24 border-t border-toac-gray-200 pt-8">
       {block ? (
