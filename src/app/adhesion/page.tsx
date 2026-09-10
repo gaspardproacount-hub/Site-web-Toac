@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { getCmsPageBlocks, getCmsHiddenBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
@@ -6,10 +7,12 @@ import EtapeAccordionItem from "@/components/EtapeAccordionItem";
 import TarifsAccordion, { TARIFS_SLOT, DEFAULT_HEADING as TARIFS_HEADING, DEFAULT_BODY as TARIFS_BODY } from "@/components/TarifsAccordion";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 
-export const metadata: Metadata = {
-  title: "Nous rejoindre",
-  description: "Adhérer au TOAC Triathlon : parcours d'adhésion et pré-inscription en ligne.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Nous rejoindre : adhésion et licence",
+  description:
+    "Rejoindre le TOAC Triathlon : étapes d'adhésion, tarifs de la licence, pièces à fournir et pré-inscription en ligne pour la saison.",
+  path: "/adhesion",
+});
 
 const ETAPES = [
   "Remplir le formulaire d'adhésion et payer en ligne (cotisation + caution, paiement sécurisé Monetico)",

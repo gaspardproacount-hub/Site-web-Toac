@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
 import { getCmsPageBlocks, getCmsCatalog, getCmsSiteSettings, getCmsNavigation } from "@/lib/cms";
 import { buildThemeCss } from "@/lib/theme";
+import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION } from "@/lib/seo";
 
 const anton = Anton({
   variable: "--font-anton",
@@ -19,24 +20,18 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://www.toac-triathlon.com";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "TOAC Triathlon — Club de triathlon à Toulouse",
+    default: DEFAULT_TITLE,
     template: "%s — TOAC Triathlon",
   },
-  description:
-    "TOAC Triathlon, club toulousain de triathlon affilié FFTRI depuis 1992. Entraînements natation, vélo, course à pied, musculation, et organisateur des Triathlons du Lauragais.",
-  openGraph: {
-    type: "website",
-    locale: "fr_FR",
-    siteName: "TOAC Triathlon",
-    title: "TOAC Triathlon — Club de triathlon à Toulouse",
-    description:
-      "Nager, rouler, courir à Toulouse depuis 1992. Rejoignez le TOAC Triathlon.",
-  },
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // Volontairement pas d'openGraph/twitter ici : Next.js hérite ces objets
+  // en bloc dans les segments enfants, ce qui donnerait les mêmes og:title et
+  // og:description sur tout le site. Chaque page les déclare via
+  // `pageMetadata()` (src/lib/seo.ts).
 };
 
 export default async function RootLayout({

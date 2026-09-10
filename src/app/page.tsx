@@ -9,6 +9,15 @@ import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsPartnerName } from
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import { slugify } from "@/lib/slug";
 import HorizontalScroller from "@/components/HorizontalScroller";
+import type { Metadata } from "next";
+import { pageMetadata, DEFAULT_TITLE, DEFAULT_DESCRIPTION } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  path: "/",
+  absoluteTitle: true,
+});
 
 // Titre du bloc "Le club en 3 temps" : bloc "à emplacement fixe" (même
 // convention que le titre du palmarès sur /le-club) identifié par un slot

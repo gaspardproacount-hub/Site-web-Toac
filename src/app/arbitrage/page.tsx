@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Arbitrage",
-};
+  description:
+    "L'arbitrage au TOAC Triathlon : informations pratiques pour les licenciés qui souhaitent devenir officiel auprès de la FFTRI.",
+  path: "/arbitrage",
+});
 
 export default function ArbitragePage() {
   return (

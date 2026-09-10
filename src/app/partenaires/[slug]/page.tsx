@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCmsPages, getCmsCatalog } from "@/lib/cms";
 import { slugify } from "@/lib/slug";
+import { pageMetadata, privatePageMetadata, toMetaDescription } from "@/lib/seo";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 import { CmsEditableImage } from "@/components/cms-edit";
 import AlltricksSignupForm from "@/components/AlltricksSignupForm";
@@ -12,9 +13,29 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const pages = await getCmsPages();
+  const [pages, cmsCatalog] = await Promise.all([getCmsPages(), getCmsCatalog()]);
   const page = pages?.find((p) => p.slug === slug);
-  return { title: page?.title ?? "Partenaire" };
+
+  if (!page) {
+    // Slug inconnu : la page rendra un 404, on n'expose donc ni description
+    // ni canonique.
+    return privatePageMetadata("Partenaire");
+  }
+
+  // Même dédoublonnage que le rendu (voir plus bas), mais on préfère ensuite
+  // la fiche qui porte réellement un descriptif pour la balise description.
+  const matchingPartners =
+    cmsCatalog?.flatMap((section) => section.products).filter((p) => slugify(p.name) === slug) ?? [];
+  const described = matchingPartners.find((p) => p.description?.trim());
+
+  return pageMetadata({
+    title: page.title,
+    description: toMetaDescription(
+      described?.description,
+      `${page.title}, partenaire du TOAC Triathlon : présentation et avantages réservés aux licenciés du club.`,
+    ),
+    path: `/partenaires/${slug}`,
+  });
 }
 
 export default async function PartenairePage({

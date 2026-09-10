@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { privatePageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import MusculationDechargeForm from "@/components/MusculationDechargeForm";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
@@ -9,12 +10,10 @@ import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/c
 // Page pas encore reliée au menu (voir src/lib/nav.ts) — accessible uniquement
 // par son URL directe le temps de la tester ; robots: noindex pour éviter
 // qu'elle ne soit indexée avant l'ouverture officielle.
-export const metadata: Metadata = {
-  title: "Musculation",
-  description:
-    "Salle de musculation du TOAC : créneaux, encadrants, règles d'accès et formulaire de décharge en ligne.",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = privatePageMetadata(
+  "Musculation",
+  "Salle de musculation du TOAC : créneaux, encadrants, règles d'accès et formulaire de décharge en ligne.",
+);
 
 const CRENEAUX_SLOT = "musculation-creneaux";
 const ENCADRANTS_SLOT = "musculation-encadrants";
