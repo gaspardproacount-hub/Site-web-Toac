@@ -2,6 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFImage } from "pdf-lib";
+import { buildDechargeDocumentTitle } from "@/lib/documentUrl";
 
 /**
  * Génère le dossier "salle de musculation" en un seul PDF : la décharge du
@@ -54,25 +55,6 @@ const HEADER_MAX_HEIGHT = 64;
  */
 function ownBytes(input: Buffer | Uint8Array): Uint8Array {
   return new Uint8Array(input);
-}
-
-/**
- * Titre du document, ex. « Décharge-Musculation-Dupont-Jean ». Il est inscrit
- * dans les métadonnées du PDF : c'est ce que les navigateurs et les lecteurs
- * affichent en haut de fenêtre. Sans lui, ils retombent sur le dernier segment
- * de l'URL qui a servi le fichier (« documents »).
- */
-export function buildDechargeDocumentTitle(nom: string, prenom: string): string {
-  const part = (value: string) =>
-    value
-      .trim()
-      // Espaces, apostrophes et tirets déjà présents deviennent un séparateur
-      // unique, pour un titre lisible quel que soit le nom saisi.
-      .replace(/[\s_'’]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-
-  return ["Décharge", "Musculation", part(nom), part(prenom)].filter(Boolean).join("-");
 }
 
 async function embedHeader(pdfDoc: PDFDocument): Promise<PDFImage | null> {

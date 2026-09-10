@@ -3,7 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MusculationDechargeRow } from "@/lib/db";
-import { documentHref } from "@/lib/documentUrl";
+import { documentHref, buildDechargeFileName } from "@/lib/documentUrl";
+
+/** Extension du certificat, qui peut être un PDF comme une image. */
+function certificatExtension(blobPath: string): string {
+  const name = blobPath.split("/").pop() ?? "";
+  return name.includes(".") ? name.slice(name.lastIndexOf(".")) : ".pdf";
+}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -175,7 +181,9 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <a
-                    href={documentHref(d.decharge_url)}
+                    href={documentHref(d.decharge_url, undefined, {
+                      filename: buildDechargeFileName(d.nom, d.prenom),
+                    })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-md border border-toac-blue-800 px-3 py-1.5 text-xs font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
@@ -183,7 +191,9 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                     Voir/télécharger la décharge →
                   </a>
                   <a
-                    href={documentHref(d.certificat_url)}
+                    href={documentHref(d.certificat_url, undefined, {
+                      filename: buildDechargeFileName(d.nom, d.prenom, certificatExtension(d.certificat_url)),
+                    })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-md border border-toac-blue-800 px-3 py-1.5 text-xs font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
