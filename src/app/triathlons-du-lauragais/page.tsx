@@ -3,6 +3,7 @@ import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import AccordionBlock from "@/components/AccordionBlock";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import AddToCalendarButton from "@/components/AddToCalendarButton";
 import { InstagramIcon, FacebookIcon } from "@/components/SocialIcons";
@@ -327,44 +328,50 @@ export default async function TriathlonsDuLauragaisPage() {
       <div className="bg-toac-gray-50">
         <section className="py-16">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            {extraBlocks.map((block, index) => (
-              <div
-                key={block.id}
-                id={block.anchor ?? undefined}
-                className={`relative scroll-mt-24 pr-9 ${index > 0 ? "mt-12" : ""}`}
-              >
-                <CmsEditPencil
-                  payload={{ type: "edit-block", blockId: block.id }}
-                  className="absolute right-0 top-0"
-                />
-                {block.image_url && (
-                  <CmsEditableImage
-                    src={block.image_url}
-                    alt={block.heading}
-                    target={{ kind: "block", id: block.id }}
-                    className="mb-6 aspect-video w-full overflow-hidden rounded-lg"
-                    imgClassName="aspect-video w-full rounded-lg object-cover"
+            {extraBlocks.map((block, index) =>
+              block.block_type === "accordion" ? (
+                <div key={block.id} className={index > 0 ? "mt-12" : ""}>
+                  <AccordionBlock block={block} />
+                </div>
+              ) : (
+                <div
+                  key={block.id}
+                  id={block.anchor ?? undefined}
+                  className={`relative scroll-mt-24 pr-9 ${index > 0 ? "mt-12" : ""}`}
+                >
+                  <CmsEditPencil
+                    payload={{ type: "edit-block", blockId: block.id }}
+                    className="absolute right-0 top-0"
                   />
-                )}
-                {block.heading && (
-                  <CmsEditableText
-                    as="h2"
-                    value={block.heading}
-                    target={{ kind: "block", id: block.id, field: "heading" }}
-                    className="section-title font-display text-2xl uppercase text-toac-blue-950"
-                  />
-                )}
-                {block.body && (
-                  <CmsEditableText
-                    as="p"
-                    value={block.body}
-                    target={{ kind: "block", id: block.id, field: "body" }}
-                    multiline
-                    className="mt-4 block text-toac-blue-900/90"
-                  />
-                )}
-              </div>
-            ))}
+                  {block.image_url && (
+                    <CmsEditableImage
+                      src={block.image_url}
+                      alt={block.heading}
+                      target={{ kind: "block", id: block.id }}
+                      className="mb-6 aspect-video w-full overflow-hidden rounded-lg"
+                      imgClassName="aspect-video w-full rounded-lg object-cover"
+                    />
+                  )}
+                  {block.heading && (
+                    <CmsEditableText
+                      as="h2"
+                      value={block.heading}
+                      target={{ kind: "block", id: block.id, field: "heading" }}
+                      className="section-title font-display text-2xl uppercase text-toac-blue-950"
+                    />
+                  )}
+                  {block.body && (
+                    <CmsEditableText
+                      as="p"
+                      value={block.body}
+                      target={{ kind: "block", id: block.id, field: "body" }}
+                      multiline
+                      className="mt-4 block text-toac-blue-900/90"
+                    />
+                  )}
+                </div>
+              )
+            )}
             <CmsAddTile
               payload={{ type: "add-block" }}
               label="+ Ajouter un bloc de contenu sur cette page"

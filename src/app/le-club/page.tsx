@@ -3,6 +3,7 @@ import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
+import AccordionBlock from "@/components/AccordionBlock";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import { slugify } from "@/lib/slug";
 import { getCmsCatalog, getCmsPageBlocks, getCmsHiddenBlocks } from "@/lib/cms";
@@ -100,42 +101,48 @@ export default async function LeClubPage() {
           </div>
         </section>
       ) : (
-        histoireBlocks!.map((block) => (
-          <section
-            key={block.id}
-            id={block.anchor ?? undefined}
-            className="mx-auto max-w-4xl scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8"
-          >
-            <div className="relative rounded-lg">
-              {block.image_url && (
-                <CmsEditableImage
-                  src={block.image_url}
-                  alt={block.heading}
-                  target={{ kind: "block", id: block.id }}
-                  className="mb-6 aspect-video w-full overflow-hidden rounded-lg"
-                  imgClassName="aspect-video w-full rounded-lg object-cover"
-                />
-              )}
-              {block.heading && (
-                <CmsEditableText
-                  as="h2"
-                  value={block.heading}
-                  target={{ kind: "block", id: block.id, field: "heading" }}
-                  className="section-title font-display text-2xl uppercase text-toac-blue-950"
-                />
-              )}
-              {block.body && (
-                <CmsEditableText
-                  as="div"
-                  value={block.body}
-                  target={{ kind: "block", id: block.id, field: "body" }}
-                  multiline
-                  className="mt-6 block space-y-4 whitespace-pre-line text-toac-blue-900/90"
-                />
-              )}
+        histoireBlocks!.map((block) =>
+          block.block_type === "accordion" ? (
+            <div key={block.id} className="mx-auto max-w-4xl px-4 py-3 sm:px-6 lg:px-8">
+              <AccordionBlock block={block} />
             </div>
-          </section>
-        ))
+          ) : (
+            <section
+              key={block.id}
+              id={block.anchor ?? undefined}
+              className="mx-auto max-w-4xl scroll-mt-24 px-4 py-12 sm:px-6 lg:px-8"
+            >
+              <div className="relative rounded-lg">
+                {block.image_url && (
+                  <CmsEditableImage
+                    src={block.image_url}
+                    alt={block.heading}
+                    target={{ kind: "block", id: block.id }}
+                    className="mb-6 aspect-video w-full overflow-hidden rounded-lg"
+                    imgClassName="aspect-video w-full rounded-lg object-cover"
+                  />
+                )}
+                {block.heading && (
+                  <CmsEditableText
+                    as="h2"
+                    value={block.heading}
+                    target={{ kind: "block", id: block.id, field: "heading" }}
+                    className="section-title font-display text-2xl uppercase text-toac-blue-950"
+                  />
+                )}
+                {block.body && (
+                  <CmsEditableText
+                    as="div"
+                    value={block.body}
+                    target={{ kind: "block", id: block.id, field: "body" }}
+                    multiline
+                    className="mt-6 block space-y-4 whitespace-pre-line text-toac-blue-900/90"
+                  />
+                )}
+              </div>
+            </section>
+          )
+        )
       )}
       <div className="mx-auto max-w-4xl px-4 pb-16 sm:px-6 lg:px-8">
         <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc de contenu sur cette page" />

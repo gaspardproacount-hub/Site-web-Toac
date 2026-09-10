@@ -3,9 +3,11 @@ import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import MusculationDechargeForm from "@/components/MusculationDechargeForm";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
-import { CmsEditableText } from "@/components/cms-edit";
+import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import AccordionBlock from "@/components/AccordionBlock";
 import { renderRichText } from "@/lib/rich-text";
 import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/cms";
+import { slugify } from "@/lib/slug";
 
 // Page pas encore reliée au menu (voir src/lib/nav.ts) : elle reste accessible
 // par son URL directe, mais elle est désormais indexable et présente dans le
@@ -96,6 +98,11 @@ function TextSection({
   bodyClassName?: string;
 }) {
   const fallback = DEFAULT_SECTIONS[slot];
+
+  if (block?.block_type === "accordion") {
+    return <AccordionBlock block={block} className="scroll-mt-24" />;
+  }
+
   return (
     <section id={slot} className="scroll-mt-24">
       {block ? (
@@ -138,6 +145,13 @@ export default async function MusculationPage() {
 
   const dechargeBlock = blockBySlot.get(DECHARGE_SLOT);
 
+  // Blocs ajoutés depuis le dashboard (Dashboard → Pages → Musculation →
+  // "+ Ajouter un bloc"), sans slot connu à l'avance : sans cette liste, un
+  // tel bloc n'apparaîtrait nulle part sur cette page (même bug que sur
+  // /natation, corrigé le même jour).
+  const knownSlots = new Set(Object.keys(DEFAULT_SECTIONS));
+  const extraBlocks = (cmsBlocks ?? []).filter((b) => !b.slot || !knownSlots.has(b.slot));
+
   return (
     <Suspense fallback={null}>
       <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
@@ -165,6 +179,39 @@ export default async function MusculationPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {extraBlocks.length > 0 && (
+          <div className="mt-10 space-y-8">
+            {extraBlocks.map((block) =>
+              block.block_type === "accordion" ? (
+                <AccordionBlock key={block.id} block={block} />
+              ) : (
+                <section
+                  key={block.id}
+                  id={block.anchor || slugify(block.heading) || block.id}
+                  className="scroll-mt-24 border-t border-toac-gray-200 pt-8"
+                >
+                  <CmsEditableText
+                    as="h2"
+                    value={block.heading}
+                    target={{ kind: "block", id: block.id, field: "heading" }}
+                    className="font-display text-lg uppercase text-toac-blue-950"
+                  />
+                  <CmsEditableText
+                    as="div"
+                    value={block.body}
+                    target={{ kind: "block", id: block.id, field: "body" }}
+                    multiline
+                    className="mt-3 block space-y-3 whitespace-pre-line text-sm text-toac-blue-900/90"
+                  />
+                </section>
+              )
+            )}
+          </div>
+        )}
+        <div className="mt-8">
+          <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc" />
         </div>
       </div>
     </Suspense>
