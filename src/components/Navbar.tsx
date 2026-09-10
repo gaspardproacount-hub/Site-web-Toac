@@ -57,37 +57,30 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
               className="relative shrink-0"
               onMouseEnter={() => item.children && setOpenDropdown(item.label)}
               onMouseLeave={() => item.children && setOpenDropdown(null)}
+              onFocus={() => item.children && setOpenDropdown(item.label)}
+              onBlur={(e) => {
+                if (item.children && !e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setOpenDropdown(null);
+                }
+              }}
             >
               {item.href ? (
-                <div className="flex items-center">
-                  <Link
-                    href={item.href}
-                    className="whitespace-nowrap py-2 pl-2.5 pr-1 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
-                  >
-                    {item.label}
-                  </Link>
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-1 whitespace-nowrap px-2.5 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
+                >
+                  {item.label}
                   {item.children && (
-                    <button
-                      type="button"
-                      aria-expanded={openDropdown === item.label}
-                      aria-haspopup="true"
-                      aria-label={`Sous-menu ${item.label}`}
-                      onClick={() =>
-                        setOpenDropdown(openDropdown === item.label ? null : item.label)
-                      }
-                      className="py-2 pl-1 pr-2.5 text-toac-blue-950 hover:text-toac-blue-600"
+                    <svg
+                      aria-hidden="true"
+                      className={`h-3 w-3 shrink-0 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
                     >
-                      <svg
-                        aria-hidden="true"
-                        className={`h-3 w-3 shrink-0 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
-                      </svg>
-                    </button>
+                      <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                    </svg>
                   )}
-                </div>
+                </Link>
               ) : (
                 <button
                   type="button"
