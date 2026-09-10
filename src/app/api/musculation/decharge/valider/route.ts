@@ -34,6 +34,8 @@ export async function POST(request: NextRequest) {
       origin: request.nextUrl.origin,
       documentPath: row.decharge_url,
       token: row.token,
+      nom: row.nom,
+      prenom: row.prenom,
     });
   } catch (error) {
     console.error("Échec de l'envoi de la notification musculation :", error);
