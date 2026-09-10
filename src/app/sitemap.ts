@@ -3,7 +3,7 @@ import { getCmsCatalog, getCmsPages } from "@/lib/cms";
 import { slugify } from "@/lib/slug";
 import { SITE_URL } from "@/lib/seo";
 
-/** Pages publiques indexables. Les pages noindex (/musculation, /connexion,
+/** Pages publiques indexables. Les pages noindex (/connexion,
  *  /espace-adherents, confirmations de paiement) sont volontairement exclues. */
 const ROUTES = [
   "",
@@ -14,6 +14,7 @@ const ROUTES = [
   "/entrainements",
   "/entrainements/points-de-rdv",
   "/natation",
+  "/musculation",
   "/triathlons-du-lauragais",
   "/faq",
   "/adhesion",

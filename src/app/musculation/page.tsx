@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { privatePageMetadata } from "@/lib/seo";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import MusculationDechargeForm from "@/components/MusculationDechargeForm";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
@@ -7,13 +7,16 @@ import { CmsEditableText } from "@/components/cms-edit";
 import { renderRichText } from "@/lib/rich-text";
 import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/cms";
 
-// Page pas encore reliée au menu (voir src/lib/nav.ts) — accessible uniquement
-// par son URL directe le temps de la tester ; robots: noindex pour éviter
-// qu'elle ne soit indexée avant l'ouverture officielle.
-export const metadata: Metadata = privatePageMetadata(
-  "Musculation",
-  "Salle de musculation du TOAC : créneaux, encadrants, règles d'accès et formulaire de décharge en ligne.",
-);
+// Page pas encore reliée au menu (voir src/lib/nav.ts) : elle reste accessible
+// par son URL directe, mais elle est désormais indexable et présente dans le
+// sitemap, ce qui suffit à Google pour la trouver sans lien dans la
+// navigation.
+export const metadata: Metadata = pageMetadata({
+  title: "Musculation",
+  description:
+    "Salle de musculation du TOAC Triathlon : créneaux d'ouverture, encadrants, règles d'accès et décharge à signer en ligne.",
+  path: "/musculation",
+});
 
 const CRENEAUX_SLOT = "musculation-creneaux";
 const ENCADRANTS_SLOT = "musculation-encadrants";
