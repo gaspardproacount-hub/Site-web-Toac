@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { getSession } from "@/lib/session";
 import { getMusculationDechargeByToken, DatabaseNotConfiguredError } from "@/lib/db";
 import { getBlobStream, isLegacyPublicUrl, BlobNotConfiguredError } from "@/lib/blob";
+import { buildDechargeDocumentTitle } from "@/lib/musculationDecharge";
 
 /**
  * Sert les documents déposés sur le store Blob privé (décharges musculation,
@@ -21,6 +22,25 @@ export const maxDuration = 30;
 
 /** Préfixes de chemins que la route accepte de servir, même pour un admin. */
 const ALLOWED_PREFIXES = ["musculation/", "justificatifs/"];
+
+/**
+ * Nom proposé au téléchargement. Quand on sait de quel adhérent vient le
+ * dossier, on reprend le titre du document — sans accent ni caractère exotique,
+ * pour rester valable sur tous les systèmes et éviter d'avoir à encoder l'en-tête
+ * Content-Disposition. Sinon, on garde le nom du fichier dans le store.
+ */
+function buildFilename(blobPath: string, adherent: { nom: string; prenom: string } | null): string {
+  const fallback = blobPath.split("/").pop() || "document";
+  if (!adherent) return fallback;
+
+  const extension = fallback.includes(".") ? fallback.slice(fallback.lastIndexOf(".")) : "";
+  const base = buildDechargeDocumentTitle(adherent.nom, adherent.prenom)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9-]/g, "");
+
+  return base ? `${base}${extension}` : fallback;
+}
 
 /** Types servis tels quels dans le navigateur ; tout le reste part en téléchargement. */
 const INLINE_CONTENT_TYPES = new Set(["application/pdf", "image/png", "image/jpeg", "image/jpg"]);
@@ -50,6 +70,10 @@ export async function GET(request: NextRequest) {
 
   const session = await getSession().catch(() => null);
   let authorized = session?.role === "admin";
+  // Renseigné quand l'accès passe par le jeton d'un dossier : sert alors à
+  // nommer le fichier téléchargé d'après l'adhérent plutôt que d'après son
+  // chemin technique dans le store.
+  let adherent: { nom: string; prenom: string } | null = null;
 
   if (!authorized && token) {
     try {
@@ -57,6 +81,9 @@ export async function GET(request: NextRequest) {
       // Le jeton n'ouvre que les deux fichiers de son propre dossier.
       authorized =
         decharge !== null && (decharge.decharge_url === path || decharge.certificat_url === path);
+      if (authorized && decharge) {
+        adherent = { nom: decharge.nom, prenom: decharge.prenom };
+      }
     } catch (error) {
       if (!(error instanceof DatabaseNotConfiguredError)) throw error;
     }
@@ -99,7 +126,7 @@ export async function GET(request: NextRequest) {
   // bouton « Télécharger le document » des emails envoyés au bureau.
   const forceDownload = request.nextUrl.searchParams.get("dl") === "1";
   const inline = !forceDownload && INLINE_CONTENT_TYPES.has(contentType);
-  const filename = path.split("/").pop() || "document";
+  const filename = buildFilename(path, adherent);
 
   return new NextResponse(result.stream, {
     headers: {
