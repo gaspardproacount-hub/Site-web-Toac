@@ -58,7 +58,37 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
               onMouseEnter={() => item.children && setOpenDropdown(item.label)}
               onMouseLeave={() => item.children && setOpenDropdown(null)}
             >
-              {item.children ? (
+              {item.href ? (
+                <div className="flex items-center">
+                  <Link
+                    href={item.href}
+                    className="whitespace-nowrap py-2 pl-2.5 pr-1 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
+                  >
+                    {item.label}
+                  </Link>
+                  {item.children && (
+                    <button
+                      type="button"
+                      aria-expanded={openDropdown === item.label}
+                      aria-haspopup="true"
+                      aria-label={`Sous-menu ${item.label}`}
+                      onClick={() =>
+                        setOpenDropdown(openDropdown === item.label ? null : item.label)
+                      }
+                      className="py-2 pl-1 pr-2.5 text-toac-blue-950 hover:text-toac-blue-600"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        className={`h-3 w-3 shrink-0 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ) : (
                 <button
                   type="button"
                   aria-expanded={openDropdown === item.label}
@@ -78,13 +108,6 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
                     <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
                   </svg>
                 </button>
-              ) : (
-                <Link
-                  href={item.href!}
-                  className="block whitespace-nowrap px-2.5 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
-                >
-                  {item.label}
-                </Link>
               )}
 
               {item.children && openDropdown === item.label && (
@@ -141,9 +164,7 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
               <div key={item.label}>
                 <Link
                   href={item.href ?? item.children![0].href}
-                  onClick={() => {
-                    if (!item.children) setMobileOpen(false);
-                  }}
+                  onClick={() => setMobileOpen(false)}
                   className="block py-2 font-medium text-toac-blue-950"
                 >
                   {item.label}
