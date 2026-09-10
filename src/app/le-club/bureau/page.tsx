@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
@@ -7,10 +8,12 @@ import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 import EnsureCmsProduct from "@/components/EnsureCmsProduct";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Le bureau & les coachs",
-  description: "Découvrez le bureau 2026 du TOAC Triathlon et son équipe d'encadrement.",
-};
+  description:
+    "Les membres du bureau 2026 du TOAC Triathlon et l'équipe d'encadrement sportif qui anime les entraînements du club à Toulouse.",
+  path: "/le-club/bureau",
+});
 
 export default async function BureauPage() {
   const [cmsCatalog, pageBlocks] = await Promise.all([

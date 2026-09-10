@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
+import { privatePageMetadata } from "@/lib/seo";
 import { getMusculationDechargeByToken, DatabaseNotConfiguredError } from "@/lib/db";
 import ValiderMusculationDecharge from "@/components/ValiderMusculationDecharge";
 import DbSetupNotice from "@/components/DbSetupNotice";
 import { documentHref } from "@/lib/documentUrl";
 
-export const metadata: Metadata = {
-  title: "Relecture de votre décharge musculation",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = privatePageMetadata("Relecture de votre décharge musculation");
 
 // L'état du dossier change juste après le clic sur « Valider ce document » :
 // la page est rejouée à chaque affichage plutôt que servie depuis un cache.

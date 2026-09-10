@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import ContactForm from "@/components/ContactForm";
 import LieuxMap from "@/components/LieuxMap";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact",
-  description: "Contactez le TOAC Triathlon : bureau, adresse du club, réseaux sociaux.",
-};
+  description:
+    "Contacter le TOAC Triathlon : formulaire de contact, adresse du club à Toulouse, e-mail du bureau et réseaux sociaux.",
+  path: "/contact",
+});
 
 const TOAC_LIEU = {
   id: "toac-siege",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
@@ -7,10 +8,12 @@ import { slugify } from "@/lib/slug";
 import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/cms";
 import { REGLEMENT_PREAMBULE, REGLEMENT_ARTICLES } from "@/content/reglement-interieur";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Règlement intérieur",
-  description: "Règlement intérieur du TOAC Triathlon.",
-};
+  description:
+    "Le règlement intérieur du TOAC Triathlon : règles de vie du club, droits et obligations des licenciés.",
+  path: "/reglement-interieur",
+});
 
 // Section d'article : texte "à emplacement fixe" (slot stable, ex.
 // "article-3") si un bloc CMS existe déjà pour lui, sinon le texte par

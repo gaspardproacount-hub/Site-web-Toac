@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
@@ -7,11 +8,12 @@ import AddToCalendarButton from "@/components/AddToCalendarButton";
 import { InstagramIcon, FacebookIcon } from "@/components/SocialIcons";
 import { getCmsPageBlocks, getCmsCatalog, getCmsHiddenBlocks } from "@/lib/cms";
 
-export const metadata: Metadata = {
-  title: "Triathlons du Lauragais",
+export const metadata: Metadata = pageMetadata({
+  title: "Triathlons du Lauragais 2026",
   description:
-    "Triathlons du Lauragais, à Nailloux. XS, S, M, L, swimrun et épreuves jeunes.",
-};
+    "Les Triathlons du Lauragais à Nailloux, organisés par le TOAC Triathlon : formats XS, S, M, L, swimrun et épreuves jeunes, les 6 et 7 juin 2026.",
+  path: "/triathlons-du-lauragais",
+});
 
 const FORMATS = ["XS", "S", "M", "L", "Swimrun (SR)", "Jeunes 6-9 ans", "Jeunes 10-13 ans"];
 

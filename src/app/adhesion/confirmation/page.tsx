@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import { privatePageMetadata } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Adhésion validée",
-};
+export const metadata: Metadata = privatePageMetadata("Adhésion validée");
 
 export default function ConfirmationPage() {
   return (

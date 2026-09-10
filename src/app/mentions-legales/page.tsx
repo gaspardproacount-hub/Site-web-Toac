@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Mentions légales",
-};
+  description:
+    "Mentions légales du site du TOAC Triathlon : éditeur, hébergement, directeur de la publication et propriété intellectuelle.",
+  path: "/mentions-legales",
+});
 
 export default function MentionsLegalesPage() {
   return (

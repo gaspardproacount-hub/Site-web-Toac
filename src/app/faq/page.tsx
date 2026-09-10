@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import FaqAccordion from "@/components/FaqAccordion";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 import { getCmsCatalog } from "@/lib/cms";
 
-export const metadata: Metadata = {
-  title: "FAQ",
-  description: "Toutes les réponses à vos questions sur l'adhésion, les entraînements, la compétition et la vie du TOAC Triathlon.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "FAQ — Questions fréquentes",
+  description:
+    "Adhésion, licence, entraînements, compétitions et vie du club : les réponses aux questions les plus fréquentes sur le TOAC Triathlon.",
+  path: "/faq",
+});
 
 const FAQ_PREFIX = "FAQ – ";
 

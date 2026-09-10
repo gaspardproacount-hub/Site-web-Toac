@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "La vie du club",
-  description: "Soirées, stages, sortie club et challenges D3 : toute la vie du TOAC Triathlon.",
-};
+  description:
+    "Soirées, stages, sortie club et challenges D3 : ce qui fait la vie du TOAC Triathlon en dehors des entraînements et des compétitions.",
+  path: "/le-club/vie-du-club",
+});
 
 const D3_DUATHLON = [
   { epreuve: "Draft — Carcassonne", date: "8 mars 2026" },

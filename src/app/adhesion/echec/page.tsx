@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import { privatePageMetadata } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Échec du paiement",
-};
+export const metadata: Metadata = privatePageMetadata("Échec du paiement");
 
 export default function EchecPage() {
   return (

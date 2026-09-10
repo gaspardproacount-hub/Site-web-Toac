@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import SiteImage from "@/components/SiteImage";
@@ -7,10 +8,12 @@ import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires"
 import { getCmsCatalog, getCmsPageBlocks, getCmsPages } from "@/lib/cms";
 import { CmsEditableText, CmsEditableImage, CmsPartnerName, CmsAddTile } from "@/components/cms-edit";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Nos partenaires",
-  description: "Les partenaires commerciaux et institutionnels du TOAC Triathlon.",
-};
+  description:
+    "Les partenaires commerciaux et institutionnels qui soutiennent le TOAC Triathlon, et les avantages négociés pour les licenciés du club.",
+  path: "/partenaires",
+});
 
 // Carte commune aux partenaires commerciaux et institutionnels : même
 // structure (logo, nom, description facultative, lien vers sa page dédiée
