@@ -3,6 +3,7 @@ import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import { CmsEditableText, CmsAddTile } from "@/components/cms-edit";
+import AccordionBlock from "@/components/AccordionBlock";
 import { renderRichText } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
 import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/cms";
@@ -117,27 +118,31 @@ export default async function ReglementInterieurPage() {
         {REGLEMENT_ARTICLES.map((a) => (
           <ArticleSection key={a.slot} id={a.slot} heading={a.heading} body={a.body} block={blockBySlot.get(a.slot)} />
         ))}
-        {extraBlocks.map((block) => (
-          <section
-            key={block.id}
-            id={block.anchor || slugify(block.heading) || block.id}
-            className="scroll-mt-24 border-t border-toac-gray-200 pt-8"
-          >
-            <CmsEditableText
-              as="h2"
-              value={block.heading}
-              target={{ kind: "block", id: block.id, field: "heading" }}
-              className="font-display text-lg uppercase text-toac-blue-950"
-            />
-            <CmsEditableText
-              as="div"
-              value={block.body}
-              target={{ kind: "block", id: block.id, field: "body" }}
-              multiline
-              className="mt-3 block space-y-3 whitespace-pre-line text-sm text-toac-blue-900/90"
-            />
-          </section>
-        ))}
+        {extraBlocks.map((block) =>
+          block.block_type === "accordion" ? (
+            <AccordionBlock key={block.id} block={block} />
+          ) : (
+            <section
+              key={block.id}
+              id={block.anchor || slugify(block.heading) || block.id}
+              className="scroll-mt-24 border-t border-toac-gray-200 pt-8"
+            >
+              <CmsEditableText
+                as="h2"
+                value={block.heading}
+                target={{ kind: "block", id: block.id, field: "heading" }}
+                className="font-display text-lg uppercase text-toac-blue-950"
+              />
+              <CmsEditableText
+                as="div"
+                value={block.body}
+                target={{ kind: "block", id: block.id, field: "body" }}
+                multiline
+                className="mt-3 block space-y-3 whitespace-pre-line text-sm text-toac-blue-900/90"
+              />
+            </section>
+          )
+        )}
         <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un article" />
       </div>
     </div>
