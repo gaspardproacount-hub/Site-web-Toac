@@ -72,7 +72,7 @@ export default async function PartenairePage({
               src={partner.image_url}
               alt={`Logo ${partner.name}`}
               target={{ kind: "product", id: partner.id }}
-              className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl border border-toac-gray-200 bg-white p-3 shadow-sm sm:h-32 sm:w-32"
+              className="flex h-56 w-56 shrink-0 items-center justify-center rounded-xl border border-toac-gray-200 bg-white p-5 shadow-sm sm:h-64 sm:w-64"
               imgClassName="max-h-full max-w-full object-contain"
             />
           )}

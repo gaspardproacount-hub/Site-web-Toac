@@ -1,4 +1,5 @@
 import "server-only";
+import { buildDechargeFileName, documentHref } from "@/lib/documentUrl";
 
 /**
  * Notification envoyée au club quand un adhérent valide son dossier « salle de
@@ -91,9 +92,12 @@ export async function sendMusculationNotification(
   const recipients = resolveRecipients();
   const apiKey = process.env.BREVO_API_KEY;
 
-  const base = `${input.origin}/api/documents?path=${encodeURIComponent(input.documentPath)}&token=${encodeURIComponent(input.token)}`;
-  const viewUrl = base;
-  const downloadUrl = `${base}&dl=1`;
+  // Le nom du fichier est dans le chemin de l'URL : c'est de là que le lecteur
+  // PDF de Chrome tire le titre de son onglet.
+  const filename = buildDechargeFileName(input.nom, input.prenom);
+  const viewUrl = input.origin + documentHref(input.documentPath, input.token, { filename });
+  const downloadUrl =
+    input.origin + documentHref(input.documentPath, input.token, { filename, download: true });
 
   if (recipients.length === 0) {
     console.info(

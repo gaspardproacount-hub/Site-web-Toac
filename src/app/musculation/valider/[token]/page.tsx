@@ -3,7 +3,7 @@ import { privatePageMetadata } from "@/lib/seo";
 import { getMusculationDechargeByToken, DatabaseNotConfiguredError } from "@/lib/db";
 import ValiderMusculationDecharge from "@/components/ValiderMusculationDecharge";
 import DbSetupNotice from "@/components/DbSetupNotice";
-import { documentHref } from "@/lib/documentUrl";
+import { documentHref, buildDechargeFileName } from "@/lib/documentUrl";
 
 export const metadata: Metadata = privatePageMetadata("Relecture de votre décharge musculation");
 
@@ -62,7 +62,9 @@ export default async function ValiderMusculationDechargePage({
     );
   }
 
-  const pdfHref = documentHref(decharge.decharge_url, decharge.token);
+  const pdfHref = documentHref(decharge.decharge_url, decharge.token, {
+    filename: buildDechargeFileName(decharge.nom, decharge.prenom),
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
