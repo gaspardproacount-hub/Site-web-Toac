@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil } from "@/components/cms-edit";
 import type { CmsPageBlock } from "@/lib/cms";
 
@@ -14,6 +14,20 @@ import type { CmsPageBlock } from "@/lib/cms";
 export default function AccordionBlock({ block, className = "" }: { block: CmsPageBlock; className?: string }) {
   const [open, setOpen] = useState(false);
   const panelId = `accordion-panel-${block.id}`;
+
+  // Ouvre l'accordéon automatiquement quand l'URL pointe directement dessus
+  // (ex. https://.../natation#tests), sinon un lien vers une ancre repliée
+  // fait juste défiler jusqu'à un titre fermé, sans montrer le contenu visé.
+  useEffect(() => {
+    if (!block.anchor) return;
+    const matchesHash = () => window.location.hash === `#${block.anchor}`;
+    const checkHash = () => {
+      if (matchesHash()) setOpen(true);
+    };
+    checkHash();
+    window.addEventListener("hashchange", checkHash);
+    return () => window.removeEventListener("hashchange", checkHash);
+  }, [block.anchor]);
 
   return (
     <div
