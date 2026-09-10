@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
-import { CmsEditableText, CmsEditableImage, CmsEditPencil } from "@/components/cms-edit";
+import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
 import { renderRichText } from "@/lib/rich-text";
 import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/cms";
 import { REGLEMENT_ARTICLES } from "@/content/reglement-interieur";
+import { slugify } from "@/lib/slug";
 
 export const metadata: Metadata = {
   title: "Natation",
@@ -79,6 +80,12 @@ export default async function NatationPage() {
   const inscriptionBlock = blockBySlot.get(INSCRIPTION_SLOT);
   const organisationBlock = blockBySlot.get(ORGANISATION_SLOT);
 
+  // Blocs ajoutés depuis le dashboard ("+ Ajouter un bloc"), sans slot connu
+  // à l'avance : affichés à la suite des 3 sections fixes ci-dessus — sans
+  // ça, un bloc ajouté manuellement n'apparaît nulle part (ni preview ni site).
+  const knownSlots = new Set(Object.keys(DEFAULT_SECTIONS));
+  const extraBlocks = (cmsBlocks ?? []).filter((b) => !b.slot || !knownSlots.has(b.slot));
+
   return (
     <Suspense fallback={null}>
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -107,6 +114,29 @@ export default async function NatationPage() {
 
           <TextSection slot={INSCRIPTION_SLOT} block={inscriptionBlock} />
           <TextSection slot={ORGANISATION_SLOT} block={organisationBlock} />
+
+          {extraBlocks.map((block) => (
+            <section
+              key={block.id}
+              id={block.anchor || slugify(block.heading) || block.id}
+              className="scroll-mt-24 border-t border-toac-gray-200 pt-8"
+            >
+              <CmsEditableText
+                as="h2"
+                value={block.heading}
+                target={{ kind: "block", id: block.id, field: "heading" }}
+                className="font-display text-lg uppercase text-toac-blue-950"
+              />
+              <CmsEditableText
+                as="div"
+                value={block.body}
+                target={{ kind: "block", id: block.id, field: "body" }}
+                multiline
+                className="mt-3 block space-y-3 whitespace-pre-line text-sm text-toac-blue-900/90"
+              />
+            </section>
+          ))}
+          <CmsAddTile payload={{ type: "add-block" }} label="+ Ajouter un bloc" />
         </div>
       </div>
     </Suspense>
