@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
+import { privatePageMetadata } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Pré-inscription enregistrée",
-};
+export const metadata: Metadata = privatePageMetadata("Pré-inscription enregistrée");
 
 export default function PreinscriptionConfirmationPage() {
   return (

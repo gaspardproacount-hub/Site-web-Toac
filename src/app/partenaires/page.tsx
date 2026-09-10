@@ -1,38 +1,64 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import SiteImage from "@/components/SiteImage";
 import { slugify } from "@/lib/slug";
 import { PARTENAIRES, PARTENAIRES_INSTITUTIONNELS } from "@/content/partenaires";
-import { getCmsCatalog, getCmsPageBlocks } from "@/lib/cms";
+import { getCmsCatalog, getCmsPageBlocks, getCmsPages } from "@/lib/cms";
 import { CmsEditableText, CmsEditableImage, CmsPartnerName, CmsAddTile } from "@/components/cms-edit";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Nos partenaires",
-  description: "Les partenaires commerciaux et institutionnels du TOAC Triathlon.",
-};
+  description:
+    "Les partenaires commerciaux et institutionnels qui soutiennent le TOAC Triathlon, et les avantages négociés pour les licenciés du club.",
+  path: "/partenaires",
+});
 
 // Carte commune aux partenaires commerciaux et institutionnels : même
-// structure (logo, nom, description facultative) pour les deux blocs.
-function PartnerCard({ logo, name, description }: { logo: ReactNode; name: ReactNode; description?: ReactNode }) {
+// structure (logo, nom, description facultative, lien vers sa page dédiée
+// si elle existe dans le CMS) pour les deux blocs.
+function PartnerCard({
+  logo,
+  name,
+  description,
+  detailHref,
+}: {
+  logo: ReactNode;
+  name: ReactNode;
+  description?: ReactNode;
+  detailHref?: string;
+}) {
   return (
     <div className="overflow-hidden rounded-lg border border-toac-gray-200 shadow-sm">
       {logo}
       <div className="p-4">
         {name}
         {description}
+        {detailHref && (
+          <Link
+            href={detailHref}
+            className="mt-2 inline-block text-sm font-medium text-toac-blue-700 hover:underline"
+          >
+            En savoir plus →
+          </Link>
+        )}
       </div>
     </div>
   );
 }
 
 export default async function PartenairesPage() {
-  const [cmsCatalog, pageBlocks] = await Promise.all([
+  const [cmsCatalog, pageBlocks, cmsPages] = await Promise.all([
     getCmsCatalog(),
     getCmsPageBlocks("partenaires"),
+    getCmsPages(),
   ]);
   const partenairesSection = cmsCatalog?.find((s) => s.name === "Partenaires");
   const institutionnelsSection = cmsCatalog?.find((s) => s.name === "Partenaires institutionnels");
+  const pageSlugs = new Set(cmsPages?.map((p) => p.slug) ?? []);
+  const detailHrefFor = (name: string) =>
+    pageSlugs.has(slugify(name)) ? `/partenaires/${slugify(name)}` : undefined;
 
   return (
     <Suspense fallback={null}>
@@ -73,6 +99,7 @@ export default async function PartenairesPage() {
                     className="text-sm text-toac-blue-900/70"
                   />
                 }
+                detailHref={detailHrefFor(p.name)}
               />
             ))
           : PARTENAIRES.map((p) => (
@@ -128,6 +155,7 @@ export default async function PartenairesPage() {
                     className="text-sm text-toac-blue-900/70"
                   />
                 }
+                detailHref={detailHrefFor(p.name)}
               />
             ))
           : PARTENAIRES_INSTITUTIONNELS.map((name) => (

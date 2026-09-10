@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import EnsureCmsBlocks, { type EnsureBlockSpec } from "@/components/EnsureCmsBlocks";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
@@ -7,11 +8,12 @@ import { getCmsPageBlocks, getCmsHiddenBlocks, type CmsPageBlock } from "@/lib/c
 import { REGLEMENT_ARTICLES } from "@/content/reglement-interieur";
 import { slugify } from "@/lib/slug";
 
-export const metadata: Metadata = {
-  title: "Natation",
+export const metadata: Metadata = pageMetadata({
+  title: "Natation : créneaux et inscriptions",
   description:
-    "Accès à la piscine, inscription aux séances et organisation des entraînements de natation du TOAC Triathlon.",
-};
+    "Créneaux de natation du TOAC Triathlon : accès à la piscine, inscription aux séances et organisation des entraînements encadrés.",
+  path: "/natation",
+});
 
 const ORGANISATION_BODY = REGLEMENT_ARTICLES.find((a) => a.slot === "annexe-1")?.body ?? "";
 

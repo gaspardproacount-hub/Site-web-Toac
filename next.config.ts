@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
       { source: "/register", destination: "/adhesion", permanent: true },
       // Ancienne page "Nous rejoindre", reconstruite sous "/adhesion".
       { source: "/nous-rejoindre", destination: "/adhesion", permanent: true },
+      { source: "/le-club/partenaires/:path*", destination: "/partenaires/:path*", permanent: true },
       { source: "/bureau", destination: "/le-club/bureau", permanent: true },
       { source: "/le-bureau", destination: "/le-club/bureau", permanent: true },
       { source: "/presentation", destination: "/le-club", permanent: true },

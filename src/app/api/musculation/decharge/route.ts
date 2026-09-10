@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "node:crypto";
-import { putBlob, BlobNotConfiguredError } from "@/lib/blob";
+import { putBlob, deleteBlobs, isLegacyPublicUrl, BlobNotConfiguredError } from "@/lib/blob";
 import { generateDechargePdf } from "@/lib/musculationDecharge";
 import { isMineur } from "@/lib/age";
-import { insertMusculationDecharge, DatabaseNotConfiguredError } from "@/lib/db";
+import {
+  insertMusculationDecharge,
+  deleteSupersededMusculationDecharges,
+  DatabaseNotConfiguredError,
+} from "@/lib/db";
 import { slugify } from "@/lib/slug";
 
 // Laisse le temps à l'upload des fichiers + à la génération du PDF de se
@@ -197,6 +201,20 @@ export async function POST(request: NextRequest) {
     }
     console.error("Échec de l'enregistrement de la décharge musculation :", error);
     return NextResponse.json({ error: "Une erreur est survenue. Réessayez plus tard." }, { status: 500 });
+  }
+
+  // Le nouveau dossier remplace les essais non validés du même adhérent, comme
+  // l'annonce la page de relecture. Un échec ici ne remet pas en cause l'envoi
+  // qui vient d'aboutir : il laisse seulement des dossiers en trop dans la vue
+  // bureau, où ils restent supprimables.
+  try {
+    const superseded = await deleteSupersededMusculationDecharges(token, { nom, prenom, dateNaissance });
+    const orphanPaths = superseded
+      .flatMap((row) => [row.decharge_url, row.certificat_url])
+      .filter((p): p is string => typeof p === "string" && p !== "" && !isLegacyPublicUrl(p));
+    if (orphanPaths.length > 0) await deleteBlobs(orphanPaths);
+  } catch (error) {
+    console.error("Échec du nettoyage des décharges musculation non validées :", error);
   }
 
   return NextResponse.json({ ok: true, reviewUrl: `/musculation/valider/${token}` });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { MusculationDechargeRow } from "@/lib/db";
 import { documentHref } from "@/lib/documentUrl";
 
@@ -20,15 +21,31 @@ const STATUT_CLASSES: Record<string, string> = {
 };
 
 export default function AdminMusculationTable({ decharges }: { decharges: MusculationDechargeRow[] }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  // Un dossier est créé dès l'envoi du formulaire, avant que l'adhérent ait relu
+  // et validé son document. Ces dossiers en attente ne sont pas des documents
+  // transmis au club : ils encombrent la liste, mais restent affichables pour
+  // pouvoir relancer l'adhérent ou supprimer un essai abandonné.
+  const [showPending, setShowPending] = useState(false);
+
+  const pendingCount = useMemo(
+    () => decharges.filter((d) => d.statut !== "valide").length,
+    [decharges]
+  );
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return decharges;
-    return decharges.filter((d) => `${d.prenom} ${d.nom}`.toLowerCase().includes(query));
-  }, [decharges, search]);
+    return decharges.filter((d) => {
+      if (!showPending && d.statut !== "valide") return false;
+      if (!query) return true;
+      return `${d.prenom} ${d.nom}`.toLowerCase().includes(query);
+    });
+  }, [decharges, search, showPending]);
 
   async function copyReviewLink(d: MusculationDechargeRow) {
     const url = `${window.location.origin}/musculation/valider/${d.token}`;
@@ -39,6 +56,43 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
     } catch {
       window.prompt("Copiez ce lien :", url);
     }
+  }
+
+  /**
+   * Suppression définitive : le dossier et ses deux fichiers disparaissent. Sert
+   * au ménage des essais comme aux demandes d'effacement (RGPD), d'où la
+   * confirmation explicite avant l'appel.
+   */
+  async function handleDelete(d: MusculationDechargeRow) {
+    const confirmed = window.confirm(
+      `Supprimer définitivement le dossier de ${d.prenom} ${d.nom} ?\n\n` +
+        "La décharge et le certificat médical seront effacés. Cette action est irréversible."
+    );
+    if (!confirmed) return;
+
+    setDeletingId(d.id);
+    setDeleteError(null);
+
+    let response: Response;
+    try {
+      response = await fetch("/api/musculation/decharge/supprimer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: d.id }),
+      });
+    } catch {
+      setDeleteError("Erreur réseau. Réessayez plus tard.");
+      setDeletingId(null);
+      return;
+    }
+
+    const data = await response.json().catch(() => null);
+    setDeletingId(null);
+    if (!response.ok) {
+      setDeleteError(data?.error ?? "La suppression a échoué. Réessayez plus tard.");
+      return;
+    }
+    router.refresh();
   }
 
   return (
@@ -61,8 +115,18 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Rechercher un nom…"
-        className="mb-4 w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
+        className="mb-3 w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30"
       />
+
+      <label className="mb-4 flex items-center gap-2 text-sm text-toac-blue-900/80">
+        <input
+          type="checkbox"
+          checked={showPending}
+          onChange={(e) => setShowPending(e.target.checked)}
+        />
+        Afficher aussi les dossiers en attente de validation
+        {pendingCount > 0 && ` (${pendingCount})`}
+      </label>
 
       <div className="space-y-3">
         {filtered.map((d) => (
@@ -133,14 +197,29 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                   >
                     {copiedId === d.id ? "Lien copié ✓" : "Copier le lien de partage/relecture"}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(d)}
+                    disabled={deletingId === d.id}
+                    className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                  >
+                    {deletingId === d.id ? "Suppression…" : "Supprimer le dossier"}
+                  </button>
                 </div>
+                {deleteError && deletingId === null && (
+                  <p role="alert" className="mt-3 text-xs font-medium text-red-600">
+                    {deleteError}
+                  </p>
+                )}
               </div>
             )}
           </div>
         ))}
         {filtered.length === 0 && (
           <p className="rounded-lg border border-toac-gray-200 bg-white p-6 text-center text-toac-blue-900/60 shadow-sm">
-            Aucune décharge musculation pour le moment.
+            {!showPending && pendingCount > 0
+              ? "Aucune décharge validée pour le moment — cochez la case ci-dessus pour voir les dossiers en attente."
+              : "Aucune décharge musculation pour le moment."}
           </p>
         )}
       </div>

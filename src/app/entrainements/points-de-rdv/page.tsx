@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import LieuxMap from "@/components/LieuxMap";
 import SiteImage from "@/components/SiteImage";
@@ -6,10 +7,12 @@ import { LIEUX } from "@/content/lieux";
 import { getCmsPageBlocks, getCmsCatalog } from "@/lib/cms";
 import { CmsEditableText, CmsEditableImage, CmsAddTile } from "@/components/cms-edit";
 
-export const metadata: Metadata = {
-  title: "Lieux - Points de rdv",
-  description: "Carte et fiches détaillées des lieux d'entraînement du TOAC Triathlon.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Lieux et points de rendez-vous",
+  description:
+    "Carte et fiches détaillées des lieux d'entraînement du TOAC Triathlon : piscines, points de départ vélo et course à pied à Toulouse et alentours.",
+  path: "/entrainements/points-de-rdv",
+});
 
 // Accepte "lat, lng" ou "lat; lng", avec un point OU une virgule comme
 // séparateur décimal (le point-virgule permet de lever l'ambiguïté quand la

@@ -19,7 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "À propos / Notre histoire", href: "/le-club" },
       { label: "Le bureau & les coachs", href: "/le-club/bureau" },
       { label: "La vie du club", href: "/le-club/vie-du-club" },
-      { label: "Nos partenaires", href: "/le-club/partenaires" },
+      { label: "Nos partenaires", href: "/partenaires" },
     ],
   },
   {

@@ -17,13 +17,16 @@ export const WATCHED_VARS: { name: string; role: string }[] = [
   { name: "TOAC_BLOB_TOKEN", role: "Repli du jeton Vercel Blob (nom non géré par Vercel)" },
   { name: "DATABASE_URL", role: "Base Postgres (dossiers, commandes, décharges)" },
   { name: "SESSION_SECRET", role: "Signature des cookies de l'espace adhérents" },
+  { name: "ADMIN_USERNAME", role: "Identifiant du compte bureau" },
+  { name: "ADMIN_PASSWORD", role: "Mot de passe du compte bureau" },
   { name: "BREVO_API_KEY", role: "Envoi des emails (contact, notification musculation)" },
   { name: "MUSCULATION_NOTIFICATION_EMAILS", role: "Destinataires de la notification musculation" },
   { name: "MONETICO_CLE_HMAC", role: "Paiement en ligne Monetico" },
 ];
 
 /** Noms de variables affichés dans la liste « ce que reçoit le runtime ». */
-const NAME_FILTER = /BLOB|STORE|POSTGRES|DATABASE|VERCEL|NETLIFY|MONETICO|BREVO|SESSION_SECRET/i;
+const NAME_FILTER =
+  /BLOB|STORE|POSTGRES|DATABASE|VERCEL|NETLIFY|MONETICO|BREVO|SESSION_SECRET|^ADMIN_|MUSCULATION/i;
 
 export interface VarInfo {
   name: string;

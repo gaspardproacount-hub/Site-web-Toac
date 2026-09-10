@@ -1,17 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NAV_ITEMS, type NavItem, type NavLink } from "@/lib/nav";
 import { useAuth } from "./AuthProvider";
 import SiteLogo from "./SiteLogo";
+
+const BUREAU_ITEM: NavItem = {
+  label: "Bureau",
+  children: [
+    { label: "Dossiers adhérents", href: "/espace-adherents/bureau" },
+    { label: "Commandes Monetico", href: "/espace-adherents/bureau/commandes" },
+    { label: "Demandes d'adhésion", href: "/espace-adherents/bureau/inscriptions" },
+    { label: "Pré-inscriptions", href: "/espace-adherents/bureau/preinscriptions" },
+    { label: "Avantages partenaires", href: "/espace-adherents/bureau/partenaires" },
+    { label: "Décharges musculation", href: "/espace-adherents/bureau/musculation" },
+    { label: "Diagnostic serveur", href: "/espace-adherents/bureau/diagnostic" },
+  ],
+};
 
 export default function Navbar({ items }: { items?: NavItem[] | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const { auth, requireAuth, logout } = useAuth();
 
-  const navItems = items && items.length ? items : NAV_ITEMS;
+  const navItems = useMemo(() => {
+    const base = items && items.length ? items : NAV_ITEMS;
+    // Menu "Bureau" : uniquement une fois connecté avec un compte admin — sans
+    // ça il fallait deviner l'URL de chaque page bureau pour y accéder.
+    return auth.role === "admin" ? [...base, BUREAU_ITEM] : base;
+  }, [items, auth.role]);
 
   function handleLinkClick(
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -28,19 +46,42 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
   return (
     <header className="sticky top-0 z-40 border-b border-toac-gray-200 bg-white/95 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8" aria-label="Navigation principale">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex shrink-0 items-center">
           <SiteLogo className="h-10 w-auto" />
         </Link>
 
-        <div className="hidden items-center gap-1 lg:flex">
+        <div className="hidden items-center gap-0.5 xl:flex">
           {navItems.map((item) => (
             <div
               key={item.label}
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => item.children && setOpenDropdown(item.label)}
               onMouseLeave={() => item.children && setOpenDropdown(null)}
+              onFocus={() => item.children && setOpenDropdown(item.label)}
+              onBlur={(e) => {
+                if (item.children && !e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setOpenDropdown(null);
+                }
+              }}
             >
-              {item.children ? (
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-1 whitespace-nowrap px-2.5 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
+                >
+                  {item.label}
+                  {item.children && (
+                    <svg
+                      aria-hidden="true"
+                      className={`h-3 w-3 shrink-0 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
+                    </svg>
+                  )}
+                </Link>
+              ) : (
                 <button
                   type="button"
                   aria-expanded={openDropdown === item.label}
@@ -48,25 +89,18 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
                   onClick={() =>
                     setOpenDropdown(openDropdown === item.label ? null : item.label)
                   }
-                  className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
+                  className="flex items-center gap-1 whitespace-nowrap px-2.5 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
                 >
                   {item.label}
                   <svg
                     aria-hidden="true"
-                    className={`h-3 w-3 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
+                    className={`h-3 w-3 shrink-0 transition-transform ${openDropdown === item.label ? "rotate-180" : ""}`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
                     <path d="M5.25 7.5L10 12.25L14.75 7.5H5.25Z" />
                   </svg>
                 </button>
-              ) : (
-                <Link
-                  href={item.href!}
-                  className="px-3 py-2 text-sm font-medium text-toac-blue-950 hover:text-toac-blue-600"
-                >
-                  {item.label}
-                </Link>
               )}
 
               {item.children && openDropdown === item.label && (
@@ -88,30 +122,22 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          {auth.loggedIn ? (
-            <div className="flex items-center gap-3 text-sm">
-              <span className="text-toac-blue-950">Bonjour {auth.name}</span>
-              <button
-                type="button"
-                onClick={() => logout()}
-                className="font-medium text-toac-blue-700 hover:text-toac-blue-950"
-              >
-                Se déconnecter
-              </button>
-            </div>
-          ) : null}
-          <Link
-            href="/adhesion"
-            className="rounded-md bg-toac-pink-500 px-4 py-2 font-display text-sm uppercase tracking-wide text-white transition hover:bg-toac-pink-400"
-          >
-            Nous rejoindre
-          </Link>
-        </div>
+        {auth.loggedIn && (
+          <div className="hidden shrink-0 items-center gap-3 whitespace-nowrap text-sm xl:flex">
+            <span className="text-toac-blue-950">Bonjour {auth.name}</span>
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="font-medium text-toac-blue-700 hover:text-toac-blue-950"
+            >
+              Se déconnecter
+            </button>
+          </div>
+        )}
 
         <button
           type="button"
-          className="lg:hidden"
+          className="xl:hidden"
           aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((v) => !v)}
@@ -125,15 +151,13 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
       </nav>
 
       {mobileOpen && (
-        <div className="border-t border-toac-gray-200 bg-white lg:hidden">
+        <div className="border-t border-toac-gray-200 bg-white xl:hidden">
           <div className="space-y-1 px-4 py-4">
             {navItems.map((item) => (
               <div key={item.label}>
                 <Link
                   href={item.href ?? item.children![0].href}
-                  onClick={() => {
-                    if (!item.children) setMobileOpen(false);
-                  }}
+                  onClick={() => setMobileOpen(false)}
                   className="block py-2 font-medium text-toac-blue-950"
                 >
                   {item.label}
@@ -155,8 +179,8 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
                 )}
               </div>
             ))}
-            <div className="pt-3">
-              {auth.loggedIn ? (
+            {auth.loggedIn && (
+              <div className="pt-3">
                 <button
                   type="button"
                   onClick={() => logout()}
@@ -164,15 +188,8 @@ export default function Navbar({ items }: { items?: NavItem[] | null }) {
                 >
                   Se déconnecter ({auth.name})
                 </button>
-              ) : null}
-              <Link
-                href="/adhesion"
-                onClick={() => setMobileOpen(false)}
-                className="mt-2 block rounded-md bg-toac-pink-500 px-4 py-2.5 text-center font-display text-sm uppercase tracking-wide text-white"
-              >
-                Nous rejoindre
-              </Link>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { PLANNING, DISCIPLINE_LABELS, DISCIPLINE_COLORS } from "@/content/planning";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
@@ -44,11 +45,12 @@ function heureToMinutes(heure: string): number {
 
 const DEFAULT_SESSION_DURATION = 60;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Planning des entraînements",
   description:
-    "Planning hebdomadaire des entraînements du TOAC Triathlon : natation, vélo, course à pied, musculation.",
-};
+    "Le planning hebdomadaire des entraînements encadrés du TOAC Triathlon : natation, vélo, course à pied et musculation, avec horaires et lieux.",
+  path: "/entrainements",
+});
 
 const PLANNING_PREFIX = "Planning – ";
 const DEFAULT_CRENEAU_COLOR = "bg-toac-gray-100 text-toac-blue-900 border-toac-gray-200";

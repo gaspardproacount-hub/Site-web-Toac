@@ -86,10 +86,6 @@ export default function LoginForm({ onSuccess, compact }: LoginFormProps) {
         {loading ? "Connexion…" : "Se connecter"}
       </button>
 
-      <p className="text-xs text-toac-blue-900/70">
-        Identifiants transmis par le bureau du club. Compte de démonstration :{" "}
-        <code className="rounded bg-toac-gray-100 px-1 py-0.5">demo</code> / voir README.
-      </p>
     </form>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import SiteImage from "@/components/SiteImage";
 import { CmsEditableText, CmsEditableImage, CmsEditPencil, CmsAddTile } from "@/components/cms-edit";
@@ -7,11 +8,12 @@ import { slugify } from "@/lib/slug";
 import { getCmsCatalog, getCmsPageBlocks, getCmsHiddenBlocks } from "@/lib/cms";
 import { PALMARES_2025 } from "@/content/bureau";
 
-export const metadata: Metadata = {
-  title: "Le Club — À propos",
+export const metadata: Metadata = pageMetadata({
+  title: "Le club : notre histoire depuis 1992",
   description:
-    "Le TOAC Triathlon, né en 1992, est aujourd'hui un club indépendant de ~180 licenciés à Toulouse, tous niveaux, affilié FFTRI.",
-};
+    "Né en 1992, le TOAC Triathlon est aujourd'hui un club indépendant de près de 180 licenciés à Toulouse, tous niveaux, affilié à la FFTRI.",
+  path: "/le-club",
+});
 
 // Titre du palmarès : bloc "à emplacement fixe" (même convention que la page
 // Triathlons du Lauragais) identifié par un slot technique stable, pour

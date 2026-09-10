@@ -132,7 +132,7 @@ export default function Footer({
 
         <div>
           <h3 className="mb-3 font-display text-sm uppercase tracking-wide text-toac-pink-400">
-            <Link href="/le-club/partenaires" className="hover:text-toac-pink-300">
+            <Link href="/partenaires" className="hover:text-toac-pink-300">
               Partenaires
             </Link>
           </h3>

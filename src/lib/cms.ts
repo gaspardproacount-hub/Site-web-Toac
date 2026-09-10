@@ -176,6 +176,17 @@ export async function getCmsPageBlocks(slug: string): Promise<CmsPageBlock[] | n
   }
 }
 
+export type CmsPage = {
+  slug: string;
+  title: string;
+};
+
+/** Liste des pages CMS (slug + titre) — sert à savoir quelles pages existent, sans leurs blocs. */
+export async function getCmsPages(): Promise<CmsPage[] | null> {
+  const rows = await fetchFromCms<CmsPage>("pages", "&select=slug,title");
+  return rows && rows.length ? rows : null;
+}
+
 export type CmsHiddenBlock = { slot: string | null; heading: string; block_type: string };
 
 /**

@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Suspense } from "react";
 import { CmsPageBlocks } from "@/components/CmsPageBlocks";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Politique de confidentialité",
-};
+  description:
+    "Politique de confidentialité du TOAC Triathlon : données collectées, partage avec les partenaires et exercice de vos droits RGPD.",
+  path: "/confidentialite",
+});
 
 export default function ConfidentialitePage() {
   return (

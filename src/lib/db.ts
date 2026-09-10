@@ -132,6 +132,17 @@ function ensureSchema(): Promise<void> {
           statut TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS partner_signups (
+          id SERIAL PRIMARY KEY,
+          recue_le TIMESTAMPTZ NOT NULL DEFAULT now(),
+          partenaire TEXT NOT NULL,
+          nom TEXT NOT NULL,
+          prenom TEXT NOT NULL,
+          email TEXT NOT NULL,
+          consentement BOOLEAN NOT NULL DEFAULT false,
+          statut TEXT NOT NULL DEFAULT 'nouveau'
+        );
+
         CREATE TABLE IF NOT EXISTS musculation_decharges (
           id SERIAL PRIMARY KEY,
           recue_le TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -339,6 +350,53 @@ export async function getPreinscriptions(): Promise<PreinscriptionRow[]> {
   return rows;
 }
 
+export interface PartnerSignupRow {
+  id: number;
+  recue_le: string;
+  partenaire: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  consentement: boolean;
+  statut: string;
+}
+
+export interface NouveauPartnerSignup {
+  partenaire: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  consentement: boolean;
+}
+
+/** Enregistre une demande d'activation des avantages d'un partenaire (ex. Alltricks). */
+export async function insertPartnerSignup(p: NouveauPartnerSignup): Promise<number> {
+  await ensureSchema();
+  const { rows } = await getPool().query<{ id: number }>(
+    `
+    INSERT INTO partner_signups (partenaire, nom, prenom, email, consentement, statut)
+    VALUES ($1,$2,$3,$4,$5,'nouveau')
+    RETURNING id
+    `,
+    [p.partenaire, p.nom, p.prenom, p.email, p.consentement]
+  );
+  return rows[0].id;
+}
+
+export async function getPartnerSignups(): Promise<PartnerSignupRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<PartnerSignupRow>(
+    "SELECT * FROM partner_signups ORDER BY recue_le DESC"
+  );
+  return rows;
+}
+
+/** Marque une demande comme traitée (email renseigné côté partenaire) ou la rouvre. */
+export async function setPartnerSignupStatut(id: number, statut: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("UPDATE partner_signups SET statut = $2 WHERE id = $1", [id, statut]);
+}
+
 export interface CommandeRow {
   id: number;
   reference: string;
@@ -487,6 +545,38 @@ export async function insertMusculationDecharge(d: NouvelleMusculationDecharge):
   );
 }
 
+/**
+ * Supprime les dossiers encore `en_attente` du même adhérent, hors celui qu'on
+ * vient de créer. Un adhérent qui reprend le formulaire — parce qu'il s'est
+ * trompé, ou qu'il a quitté la page de relecture sans valider — laissait
+ * jusqu'ici un dossier orphelin de plus à chaque essai, et c'est bien le
+ * remplacement que lui promet la page de relecture.
+ *
+ * Les dossiers `valide` ne sont jamais touchés : ce sont des documents transmis
+ * au club. La comparaison ignore la casse et les espaces de bord.
+ *
+ * Renvoie les lignes supprimées, pour que l'appelant efface aussi leurs fichiers.
+ */
+export async function deleteSupersededMusculationDecharges(
+  currentToken: string,
+  adherent: { nom: string; prenom: string; dateNaissance: string }
+): Promise<MusculationDechargeRow[]> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    `
+    DELETE FROM musculation_decharges
+    WHERE statut = 'en_attente'
+      AND token <> $1
+      AND lower(btrim(nom)) = lower(btrim($2))
+      AND lower(btrim(prenom)) = lower(btrim($3))
+      AND date_naissance = $4
+    RETURNING *
+    `,
+    [currentToken, adherent.nom, adherent.prenom, adherent.dateNaissance]
+  );
+  return rows;
+}
+
 export async function getMusculationDechargeByToken(token: string): Promise<MusculationDechargeRow | null> {
   await ensureSchema();
   const { rows } = await getPool().query<MusculationDechargeRow>(
@@ -507,6 +597,20 @@ export async function validateMusculationDecharge(token: string): Promise<Muscul
     RETURNING *
     `,
     [token]
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Supprime définitivement un dossier de décharge. Renvoie la ligne supprimée
+ * pour que l'appelant puisse effacer aussi les fichiers correspondants dans le
+ * store Blob, ou null si l'identifiant n'existe pas.
+ */
+export async function deleteMusculationDecharge(id: number): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "DELETE FROM musculation_decharges WHERE id = $1 RETURNING *",
+    [id]
   );
   return rows[0] ?? null;
 }

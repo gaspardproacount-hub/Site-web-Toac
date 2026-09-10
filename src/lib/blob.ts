@@ -1,5 +1,5 @@
 import "server-only";
-import { put, get, type PutBlobResult, type GetBlobResult } from "@vercel/blob";
+import { put, get, del, type PutBlobResult, type GetBlobResult } from "@vercel/blob";
 
 /**
  * Accès à Vercel Blob (justificatifs d'adhésion, décharges musculation et
@@ -80,6 +80,17 @@ export async function getBlobStream(
     token: requireToken(),
     ...(options.ifNoneMatch ? { ifNoneMatch: options.ifNoneMatch } : {}),
   });
+}
+
+/**
+ * Efface définitivement des fichiers du store. Les chemins inconnus sont
+ * ignorés par l'API Blob, l'appel est donc sans effet plutôt qu'en erreur si un
+ * fichier a déjà disparu.
+ */
+export async function deleteBlobs(pathnames: string[]): Promise<void> {
+  const targets = pathnames.filter((p) => p.trim() !== "");
+  if (targets.length === 0) return;
+  await del(targets, { token: requireToken() });
 }
 
 /**
