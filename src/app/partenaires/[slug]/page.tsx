@@ -65,20 +65,30 @@ export default async function PartenairePage({
 
   return (
     <div className="pb-16">
-      <div className="mx-auto max-w-4xl px-4 pt-16 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4">
+      <div className="border-b border-toac-gray-200 bg-toac-gray-50">
+        <div className="mx-auto flex flex-col items-center gap-5 px-4 py-14 text-center sm:px-6 lg:px-8">
           {partner?.image_url && (
             <CmsEditableImage
               src={partner.image_url}
               alt={`Logo ${partner.name}`}
               target={{ kind: "product", id: partner.id }}
-              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-toac-gray-200 bg-white p-1.5"
+              className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl border border-toac-gray-200 bg-white p-3 shadow-sm sm:h-32 sm:w-32"
               imgClassName="max-h-full max-w-full object-contain"
             />
           )}
-          <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
+          <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950 sm:text-4xl">
             {page.title}
           </h1>
+          {partner?.url && (
+            <a
+              href={partner.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-toac-blue-700 hover:underline"
+            >
+              Visiter le site →
+            </a>
+          )}
         </div>
       </div>
 
