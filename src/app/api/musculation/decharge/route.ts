@@ -10,6 +10,7 @@ import {
   DatabaseNotConfiguredError,
 } from "@/lib/db";
 import { slugify } from "@/lib/slug";
+import { MAX_UPLOAD_TOTAL_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 // Laisse le temps à l'upload des fichiers + à la génération du PDF de se
 // terminer (au-delà du timeout par défaut de 10s sur le plan Hobby Vercel).
@@ -17,7 +18,10 @@ export const maxDuration = 30;
 
 const SIGNATURE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
 const CERTIFICAT_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "application/pdf"]);
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 Mo
+// Dernier filet : la plateforme coupe déjà toute requête dépassant sa propre
+// limite avant d'appeler ce code, et le formulaire vérifie la taille côté
+// client. Voir src/lib/uploadLimits.ts.
+const MAX_FILE_SIZE_BYTES = MAX_UPLOAD_TOTAL_BYTES;
 
 /** Date en toutes lettres pour le document, ex. « 4 septembre 2026 ». */
 function formatDateFr(date: Date): string {
@@ -100,7 +104,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "La signature doit être une image JPG ou PNG." }, { status: 400 });
   }
   if (certificatFile.size > MAX_FILE_SIZE_BYTES || signatureFile.size > MAX_FILE_SIZE_BYTES) {
-    return NextResponse.json({ error: "Chaque fichier doit faire moins de 10 Mo." }, { status: 400 });
+    return NextResponse.json(
+      { error: `Chaque fichier doit faire moins de ${formatBytes(MAX_FILE_SIZE_BYTES)}.` },
+      { status: 400 }
+    );
   }
 
   const signatureBytes = Buffer.from(await signatureFile.arrayBuffer());

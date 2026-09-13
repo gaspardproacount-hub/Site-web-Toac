@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { isMineur } from "@/lib/age";
+import { compressImageFile } from "@/lib/imageCompression";
+import { MAX_UPLOAD_TOTAL_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
@@ -34,6 +36,32 @@ export default function MusculationDechargeForm() {
 
     const formData = new FormData(event.currentTarget);
 
+    // Les photos prises au smartphone pèsent souvent plus lourd que ce qu'un
+    // envoi accepte. On les recompresse ici, dans le navigateur, avant de
+    // construire la requête.
+    for (const field of ["certificatMedical", "signature"]) {
+      const file = formData.get(field);
+      if (file instanceof File && file.size > 0) {
+        formData.set(field, await compressImageFile(file));
+      }
+    }
+
+    // Au-delà de la limite, la requête est coupée avant d'atteindre le serveur :
+    // sans ce contrôle, l'adhérent ne verrait qu'une « erreur réseau »
+    // inexplicable.
+    const totalBytes = Array.from(formData.values()).reduce(
+      (total, value) => total + (value instanceof File ? value.size : 0),
+      0
+    );
+    if (totalBytes > MAX_UPLOAD_TOTAL_BYTES) {
+      setErrorMessage(
+        `Vos fichiers pèsent ${formatBytes(totalBytes)} au total, pour ${formatBytes(MAX_UPLOAD_TOTAL_BYTES)} au maximum. ` +
+          "Si votre certificat est un PDF, envoyez plutôt une photo de celui-ci ; sinon, reprenez la photo avec une définition plus basse."
+      );
+      setStatus("error");
+      return;
+    }
+
     let response: Response;
     try {
       response = await fetch("/api/musculation/decharge", {
@@ -41,7 +69,10 @@ export default function MusculationDechargeForm() {
         body: formData,
       });
     } catch {
-      setErrorMessage("Erreur réseau. Réessayez plus tard.");
+      setErrorMessage(
+        "L'envoi n'a pas abouti. Vérifiez votre connexion et réessayez — si le problème persiste, " +
+          "le certificat est peut-être trop lourd : reprenez-le en photo avec une définition plus basse."
+      );
       setStatus("error");
       return;
     }
@@ -134,7 +165,10 @@ export default function MusculationDechargeForm() {
           required
           className={fileInputClass}
         />
-        <p className="mt-1 text-xs text-toac-blue-900/60">Image (JPG, PNG) ou PDF, 10 Mo maximum.</p>
+        <p className="mt-1 text-xs text-toac-blue-900/60">
+          Image (JPG, PNG) ou PDF. Les photos sont automatiquement allégées avant l&apos;envoi, vous
+          n&apos;avez pas à les redimensionner.
+        </p>
       </div>
 
       <div>

@@ -25,6 +25,19 @@ faudra traiter. Rien ici n'est urgent ; l'ordre est indicatif.
       compte `toactri` y est collaborateur avec les droits d'écriture mais pas
       d'administration, et GitHub réserve la visibilité aux administrateurs.
 
+## Envoi des documents
+
+- [ ] **Envoyer les fichiers directement vers le store Blob depuis le navigateur**
+      (`upload()` de `@vercel/blob/client` + une route de jeton), au lieu de les
+      faire transiter par la fonction. C'est la seule façon de dépasser vraiment
+      la limite de 4,5 Mo imposée au corps d'une requête. Aujourd'hui, le
+      formulaire recompresse les photos côté client et refuse au-delà de 4 Mo au
+      total, ce qui couvre le cas courant — une photo de certificat prise au
+      téléphone — mais pas un PDF lourd envoyé tel quel. À prévoir si des
+      adhérents butent encore sur la taille.
+      Attention : le serveur a besoin du certificat pour l'incorporer au PDF de
+      décharge ; il devrait donc le relire depuis le store après l'envoi.
+
 ## RGPD — avant d'ouvrir l'espace adhérents à de vraies données
 
 Le consentement recueilli dans le formulaire est nécessaire mais pas suffisant.
