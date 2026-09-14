@@ -6,6 +6,9 @@ import { isMineur } from "@/lib/age";
 import { compressImageFile } from "@/lib/imageCompression";
 import { MAX_UPLOAD_TOTAL_BYTES, formatBytes } from "@/lib/uploadLimits";
 
+/** Au-delà, on abandonne l'envoi plutôt que de laisser l'adhérent attendre. */
+const REQUEST_TIMEOUT_MS = 90_000;
+
 const inputClass =
   "w-full rounded-md border border-toac-gray-200 px-3 py-2 outline-none focus:border-toac-blue-600 focus:ring-2 focus:ring-toac-blue-600/30";
 const labelClass = "mb-1 block text-sm font-medium text-toac-blue-900";
@@ -22,6 +25,9 @@ export default function MusculationDechargeForm() {
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Cause technique de l'échec, affichée en petit sous le message : sans elle,
+  // un envoi qui n'atteint pas le serveur reste indiagnostiquable.
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
   // Le bloc « autorisation parentale » se déplie tout seul dès que la date de
   // naissance saisie correspond à une personne de moins de 18 ans. Le serveur
   // refait ce calcul de son côté : ce qui est envoyé ici n'est qu'un confort
@@ -33,7 +39,9 @@ export default function MusculationDechargeForm() {
     event.preventDefault();
     setStatus("sending");
     setErrorMessage(null);
+    setErrorDetail(null);
 
+    const startedAt = Date.now();
     const formData = new FormData(event.currentTarget);
 
     // Les photos prises au smartphone pèsent souvent plus lourd que ce qu'un
@@ -62,19 +70,35 @@ export default function MusculationDechargeForm() {
       return;
     }
 
+    // Un envoi qui n'aboutit pas ne laisse aucune trace côté serveur : la
+    // requête n'y arrive jamais. Le délai explicite permet au moins de
+    // distinguer « trop long » de « connexion perdue », et le détail technique
+    // est affiché pour pouvoir être rapporté au bureau.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     let response: Response;
     try {
       response = await fetch("/api/musculation/decharge", {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
-    } catch {
+    } catch (error) {
+      const timedOut = error instanceof DOMException && error.name === "AbortError";
       setErrorMessage(
-        "L'envoi n'a pas abouti. Vérifiez votre connexion et réessayez — si le problème persiste, " +
-          "le certificat est peut-être trop lourd : reprenez-le en photo avec une définition plus basse."
+        timedOut
+          ? "L'envoi a été interrompu : le serveur a mis trop de temps à répondre. Réessayez dans quelques minutes."
+          : "L'envoi n'a pas abouti : la connexion au serveur a été perdue. Réessayez, et si cela se reproduit, signalez-le au bureau du club."
+      );
+      setErrorDetail(
+        `${error instanceof Error ? `${error.name} : ${error.message}` : String(error)} · ` +
+          `fichiers ${formatBytes(totalBytes)} · ${Math.round((Date.now() - startedAt) / 1000)} s`
       );
       setStatus("error");
       return;
+    } finally {
+      clearTimeout(timeout);
     }
 
     const data = await response.json().catch(() => null);
@@ -196,9 +220,12 @@ export default function MusculationDechargeForm() {
       </label>
 
       {errorMessage && (
-        <p role="alert" className="text-sm font-medium text-red-600">
-          {errorMessage}
-        </p>
+        <div role="alert">
+          <p className="text-sm font-medium text-red-600">{errorMessage}</p>
+          {errorDetail && (
+            <p className="mt-1 font-mono text-xs text-toac-blue-900/50">{errorDetail}</p>
+          )}
+        </div>
       )}
 
       <button

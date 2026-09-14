@@ -12,9 +12,12 @@ import {
 import { slugify } from "@/lib/slug";
 import { MAX_UPLOAD_TOTAL_BYTES, formatBytes } from "@/lib/uploadLimits";
 
-// Laisse le temps à l'upload des fichiers + à la génération du PDF de se
-// terminer (au-delà du timeout par défaut de 10s sur le plan Hobby Vercel).
-export const maxDuration = 30;
+// Plafond maximal du plan Hobby. La fonction enchaîne la lecture des fichiers,
+// la génération du PDF, deux dépôts dans le store et l'écriture en base — une
+// base Neon qui sort de veille pouvant à elle seule coûter plusieurs secondes.
+// Au-delà du plafond, la connexion est coupée sans réponse : le navigateur ne
+// peut alors que signaler un échec réseau, sans rien laisser dans les logs.
+export const maxDuration = 60;
 
 const SIGNATURE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg"]);
 const CERTIFICAT_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "application/pdf"]);
