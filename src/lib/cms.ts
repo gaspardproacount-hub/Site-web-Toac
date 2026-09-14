@@ -3,14 +3,36 @@
 // dossiers, paiements) reste géré séparément par sa propre base de données.
 // Si CMS_CONFIG.siteId n'est pas renseigné, toutes les fonctions ci-dessous
 // renvoient null et les pages gardent leur contenu actuel (src/content/*).
+//
+// Les trois valeurs ci-dessous sont surchargeables par variables
+// d'environnement (CMS_SUPABASE_URL, CMS_SUPABASE_ANON_KEY, CMS_SITE_ID) :
+// c'est ce qui permet de rebrancher le site sur un autre projet Supabase — par
+// exemple celui du club — sans toucher au code. Tant que ces variables ne sont
+// pas définies, les valeurs de repli ci-dessous s'appliquent et le
+// comportement est strictement inchangé.
+//
+// Aucune de ces trois valeurs n'est secrète : la clé « anon » est publique par
+// conception (c'est celle que le navigateur enverrait), et l'accès aux données
+// est borné par les règles RLS définies côté Supabase.
 
 import type { NavItem, NavLink } from "@/lib/nav";
 
+/** Valeur d'environnement si elle est renseignée, sinon le repli fourni. */
+function fromEnv(name: string, fallback: string): string {
+  const value = process.env[name];
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
 const CMS_CONFIG = {
-  supabaseUrl: "https://kekjsyqakhpuzxxeralm.supabase.co",
-  supabaseAnonKey:
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtla2pzeXFha2hwdXp4eGVyYWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNDgwNDAsImV4cCI6MjA5OTYyNDA0MH0.vZdboaaVCYThBNH4zXGrb8gEYXwzmk5uHCoPiLFXhUI",
-  siteId: "f75cad77-b956-4822-83ff-bee764af2b4d",
+  supabaseUrl: fromEnv(
+    "CMS_SUPABASE_URL",
+    "https://kekjsyqakhpuzxxeralm.supabase.co"
+  ),
+  supabaseAnonKey: fromEnv(
+    "CMS_SUPABASE_ANON_KEY",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtla2pzeXFha2hwdXp4eGVyYWxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNDgwNDAsImV4cCI6MjA5OTYyNDA0MH0.vZdboaaVCYThBNH4zXGrb8gEYXwzmk5uHCoPiLFXhUI"
+  ),
+  siteId: fromEnv("CMS_SITE_ID", "f75cad77-b956-4822-83ff-bee764af2b4d"),
 };
 
 const isConfigured =
