@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { isMineur } from "@/lib/age";
 import { compressImageFile } from "@/lib/imageCompression";
+import { materializeFile, FileUnreadableError } from "@/lib/clientFiles";
 import { MAX_UPLOAD_TOTAL_BYTES, formatBytes } from "@/lib/uploadLimits";
 
 /** Au-delà, on abandonne l'envoi plutôt que de laisser l'adhérent attendre. */
@@ -44,14 +45,32 @@ export default function MusculationDechargeForm() {
     const startedAt = Date.now();
     const formData = new FormData(event.currentTarget);
 
-    // Les photos prises au smartphone pèsent souvent plus lourd que ce qu'un
-    // envoi accepte. On les recompresse ici, dans le navigateur, avant de
-    // construire la requête.
-    for (const field of ["certificatMedical", "signature"]) {
-      const file = formData.get(field);
-      if (file instanceof File && file.size > 0) {
-        formData.set(field, await compressImageFile(file));
+    // Deux étapes avant l'envoi :
+    //  - les photos prises au smartphone sont recompressées, elles pèsent
+    //    souvent plus lourd que ce qu'un envoi accepte ;
+    //  - chaque fichier est ensuite lu en mémoire. Sans cela, le navigateur ne
+    //    lit les octets qu'au moment d'envoyer, et un document dont la
+    //    permission a expiré (fichier ouvert depuis Drive ou l'application
+    //    Fichiers) fait échouer la requête instantanément, sans rien laisser
+    //    côté serveur.
+    try {
+      for (const field of ["certificatMedical", "signature"]) {
+        const file = formData.get(field);
+        if (file instanceof File && file.size > 0) {
+          formData.set(field, await materializeFile(await compressImageFile(file)));
+        }
       }
+    } catch (error) {
+      if (error instanceof FileUnreadableError) {
+        setErrorMessage(
+          `Impossible de lire « ${error.fileName} ». Si vous l'avez choisi depuis Google Drive ou ` +
+            "une application de stockage, enregistrez-le d'abord dans votre téléphone, puis " +
+            "sélectionnez-le à nouveau."
+        );
+        setStatus("error");
+        return;
+      }
+      throw error;
     }
 
     // Au-delà de la limite, la requête est coupée avant d'atteindre le serveur :
