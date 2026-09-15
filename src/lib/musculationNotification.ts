@@ -40,11 +40,49 @@ function escapeHtml(value: string): string {
 
 export type NotificationResult = "sent" | "skipped";
 
+/** Nombre d'adresses exploitables, pour la page de diagnostic. */
+export function countNotificationRecipients(): number {
+  return resolveRecipients().length;
+}
+
+/**
+ * Contrôle volontairement permissif : il ne s'agit pas de valider une adresse
+ * dans les règles, seulement d'écarter ce qui ferait rejeter tout l'envoi par
+ * Brevo — un fragment sans arobase, ou plusieurs adresses restées collées.
+ */
+const EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+/**
+ * Destinataires de la notification, lus dans MUSCULATION_NOTIFICATION_EMAILS.
+ *
+ * La saisie est humaine et le champ « Value » de Vercel est une zone de texte
+ * multiligne : les adresses peuvent aussi bien être séparées par des virgules
+ * que par des points-virgules, des espaces ou des retours à la ligne. Découper
+ * sur la seule virgule transformait « une adresse par ligne » en un unique
+ * destinataire invalide, que Brevo rejetait en bloc — aucun message ne partait,
+ * et rien n'apparaissait dans ses statistiques.
+ *
+ * Les entrées qui ne ressemblent pas à une adresse sont écartées et
+ * journalisées, plutôt que de faire échouer l'envoi aux autres destinataires.
+ */
 function resolveRecipients(): string[] {
-  return (process.env.MUSCULATION_NOTIFICATION_EMAILS ?? "")
-    .split(",")
+  const entries = (process.env.MUSCULATION_NOTIFICATION_EMAILS ?? "")
+    .split(/[,;\s]+/)
     .map((address) => address.trim())
     .filter(Boolean);
+
+  const valid = entries.filter((address) => EMAIL_PATTERN.test(address));
+  const rejected = entries.filter((address) => !EMAIL_PATTERN.test(address));
+
+  if (rejected.length > 0) {
+    console.warn(
+      "[musculation] Entrées ignorées dans MUSCULATION_NOTIFICATION_EMAILS (adresse invalide) :",
+      rejected
+    );
+  }
+
+  // Une même adresse saisie deux fois ferait recevoir le message en double.
+  return Array.from(new Set(valid.map((address) => address.toLowerCase())));
 }
 
 function buildHtml(
@@ -100,8 +138,9 @@ export async function sendMusculationNotification(
     input.origin + documentHref(input.documentPath, input.token, { filename, download: true });
 
   if (recipients.length === 0) {
-    console.info(
-      "[musculation] MUSCULATION_NOTIFICATION_EMAILS non renseignée — aucune notification envoyée."
+    console.warn(
+      "[musculation] Aucun destinataire exploitable dans MUSCULATION_NOTIFICATION_EMAILS — " +
+        "notification non envoyée."
     );
     return "skipped";
   }
