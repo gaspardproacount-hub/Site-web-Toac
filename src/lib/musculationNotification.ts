@@ -38,7 +38,15 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export type NotificationResult = "sent" | "skipped";
+/**
+ * Résultat détaillé d'un envoi, consigné sur le dossier pour que la vue bureau
+ * puisse dire si l'information est partie, à qui, et sinon pourquoi.
+ */
+export interface NotificationOutcome {
+  statut: "envoyee" | "ignoree" | "echec";
+  destinataires: string[];
+  erreur: string | null;
+}
 
 /** Nombre d'adresses exploitables, pour la page de diagnostic. */
 export function countNotificationRecipients(): number {
@@ -126,9 +134,9 @@ function buildHtml(
 
 export async function sendMusculationNotification(
   input: MusculationNotificationInput
-): Promise<NotificationResult> {
+): Promise<NotificationOutcome> {
   const recipients = resolveRecipients();
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY?.trim();
 
   // Le nom du fichier est dans le chemin de l'URL : c'est de là que le lecteur
   // PDF de Chrome tire le titre de son onglet.
@@ -138,18 +146,15 @@ export async function sendMusculationNotification(
     input.origin + documentHref(input.documentPath, input.token, { filename, download: true });
 
   if (recipients.length === 0) {
-    console.warn(
-      "[musculation] Aucun destinataire exploitable dans MUSCULATION_NOTIFICATION_EMAILS — " +
-        "notification non envoyée."
-    );
-    return "skipped";
+    const erreur =
+      "Aucun destinataire exploitable dans MUSCULATION_NOTIFICATION_EMAILS.";
+    console.warn(`[musculation] ${erreur} Notification non envoyée.`);
+    return { statut: "ignoree", destinataires: [], erreur };
   }
   if (!apiKey) {
-    console.info("[musculation] BREVO_API_KEY non configurée — notification journalisée uniquement:", {
-      recipients,
-      viewUrl,
-    });
-    return "skipped";
+    const erreur = "BREVO_API_KEY n'est pas configurée : aucun email ne peut être envoyé.";
+    console.info(`[musculation] ${erreur}`, { recipients, viewUrl });
+    return { statut: "ignoree", destinataires: recipients, erreur };
   }
 
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -186,5 +191,5 @@ export async function sendMusculationNotification(
     throw new Error(`Brevo a répondu ${response.status} : ${await response.text()}`);
   }
 
-  return "sent";
+  return { statut: "envoyee", destinataires: recipients, erreur: null };
 }

@@ -164,6 +164,14 @@ function ensureSchema(): Promise<void> {
           certificat_url TEXT NOT NULL
         );
 
+        -- Suivi de la notification envoyée au bureau à la validation d'un
+        -- dossier. Ajouté après coup : sans effet sur une base déjà à jour.
+        ALTER TABLE musculation_decharges
+          ADD COLUMN IF NOT EXISTS notification_statut TEXT,
+          ADD COLUMN IF NOT EXISTS notification_le TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS notification_destinataires TEXT[] NOT NULL DEFAULT '{}',
+          ADD COLUMN IF NOT EXISTS notification_erreur TEXT;
+
         CREATE TABLE IF NOT EXISTS members (
           id SERIAL PRIMARY KEY,
           first_name TEXT NOT NULL,
@@ -491,7 +499,18 @@ export interface MusculationDechargeRow {
   date_signature_representant: string | null;
   decharge_url: string;
   certificat_url: string;
+  /**
+   * Suivi de la notification au bureau : `null` tant que le dossier n'est pas
+   * validé, puis « envoyee », « ignoree » (aucun destinataire ou envoi d'emails
+   * non configuré) ou « echec ».
+   */
+  notification_statut: NotificationStatut | null;
+  notification_le: string | null;
+  notification_destinataires: string[];
+  notification_erreur: string | null;
 }
+
+export type NotificationStatut = "envoyee" | "ignoree" | "echec";
 
 export interface NouvelleMusculationDecharge {
   token: string;
@@ -542,6 +561,29 @@ export async function insertMusculationDecharge(d: NouvelleMusculationDecharge):
       d.dechargeUrl,
       d.certificatUrl,
     ]
+  );
+}
+
+/**
+ * Consigne le résultat de la notification au bureau sur le dossier. Appelée
+ * juste après la tentative d'envoi, et à chaque renvoi depuis la vue bureau,
+ * pour que celle-ci puisse montrer si l'information est bien partie et à qui.
+ */
+export async function recordMusculationNotification(
+  token: string,
+  result: { statut: NotificationStatut; destinataires: string[]; erreur?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    UPDATE musculation_decharges
+    SET notification_statut = $2,
+        notification_le = now(),
+        notification_destinataires = $3,
+        notification_erreur = $4
+    WHERE token = $1
+    `,
+    [token, result.statut, result.destinataires, result.erreur ?? null]
   );
 }
 
@@ -610,6 +652,15 @@ export async function deleteMusculationDecharge(id: number): Promise<Musculation
   await ensureSchema();
   const { rows } = await getPool().query<MusculationDechargeRow>(
     "DELETE FROM musculation_decharges WHERE id = $1 RETURNING *",
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getMusculationDechargeById(id: number): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "SELECT * FROM musculation_decharges WHERE id = $1",
     [id]
   );
   return rows[0] ?? null;
