@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import crypto from "node:crypto";
 import { insertPartnerSignup, DatabaseNotConfiguredError } from "@/lib/db";
 import { buildErrorHtml } from "@/lib/monetico";
+import { notifyStaffAndRecord } from "@/lib/partnerSignupNotify";
 
 /**
  * Demande d'activation des avantages d'un partenaire (ex. Alltricks) : un
@@ -35,8 +37,16 @@ export async function POST(request: NextRequest) {
     return htmlError("Merci de donner votre consentement pour continuer.");
   }
 
+  let signup;
   try {
-    await insertPartnerSignup({ partenaire, nom, prenom, email, consentement });
+    signup = await insertPartnerSignup({
+      partenaire,
+      nom,
+      prenom,
+      email,
+      consentement,
+      token: crypto.randomUUID(),
+    });
   } catch (error) {
     if (error instanceof DatabaseNotConfiguredError) {
       console.error(error.message);
@@ -47,6 +57,10 @@ export async function POST(request: NextRequest) {
     console.error("Échec de l'enregistrement de la demande partenaire :", error);
     return htmlError("Une erreur est survenue. Réessayez plus tard.");
   }
+
+  // Un échec d'envoi ne doit pas empêcher l'adhérent de voir sa demande
+  // confirmée : la notification est tentée et consignée, jamais bloquante.
+  await notifyStaffAndRecord(signup, request.nextUrl.origin);
 
   return NextResponse.redirect(new URL(`${backHref}?merci=1`, request.url), 303);
 }

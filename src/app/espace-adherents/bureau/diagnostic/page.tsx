@@ -25,7 +25,7 @@ export default async function BureauDiagnosticPage({
 
   const { test } = await searchParams;
   const blobTest = test === "blob" ? await runBlobTest() : null;
-  const { platform, hosting, vars, injectedNames, totalEnvVars, blobTokenSource } =
+  const { platform, hosting, vars, injectedNames, totalEnvVars, blobTokenSource, notificationRecipients } =
     collectDiagnostic();
 
   return (
@@ -94,6 +94,17 @@ export default async function BureauDiagnosticPage({
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="font-display text-xl uppercase text-toac-blue-950">
+          Notification des décharges musculation
+        </h2>
+        <p className="mt-3 text-sm text-toac-blue-900/80">
+          {notificationRecipients > 0
+            ? `${notificationRecipients} destinataire${notificationRecipients > 1 ? "s" : ""} reconnu${notificationRecipients > 1 ? "s" : ""} dans MUSCULATION_NOTIFICATION_EMAILS.`
+            : "Aucun destinataire reconnu dans MUSCULATION_NOTIFICATION_EMAILS : aucun email ne partira à la validation d'une décharge. Vérifiez la variable dans les réglages du projet."}
+        </p>
       </section>
 
       <section className="mt-10">

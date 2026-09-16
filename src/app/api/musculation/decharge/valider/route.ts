@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { validateMusculationDecharge, DatabaseNotConfiguredError } from "@/lib/db";
-import { sendMusculationNotification } from "@/lib/musculationNotification";
+import { notifyAndRecord } from "@/lib/musculationNotify";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -26,20 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Une erreur est survenue. Réessayez plus tard." }, { status: 500 });
   }
 
-  // Le dossier est validé à partir d'ici : un échec d'envoi de la notification
-  // ne doit pas être présenté à l'adhérent comme un échec de sa démarche. Il est
-  // journalisé, et le dossier reste visible dans la vue bureau.
-  try {
-    await sendMusculationNotification({
-      origin: request.nextUrl.origin,
-      documentPath: row.decharge_url,
-      token: row.token,
-      nom: row.nom,
-      prenom: row.prenom,
-    });
-  } catch (error) {
-    console.error("Échec de l'envoi de la notification musculation :", error);
-  }
+  // Le dossier est validé à partir d'ici : un échec d'envoi ne doit pas être
+  // présenté à l'adhérent comme un échec de sa démarche. Le résultat est
+  // consigné sur le dossier, où le bureau peut le consulter et relancer l'envoi.
+  await notifyAndRecord(row, request.nextUrl.origin);
 
   return NextResponse.json({ ok: true });
 }

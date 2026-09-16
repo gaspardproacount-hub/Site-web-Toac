@@ -26,6 +26,44 @@ const STATUT_CLASSES: Record<string, string> = {
   valide: "bg-green-100 text-green-800",
 };
 
+/**
+ * État de la transmission au bureau : sans cette information, un envoi refusé
+ * par le service d'emails resterait invisible — la validation du dossier
+ * aboutit dans tous les cas, volontairement.
+ */
+function NotificationEtat({ decharge: d }: { decharge: MusculationDechargeRow }) {
+  const destinataires = d.notification_destinataires ?? [];
+
+  if (d.notification_statut === "envoyee") {
+    return (
+      <>
+        <span className="font-medium text-emerald-700">✓ Transmise au bureau</span>
+        <span className="text-toac-blue-900/60"> le {formatDate(d.notification_le)}</span>
+        {destinataires.length > 0 && (
+          <div className="mt-1 text-toac-blue-900/70">À : {destinataires.join(", ")}</div>
+        )}
+      </>
+    );
+  }
+
+  if (d.notification_statut === "echec" || d.notification_statut === "ignoree") {
+    return (
+      <>
+        <span className="font-medium text-red-700">
+          {d.notification_statut === "echec" ? "✕ Envoi en échec" : "✕ Aucun email envoyé"}
+        </span>
+        <span className="text-toac-blue-900/60"> le {formatDate(d.notification_le)}</span>
+        {d.notification_erreur && (
+          <div className="mt-1 break-words text-toac-blue-900/70">{d.notification_erreur}</div>
+        )}
+      </>
+    );
+  }
+
+  // Dossiers validés avant la mise en place de ce suivi : aucune trace en base.
+  return <span className="text-toac-blue-900/60">Transmission au bureau non tracée.</span>;
+}
+
 export default function AdminMusculationTable({ decharges }: { decharges: MusculationDechargeRow[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -33,6 +71,10 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [notifyingId, setNotifyingId] = useState<number | null>(null);
+  const [notifyMessage, setNotifyMessage] = useState<{ id: number; text: string; ok: boolean } | null>(
+    null
+  );
   // Un dossier est créé dès l'envoi du formulaire, avant que l'adhérent ait relu
   // et validé son document. Ces dossiers en attente ne sont pas des documents
   // transmis au club : ils encombrent la liste, mais restent affichables pour
@@ -62,6 +104,38 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
     } catch {
       window.prompt("Copiez ce lien :", url);
     }
+  }
+
+  /** Relance l'envoi au bureau, après un échec ou une correction des destinataires. */
+  async function handleNotify(d: MusculationDechargeRow) {
+    setNotifyingId(d.id);
+    setNotifyMessage(null);
+
+    let response: Response;
+    try {
+      response = await fetch("/api/musculation/decharge/notifier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: d.id }),
+      });
+    } catch {
+      setNotifyMessage({ id: d.id, text: "Erreur réseau. Réessayez plus tard.", ok: false });
+      setNotifyingId(null);
+      return;
+    }
+
+    const data = await response.json().catch(() => null);
+    setNotifyingId(null);
+    if (!response.ok) {
+      setNotifyMessage({ id: d.id, text: data?.error ?? "L'envoi a échoué.", ok: false });
+      return;
+    }
+    setNotifyMessage({
+      id: d.id,
+      text: `Envoyé à ${(data?.destinataires ?? []).join(", ")}`,
+      ok: true,
+    });
+    router.refresh();
   }
 
   /**
@@ -179,6 +253,12 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                   )}
                 </dl>
 
+                {d.statut === "valide" && (
+                  <div className="mt-4 rounded-md border border-toac-gray-200 bg-toac-gray-50 px-3 py-2 text-xs">
+                    <NotificationEtat decharge={d} />
+                  </div>
+                )}
+
                 <div className="mt-4 flex flex-wrap gap-3">
                   <a
                     href={documentHref(d.decharge_url, undefined, {
@@ -207,6 +287,20 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                   >
                     {copiedId === d.id ? "Lien copié ✓" : "Copier le lien de partage/relecture"}
                   </button>
+                  {d.statut === "valide" && (
+                    <button
+                      type="button"
+                      onClick={() => handleNotify(d)}
+                      disabled={notifyingId === d.id}
+                      className="rounded-md border border-toac-gray-200 px-3 py-1.5 text-xs font-medium text-toac-blue-900 hover:bg-toac-gray-100 disabled:opacity-60"
+                    >
+                      {notifyingId === d.id
+                        ? "Envoi…"
+                        : d.notification_statut === "envoyee"
+                          ? "Renvoyer la notification"
+                          : "Envoyer la notification"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleDelete(d)}
@@ -216,6 +310,14 @@ export default function AdminMusculationTable({ decharges }: { decharges: Muscul
                     {deletingId === d.id ? "Suppression…" : "Supprimer le dossier"}
                   </button>
                 </div>
+                {notifyMessage?.id === d.id && (
+                  <p
+                    role="status"
+                    className={`mt-3 text-xs font-medium ${notifyMessage.ok ? "text-emerald-700" : "text-red-600"}`}
+                  >
+                    {notifyMessage.text}
+                  </p>
+                )}
                 {deleteError && deletingId === null && (
                   <p role="alert" className="mt-3 text-xs font-medium text-red-600">
                     {deleteError}

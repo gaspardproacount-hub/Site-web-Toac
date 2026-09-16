@@ -1,5 +1,6 @@
 import "server-only";
 import { BLOB_TOKEN_ENV_NAMES, resolveBlobToken, putBlob } from "@/lib/blob";
+import { countNotificationRecipients } from "@/lib/musculationNotification";
 
 /**
  * Collecte l'état réel du serveur (variables d'environnement vues par la
@@ -59,6 +60,8 @@ export interface Diagnostic {
   injectedNames: string[];
   totalEnvVars: number;
   blobTokenSource: string | null;
+  /** Adresses effectivement reconnues dans MUSCULATION_NOTIFICATION_EMAILS. */
+  notificationRecipients: number;
 }
 
 export function collectDiagnostic(): Diagnostic {
@@ -82,6 +85,7 @@ export function collectDiagnostic(): Diagnostic {
     injectedNames: Object.keys(process.env).filter((name) => NAME_FILTER.test(name)).sort(),
     totalEnvVars: Object.keys(process.env).length,
     blobTokenSource: blobToken?.source ?? null,
+    notificationRecipients: countNotificationRecipients(),
   };
 }
 

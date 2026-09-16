@@ -6,7 +6,7 @@ import AdminPartnerSignupsTable from "@/components/AdminPartnerSignupsTable";
 import DbSetupNotice from "@/components/DbSetupNotice";
 
 export const metadata: Metadata = {
-  title: "Vue bureau — Avantages partenaires",
+  title: "Vue bureau — Gestion adhérents - partenaires",
   robots: { index: false, follow: false },
 };
 
@@ -31,12 +31,13 @@ export default async function BureauPartenairesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <h1 className="section-title font-display text-3xl uppercase text-toac-blue-950">
-        Vue bureau — Avantages partenaires
+        Vue bureau — Gestion adhérents - partenaires
       </h1>
       <p className="mt-4 text-toac-blue-900/80">
         Demandes d&apos;activation des avantages partenaires (ex. Alltricks) envoyées depuis les pages
-        partenaires du site. Pour chacune, vérifiez que la personne est bien adhérente puis renseignez
-        son email sur le compte partenaire du club, avant de marquer la demande traitée.
+        partenaires du site. Le responsable partenariat reçoit un email à chaque demande, avec un lien
+        pour confirmer directement ; vous pouvez aussi confirmer depuis cette page. L&apos;adhérent reçoit
+        alors automatiquement un email lui confirmant que son avantage est activé.
       </p>
       <div className="mt-8">
         {dbError ? <DbSetupNotice /> : <AdminPartnerSignupsTable signups={signups} />}

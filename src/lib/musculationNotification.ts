@@ -38,13 +38,59 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export type NotificationResult = "sent" | "skipped";
+/**
+ * Résultat détaillé d'un envoi, consigné sur le dossier pour que la vue bureau
+ * puisse dire si l'information est partie, à qui, et sinon pourquoi.
+ */
+export interface NotificationOutcome {
+  statut: "envoyee" | "ignoree" | "echec";
+  destinataires: string[];
+  erreur: string | null;
+}
 
+/** Nombre d'adresses exploitables, pour la page de diagnostic. */
+export function countNotificationRecipients(): number {
+  return resolveRecipients().length;
+}
+
+/**
+ * Contrôle volontairement permissif : il ne s'agit pas de valider une adresse
+ * dans les règles, seulement d'écarter ce qui ferait rejeter tout l'envoi par
+ * Brevo — un fragment sans arobase, ou plusieurs adresses restées collées.
+ */
+const EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+/**
+ * Destinataires de la notification, lus dans MUSCULATION_NOTIFICATION_EMAILS.
+ *
+ * La saisie est humaine et le champ « Value » de Vercel est une zone de texte
+ * multiligne : les adresses peuvent aussi bien être séparées par des virgules
+ * que par des points-virgules, des espaces ou des retours à la ligne. Découper
+ * sur la seule virgule transformait « une adresse par ligne » en un unique
+ * destinataire invalide, que Brevo rejetait en bloc — aucun message ne partait,
+ * et rien n'apparaissait dans ses statistiques.
+ *
+ * Les entrées qui ne ressemblent pas à une adresse sont écartées et
+ * journalisées, plutôt que de faire échouer l'envoi aux autres destinataires.
+ */
 function resolveRecipients(): string[] {
-  return (process.env.MUSCULATION_NOTIFICATION_EMAILS ?? "")
-    .split(",")
+  const entries = (process.env.MUSCULATION_NOTIFICATION_EMAILS ?? "")
+    .split(/[,;\s]+/)
     .map((address) => address.trim())
     .filter(Boolean);
+
+  const valid = entries.filter((address) => EMAIL_PATTERN.test(address));
+  const rejected = entries.filter((address) => !EMAIL_PATTERN.test(address));
+
+  if (rejected.length > 0) {
+    console.warn(
+      "[musculation] Entrées ignorées dans MUSCULATION_NOTIFICATION_EMAILS (adresse invalide) :",
+      rejected
+    );
+  }
+
+  // Une même adresse saisie deux fois ferait recevoir le message en double.
+  return Array.from(new Set(valid.map((address) => address.toLowerCase())));
 }
 
 function buildHtml(
@@ -88,9 +134,9 @@ function buildHtml(
 
 export async function sendMusculationNotification(
   input: MusculationNotificationInput
-): Promise<NotificationResult> {
+): Promise<NotificationOutcome> {
   const recipients = resolveRecipients();
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY?.trim();
 
   // Le nom du fichier est dans le chemin de l'URL : c'est de là que le lecteur
   // PDF de Chrome tire le titre de son onglet.
@@ -100,17 +146,15 @@ export async function sendMusculationNotification(
     input.origin + documentHref(input.documentPath, input.token, { filename, download: true });
 
   if (recipients.length === 0) {
-    console.info(
-      "[musculation] MUSCULATION_NOTIFICATION_EMAILS non renseignée — aucune notification envoyée."
-    );
-    return "skipped";
+    const erreur =
+      "Aucun destinataire exploitable dans MUSCULATION_NOTIFICATION_EMAILS.";
+    console.warn(`[musculation] ${erreur} Notification non envoyée.`);
+    return { statut: "ignoree", destinataires: [], erreur };
   }
   if (!apiKey) {
-    console.info("[musculation] BREVO_API_KEY non configurée — notification journalisée uniquement:", {
-      recipients,
-      viewUrl,
-    });
-    return "skipped";
+    const erreur = "BREVO_API_KEY n'est pas configurée : aucun email ne peut être envoyé.";
+    console.info(`[musculation] ${erreur}`, { recipients, viewUrl });
+    return { statut: "ignoree", destinataires: recipients, erreur };
   }
 
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -147,5 +191,5 @@ export async function sendMusculationNotification(
     throw new Error(`Brevo a répondu ${response.status} : ${await response.text()}`);
   }
 
-  return "sent";
+  return { statut: "envoyee", destinataires: recipients, erreur: null };
 }

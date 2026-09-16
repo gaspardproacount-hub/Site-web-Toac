@@ -140,8 +140,26 @@ function ensureSchema(): Promise<void> {
           prenom TEXT NOT NULL,
           email TEXT NOT NULL,
           consentement BOOLEAN NOT NULL DEFAULT false,
-          statut TEXT NOT NULL DEFAULT 'nouveau'
+          statut TEXT NOT NULL DEFAULT 'a_traiter'
         );
+
+        -- Jeton pour le lien "Confirmer l'ajout" envoyé par email au
+        -- responsable partenariat (clic direct, sans connexion au bureau) et
+        -- suivi de la notification qui lui est envoyée à chaque demande —
+        -- même logique que pour musculation_decharges plus bas. Ajoutés
+        -- après coup : sans effet sur une base déjà à jour.
+        ALTER TABLE partner_signups
+          ADD COLUMN IF NOT EXISTS token TEXT UNIQUE,
+          ADD COLUMN IF NOT EXISTS ajoute_le TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS notification_statut TEXT,
+          ADD COLUMN IF NOT EXISTS notification_le TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS notification_destinataires TEXT[] NOT NULL DEFAULT '{}',
+          ADD COLUMN IF NOT EXISTS notification_erreur TEXT;
+
+        -- Anciens intitulés de statut (avant l'ajout du suivi ci-dessus) :
+        -- remplacés par 'a_traiter' / 'ajoute', utilisés partout ailleurs.
+        UPDATE partner_signups SET statut = 'a_traiter' WHERE statut = 'nouveau';
+        UPDATE partner_signups SET statut = 'ajoute' WHERE statut = 'traite';
 
         CREATE TABLE IF NOT EXISTS musculation_decharges (
           id SERIAL PRIMARY KEY,
@@ -163,6 +181,14 @@ function ensureSchema(): Promise<void> {
           decharge_url TEXT NOT NULL,
           certificat_url TEXT NOT NULL
         );
+
+        -- Suivi de la notification envoyée au bureau à la validation d'un
+        -- dossier. Ajouté après coup : sans effet sur une base déjà à jour.
+        ALTER TABLE musculation_decharges
+          ADD COLUMN IF NOT EXISTS notification_statut TEXT,
+          ADD COLUMN IF NOT EXISTS notification_le TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS notification_destinataires TEXT[] NOT NULL DEFAULT '{}',
+          ADD COLUMN IF NOT EXISTS notification_erreur TEXT;
 
         CREATE TABLE IF NOT EXISTS members (
           id SERIAL PRIMARY KEY,
@@ -358,7 +384,19 @@ export interface PartnerSignupRow {
   prenom: string;
   email: string;
   consentement: boolean;
-  statut: string;
+  statut: "a_traiter" | "ajoute";
+  token: string | null;
+  ajoute_le: string | null;
+  /**
+   * Suivi de la notification envoyée au responsable partenariat à chaque
+   * demande (et à chaque renvoi manuel) : `null` tant qu'aucun envoi n'a
+   * été tenté, puis « envoyee », « ignoree » (aucun destinataire ou envoi
+   * d'emails non configuré) ou « echec ».
+   */
+  notification_statut: NotificationStatut | null;
+  notification_le: string | null;
+  notification_destinataires: string[];
+  notification_erreur: string | null;
 }
 
 export interface NouveauPartnerSignup {
@@ -367,20 +405,21 @@ export interface NouveauPartnerSignup {
   prenom: string;
   email: string;
   consentement: boolean;
+  token: string;
 }
 
 /** Enregistre une demande d'activation des avantages d'un partenaire (ex. Alltricks). */
-export async function insertPartnerSignup(p: NouveauPartnerSignup): Promise<number> {
+export async function insertPartnerSignup(p: NouveauPartnerSignup): Promise<PartnerSignupRow> {
   await ensureSchema();
-  const { rows } = await getPool().query<{ id: number }>(
+  const { rows } = await getPool().query<PartnerSignupRow>(
     `
-    INSERT INTO partner_signups (partenaire, nom, prenom, email, consentement, statut)
-    VALUES ($1,$2,$3,$4,$5,'nouveau')
-    RETURNING id
+    INSERT INTO partner_signups (partenaire, nom, prenom, email, consentement, statut, token)
+    VALUES ($1,$2,$3,$4,$5,'a_traiter',$6)
+    RETURNING *
     `,
-    [p.partenaire, p.nom, p.prenom, p.email, p.consentement]
+    [p.partenaire, p.nom, p.prenom, p.email, p.consentement, p.token]
   );
-  return rows[0].id;
+  return rows[0];
 }
 
 export async function getPartnerSignups(): Promise<PartnerSignupRow[]> {
@@ -391,11 +430,68 @@ export async function getPartnerSignups(): Promise<PartnerSignupRow[]> {
   return rows;
 }
 
-/** Marque une demande comme traitée (email renseigné côté partenaire) ou la rouvre. */
-export async function setPartnerSignupStatut(id: number, statut: string): Promise<void> {
+export async function getPartnerSignupById(id: number): Promise<PartnerSignupRow | null> {
   await ensureSchema();
-  await getPool().query("UPDATE partner_signups SET statut = $2 WHERE id = $1", [id, statut]);
+  const { rows } = await getPool().query<PartnerSignupRow>(
+    "SELECT * FROM partner_signups WHERE id = $1",
+    [id]
+  );
+  return rows[0] ?? null;
 }
+
+export async function getPartnerSignupByToken(token: string): Promise<PartnerSignupRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<PartnerSignupRow>(
+    "SELECT * FROM partner_signups WHERE token = $1",
+    [token]
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Marque la demande « ajoutée » (email renseigné côté partenaire) et
+ * renvoie la ligne mise à jour — ou `null` si l'id est inconnu ou si la
+ * demande était déjà marquée ajoutée (pas de double envoi de l'email de
+ * confirmation à l'adhérent dans ce cas : à l'appelant de vérifier l'état
+ * actuel via getPartnerSignupById/ByToken s'il veut distinguer les deux).
+ */
+export async function markPartnerSignupAdded(id: number): Promise<PartnerSignupRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<PartnerSignupRow>(
+    `
+    UPDATE partner_signups SET statut = 'ajoute', ajoute_le = now()
+    WHERE id = $1 AND statut != 'ajoute'
+    RETURNING *
+    `,
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+/** Consigne le résultat de la notification au responsable partenariat. */
+export async function recordPartnerSignupNotification(
+  id: number,
+  result: { statut: NotificationStatut; destinataires: string[]; erreur?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    UPDATE partner_signups
+    SET notification_statut = $2,
+        notification_le = now(),
+        notification_destinataires = $3,
+        notification_erreur = $4
+    WHERE id = $1
+    `,
+    [id, result.statut, result.destinataires, result.erreur ?? null]
+  );
+}
+
+export async function deletePartnerSignup(id: number): Promise<void> {
+  await ensureSchema();
+  await getPool().query("DELETE FROM partner_signups WHERE id = $1", [id]);
+}
+
 
 export interface CommandeRow {
   id: number;
@@ -491,7 +587,18 @@ export interface MusculationDechargeRow {
   date_signature_representant: string | null;
   decharge_url: string;
   certificat_url: string;
+  /**
+   * Suivi de la notification au bureau : `null` tant que le dossier n'est pas
+   * validé, puis « envoyee », « ignoree » (aucun destinataire ou envoi d'emails
+   * non configuré) ou « echec ».
+   */
+  notification_statut: NotificationStatut | null;
+  notification_le: string | null;
+  notification_destinataires: string[];
+  notification_erreur: string | null;
 }
+
+export type NotificationStatut = "envoyee" | "ignoree" | "echec";
 
 export interface NouvelleMusculationDecharge {
   token: string;
@@ -542,6 +649,29 @@ export async function insertMusculationDecharge(d: NouvelleMusculationDecharge):
       d.dechargeUrl,
       d.certificatUrl,
     ]
+  );
+}
+
+/**
+ * Consigne le résultat de la notification au bureau sur le dossier. Appelée
+ * juste après la tentative d'envoi, et à chaque renvoi depuis la vue bureau,
+ * pour que celle-ci puisse montrer si l'information est bien partie et à qui.
+ */
+export async function recordMusculationNotification(
+  token: string,
+  result: { statut: NotificationStatut; destinataires: string[]; erreur?: string | null }
+): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    UPDATE musculation_decharges
+    SET notification_statut = $2,
+        notification_le = now(),
+        notification_destinataires = $3,
+        notification_erreur = $4
+    WHERE token = $1
+    `,
+    [token, result.statut, result.destinataires, result.erreur ?? null]
   );
 }
 
@@ -610,6 +740,15 @@ export async function deleteMusculationDecharge(id: number): Promise<Musculation
   await ensureSchema();
   const { rows } = await getPool().query<MusculationDechargeRow>(
     "DELETE FROM musculation_decharges WHERE id = $1 RETURNING *",
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getMusculationDechargeById(id: number): Promise<MusculationDechargeRow | null> {
+  await ensureSchema();
+  const { rows } = await getPool().query<MusculationDechargeRow>(
+    "SELECT * FROM musculation_decharges WHERE id = $1",
     [id]
   );
   return rows[0] ?? null;
