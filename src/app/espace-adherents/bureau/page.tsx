@@ -68,25 +68,12 @@ export default async function BureauDossiersPage() {
         </>
       )}
 
+      {/* Commandes Monetico, Demandes d'adhésion et Pré-inscriptions ne sont
+          pas proposées ici : Monetico n'est pas en service, et les adhésions
+          de la saison sont suivies hors du site. Les pages correspondantes
+          restent en place, prêtes à être remises dans cette liste le jour où
+          ces parcours reprendront. */}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/espace-adherents/bureau/commandes"
-          className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
-        >
-          Commandes Monetico →
-        </Link>
-        <Link
-          href="/espace-adherents/bureau/inscriptions"
-          className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
-        >
-          Demandes d&apos;adhésion →
-        </Link>
-        <Link
-          href="/espace-adherents/bureau/preinscriptions"
-          className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
-        >
-          Pré-inscriptions →
-        </Link>
         <Link
           href="/espace-adherents/bureau/partenaires"
           className="rounded-md border border-toac-blue-800 px-4 py-2 text-sm font-medium text-toac-blue-950 hover:bg-toac-blue-950 hover:text-white"
